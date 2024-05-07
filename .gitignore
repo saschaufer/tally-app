@@ -1,0 +1,17 @@
+### IntelliJ IDEA ###
+.idea/
+.vscode/
+.editorconfig
+*.iml
+
+# Maven
+target/
+.ci-friendly-pom.xml
+
+# Npm
+frontend/node/
+frontend/node_modules/
+frontend/.angular/
+
+# Personal stuff
+.dev/

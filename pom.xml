@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.saschaufer.apps</groupId>
+    <artifactId>tally</artifactId>
+    <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>A tally app.</description>
+
+    <modules>
+        <module>frontend</module>
+        <module>backend</module>
+    </modules>
+
+    <properties>
+
+        <revision>0.1.0-SNAPSHOT</revision>
+
+        <maven.compiler.release>21</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.deploy.skip>true</maven.deploy.skip>
+
+        <!-- VCS -->
+        <project.scm.id>gitea</project.scm.id>
+        <project.scm.url>https://gitea.server.lan/apps/tally.git</project.scm.url>
+
+        <!-- Dependency-Check -->
+        <dependencyCheck.outdir>${project.build.directory}/dependency-check</dependencyCheck.outdir>
+
+        <!-- SonarQube Arguments -->
+        <sonar.projectKey>${project.name}</sonar.projectKey>
+        <sonar.projectName>${project.name}</sonar.projectName>
+
+        <!-- Must be here, since it is not being picked up when set in child module -->
+        <sonar.testExecutionReportPaths>
+            frontend/target/test-report/unit-test-result.xml
+        </sonar.testExecutionReportPaths>
+
+        <sonar.dependencyCheck.htmlReportPath>
+            ${dependencyCheck.outdir}/dependency-check-report.html
+        </sonar.dependencyCheck.htmlReportPath>
+        <sonar.dependencyCheck.jsonReportPath>
+            ${dependencyCheck.outdir}/dependency-check-report.json
+        </sonar.dependencyCheck.jsonReportPath>
+
+        <!-- Archive and Deploy -->
+        <!-- mvn ... -Darchive.version=<url> -->
+        <archive.version/>
+        <!-- mvn ... -Darchive.repository=<url> -->
+        <archive.repository/>
+
+        <!-- Dependencies -->
+        <hamcrest.version>2.2</hamcrest.version>
+        <spring-boot.version>3.2.5</spring-boot.version>
+
+        <!-- Plugins -->
+        <ci-friendly-flatten-maven-plugin.version>1.0.19</ci-friendly-flatten-maven-plugin.version>
+        <dependency-check-maven.version>9.1.0</dependency-check-maven.version>
+        <exec-maven-plugin.version>3.2.0</exec-maven-plugin.version>
+        <frontend-maven-plugin.version>1.15.0</frontend-maven-plugin.version>
+        <jacoco-maven-plugin.version>0.8.12</jacoco-maven-plugin.version>
+        <maven-scm-plugin.version>2.1.0</maven-scm-plugin.version>
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+        <postgresql.version>42.7.3</postgresql.version>
+        <sonar-maven-plugin.version>3.11.0.3922</sonar-maven-plugin.version>
+
+        <!-- The following plugins are not resolved correctly via spring-boot-dependencies. -->
+        <!-- Check spring-boot-dependencies POM for versions: -->
+        <!-- https://central.sonatype.com/artifact/org.springframework.boot/spring-boot-dependencies/3.2.5/pom -->
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
+        <spring-boot-maven-plugin.version>3.2.5</spring-boot-maven-plugin.version>
+
+    </properties>
+
+    <!-- VCS -->
+    <scm>
+        <connection>scm:git:${project.scm.url}</connection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
+        <url>${project.scm.url}</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- Spring Boot BOM -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+
+        <pluginManagement>
+
+            <plugins>
+
+                <!-- Create and deploy archive (see archive-and-deploy.sh) -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>${exec-maven-plugin.version}</version>
+                    <configuration>
+                        <inheritIo>true</inheritIo>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>archive-and-deploy</id>
+                            <goals>
+                                <goal>exec</goal>
+                            </goals>
+                            <configuration>
+                                <executable>${project.basedir}/archive-and-deploy.sh</executable>
+                                <commandlineArgs>
+                                    -v ${archive.version}
+                                    -r ${archive.repository}
+                                    -p ${nexus.passphrase}
+                                </commandlineArgs>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+            </plugins>
+
+        </pluginManagement>
+
+        <plugins>
+
+            <!-- Flattens POMs -->
+            <plugin>
+                <groupId>com.outbrain.swinfra</groupId>
+                <artifactId>ci-friendly-flatten-maven-plugin</artifactId>
+                <version>${ci-friendly-flatten-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <!-- Ensure proper cleanup. Will run on clean phase-->
+                            <goal>clean</goal>
+                            <!-- Enable ci-friendly version resolution. Will run on process-resources phase-->
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Dependency Check -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${dependency-check-maven.version}</version>
+                <inherited>false</inherited>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.postgresql</groupId>
+                        <artifactId>postgresql</artifactId>
+                        <version>${postgresql.version}</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <databaseDriverName>org.postgresql.Driver</databaseDriverName>
+                    <connectionString>jdbc:postgresql://server.lan:5432/cicd?currentSchema=nvd</connectionString>
+                    <serverId>nvd</serverId>
+                    <autoUpdate>false</autoUpdate>
+
+                    <formats>HTML,JSON</formats>
+                    <prettyPrint>true</prettyPrint>
+                    <outputDirectory>${dependencyCheck.outdir}</outputDirectory>
+                    <name>report</name>
+
+                    <failBuildOnCVSS>1</failBuildOnCVSS>
+
+                    <ossindexAnalyzerEnabled>false</ossindexAnalyzerEnabled>
+                    <nodePackageSkipDevDependencies>true</nodePackageSkipDevDependencies>
+
+                    <!-- Active, but no exe or dll in project -->
+                    <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
+
+                    <suppressionFile>${project.basedir}/dependency-check-suppressions.xml</suppressionFile>
+                    <hostedSuppressionsEnabled>false</hostedSuppressionsEnabled>
+                </configuration>
+            </plugin>
+
+            <!-- SonarQube Scanner -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>${sonar-maven-plugin.version}</version>
+                <inherited>false</inherited>
+            </plugin>
+
+            <!-- Skip: Create and deploy archive -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
+</project>

@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>de.saschaufer.apps</groupId>
+        <artifactId>tally</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <groupId>de.saschaufer.apps.tally</groupId>
+    <artifactId>frontend</artifactId>
+    <packaging>pom</packaging>
+
+    <name>${project.groupId}:${project.artifactId}</name>
+
+    <properties>
+
+        <!-- SonarQube Arguments -->
+        <sonar.nodejs.executable>${project.basedir}/node/node</sonar.nodejs.executable>
+
+        <sonar.sources>src</sonar.sources>
+        <sonar.tests>src</sonar.tests>
+        <sonar.test.inclusions>src/**/*.spec.ts</sonar.test.inclusions>
+
+        <sonar.javascript.lcov.reportPaths>
+            ${project.build.directory}/coverage-report/lcov.info
+        </sonar.javascript.lcov.reportPaths>
+
+    </properties>
+
+    <build>
+
+        <plugins>
+
+            <!-- Frontend -->
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>${frontend-maven-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>install node and npm</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <configuration>
+                            <serverId>nexus</serverId>
+                            <!-- Node & Npm compatibility: https://nodejs.org/en/download/releases/ -->
+                            <!-- Download: https://nodejs.org/dist/vX.X.X/node-vX.X.X-linux-x64.tar.gz -->
+                            <nodeVersion>v20.11.1</nodeVersion>
+                            <nodeDownloadRoot>https://nexus.server.lan/repository/raw-group/nodejs/
+                            </nodeDownloadRoot>
+                            <!-- Download: https://registry.npmjs.org/npm/-/npm-X.X.X.tgz -->
+                            <npmVersion>10.2.4</npmVersion>
+                            <npmDownloadRoot>https://nexus.server.lan/repository/raw-group/npm/</npmDownloadRoot>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm (clean install)</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>ci</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm (version)</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>
+                                version ${project.version}
+                                --allow-same-version
+                                --git-tag-version=false
+                            </arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm (build-release)</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run build-release</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm (test)</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>run test</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-plugin</artifactId>
+                <version>${maven-scm-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>Git add package.json / package-lock.json</id>
+                        <phase>process-sources</phase>
+                        <goals>
+                            <goal>add</goal>
+                        </goals>
+                        <configuration>
+                            <includes>package.json,package-lock.json</includes>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Skip: Create and deploy archive -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+    </build>
+</project>
