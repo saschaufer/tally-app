@@ -37,6 +37,9 @@
         <sonar.projectKey>${project.name}</sonar.projectKey>
         <sonar.projectName>${project.name}</sonar.projectName>
 
+        <!--Break build on failed Quality Gate -->
+        <sonar.qualitygate.wait>true</sonar.qualitygate.wait>
+
         <!-- Must be here, since it is not being picked up when set in child module -->
         <sonar.testExecutionReportPaths>
             frontend/target/test-report/unit-test-result.xml
