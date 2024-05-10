@@ -1,0 +1,17 @@
+# Database
+# ==================================================================
+
+database:
+
+  # Choose one database url
+  # Replace variables between < and >
+  # Remove < and >
+
+  # H2 (File)
+  # url: "r2dbc:h2:file:///<./path/tally>"
+
+  # H2 (In-Memory)
+  url: r2dbc:h2:mem:///tally?options=DB_CLOSE_DELAY=-1;
+
+  # Postgres
+  # url: "r2dbc:postgresql://<user>:<password>@<host>:<port>/<database>?schema=<schema>"
