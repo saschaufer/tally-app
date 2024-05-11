@@ -4,8 +4,3 @@
 spring:
   main.banner-mode: off
   profiles.active: default
-
-# Server
-# ==================================================================
-
-server.port: 8000

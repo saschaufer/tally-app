@@ -8,6 +8,10 @@ import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Mono;
 
+import static org.springframework.data.relational.core.query.Criteria.where;
+import static org.springframework.data.relational.core.query.Query.query;
+import static org.springframework.data.relational.core.query.Update.update;
+
 @Component
 @RequiredArgsConstructor
 public class Persistence {
@@ -17,6 +21,28 @@ public class Persistence {
 
     public Mono<User> insertUser(final User user) {
         return Mono.just(user).flatMap(template::insert);
+    }
+
+    public Mono<User> selectUser(final String username) {
+        return template.selectOne(query(where("username").is(username)), User.class)
+                .switchIfEmpty(Mono.error(new RuntimeException("User not found")));
+    }
+
+    public Mono<Void> updateUserPassword(final Long id, final String newPassword) {
+
+        return template
+
+                // Update user
+                .update(User.class)
+                .matching(query(where("id").is(id)))
+                .apply(update("password", newPassword))
+
+                // If no user was updated, return an error
+                .flatMap(updateCount -> switch (updateCount.intValue()) {
+                    case 0 -> Mono.error(new RuntimeException("User not updated"));
+                    case 1 -> Mono.empty();
+                    default -> Mono.error(new RuntimeException("Too many users updated"));
+                });
     }
 
     public Mono<Product> insertProduct(final Product product) {

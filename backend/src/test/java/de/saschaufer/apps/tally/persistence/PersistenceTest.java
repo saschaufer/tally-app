@@ -66,12 +66,12 @@ class PersistenceTest {
 
         assertCount(User.class, 0);
 
-        Mono.just(new User(null, "test-name", "test-password", "test-role"))
+        Mono.just(new User(null, "test-username", "test-password", "test-role"))
                 .flatMap(persistence::insertUser)
                 .as(StepVerifier::create)
                 .assertNext(user -> {
                     assertThat(user.getId(), notNullValue());
-                    assertThat(user.getName(), is("test-name"));
+                    assertThat(user.getUsername(), is("test-username"));
                     assertThat(user.getPassword(), is("test-password"));
                     assertThat(user.getRoles(), is("test-role"));
                 })
@@ -119,7 +119,7 @@ class PersistenceTest {
         return Stream.of(
                 Arguments.of(
                         new User(null, null, "", ""),
-                        "NULL not allowed for column \"NAME\""
+                        "NULL not allowed for column \"USERNAME\""
                 ),
                 Arguments.of(
                         new User(null, "", null, ""),
@@ -130,6 +130,73 @@ class PersistenceTest {
                         "NULL not allowed for column \"ROLES\""
                 )
         );
+    }
+
+    @Test
+    void selectUser_positive_UserExists() {
+
+        final String username = Objects.requireNonNull(persistence.insertUser(
+                new User(null, "test-username", "test-password", "test-role")
+        ).block()).getUsername();
+
+        Mono.just(username)
+                .flatMap(persistence::selectUser)
+                .as(StepVerifier::create)
+                .assertNext(user -> {
+                    assertThat(user.getId(), notNullValue());
+                    assertThat(user.getUsername(), is("test-username"));
+                    assertThat(user.getPassword(), is("test-password"));
+                    assertThat(user.getRoles(), is("test-role"));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void selectUser_negative_UserNotExists() {
+
+        Mono.just("username")
+                .flatMap(persistence::selectUser)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("User not found"))
+                );
+    }
+
+    @Test
+    void updateUserPassword_positive_UserExists() {
+
+        final Long userId = Objects.requireNonNull(persistence.insertUser(
+                new User(null, "test-username", "test-password", "test-role")
+        ).block()).getId();
+
+        Mono.just(userId)
+                .flatMap(id -> persistence.updateUserPassword(id, "test-password-changed"))
+                .as(StepVerifier::create)
+                .expectNext()
+                .verifyComplete();
+
+        Mono.just("test-username")
+                .flatMap(persistence::selectUser)
+                .as(StepVerifier::create)
+                .assertNext(user -> {
+                    assertThat(user.getId(), notNullValue());
+                    assertThat(user.getUsername(), is("test-username"));
+                    assertThat(user.getPassword(), is("test-password-changed"));
+                    assertThat(user.getRoles(), is("test-role"));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void updateUserPassword_negative_UserNotExists() {
+
+        Mono.just(1L)
+                .flatMap(id -> persistence.updateUserPassword(id, ""))
+                .as(StepVerifier::create)
+                .expectNext()
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("User not updated"))
+                );
     }
 
     @Test

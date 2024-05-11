@@ -1,3 +1,8 @@
+# Server
+# ==================================================================
+
+server.port: 8000
+
 # Database
 # ==================================================================
 
@@ -15,3 +20,15 @@ database:
 
   # Postgres
   # url: "r2dbc:postgresql://<user>:<password>@<host>:<port>/<database>?schema=<schema>"
+
+# JWT
+# ==================================================================
+
+jwt:
+  # If not set, the servers host name is used
+  issuer: tally.backend
+
+  # If not set, the app name is used
+  audience: tally.app
+
+  key: SomeMoreThen30CharactersLongString
