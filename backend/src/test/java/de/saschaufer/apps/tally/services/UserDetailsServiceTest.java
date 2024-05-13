@@ -1,6 +1,7 @@
 package de.saschaufer.apps.tally.services;
 
 import de.saschaufer.apps.tally.config.security.JwtProperties;
+import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import de.saschaufer.apps.tally.management.UserAgent;
 import de.saschaufer.apps.tally.persistence.Persistence;
 import de.saschaufer.apps.tally.persistence.dto.User;
@@ -142,11 +143,12 @@ class UserDetailsServiceTest {
 
         doReturn(new Jwt("ecoded-jwt", Instant.MIN, Instant.MAX, Map.of("header", "h"), Map.of("claim", "m"))).when(jwtEncoder).encode(any());
 
-        final String jwt = userDetailsService.createJwtToken(user);
+        final PostLoginResponse response = userDetailsService.createJwtToken(user);
 
         verify(jwtEncoder, times(1)).encode(any());
 
-        assertThat(jwt, is("ecoded-jwt"));
+        assertThat(response.jwt(), is("ecoded-jwt"));
+        assertThat(response.secure(), is(jwtProperties.secure()));
     }
 
     @Test
@@ -159,10 +161,11 @@ class UserDetailsServiceTest {
 
         doReturn(new Jwt("ecoded-jwt", Instant.MIN, Instant.MAX, Map.of("header", "h"), Map.of("claim", "m"))).when(jwtEncoder).encode(any());
 
-        final String jwt = userDetailsService.createJwtToken(user);
+        final PostLoginResponse response = userDetailsService.createJwtToken(user);
 
         verify(jwtEncoder, times(1)).encode(any());
 
-        assertThat(jwt, is("ecoded-jwt"));
+        assertThat(response.jwt(), is("ecoded-jwt"));
+        assertThat(response.secure(), is(jwtProperties.secure()));
     }
 }

@@ -36,7 +36,7 @@ public abstract class SecurityConfigSetup {
 
         @Bean
         private JwtProperties jwtProperties() {
-            return new JwtProperties("issuer", "audience", "key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            return new JwtProperties("issuer", "audience", "key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true);
         }
     }
 

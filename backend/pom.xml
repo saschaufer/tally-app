@@ -21,8 +21,22 @@
         <!-- Jacoco -->
         <jacoco.outdir>${project.build.directory}/coverage-report</jacoco.outdir>
 
+        <!-- Add to plugin as well -->
+        <jacoco.exclude.1>**/tally/config/**/*Config.*</jacoco.exclude.1>
+        <jacoco.exclude.2>**/tally/config/**/*Properties.*</jacoco.exclude.2>
+        <jacoco.exclude.3>**/tally/**/dto/**/*</jacoco.exclude.3>
+        <jacoco.exclude.4>**/tally/management/UserAgent.*</jacoco.exclude.4>
+        <jacoco.exclude.5>**/tally/Application.*</jacoco.exclude.5>
+
         <!-- SonarQube -->
         <sonar.coverage.jacoco.xmlReportPaths>${jacoco.outdir}/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.coverage.exclusions>
+            ${jacoco.exclude.1},
+            ${jacoco.exclude.2},
+            ${jacoco.exclude.3},
+            ${jacoco.exclude.4},
+            ${jacoco.exclude.5}
+        </sonar.coverage.exclusions>
 
     </properties>
 
@@ -201,6 +215,13 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco-maven-plugin.version}</version>
                 <configuration>
+                    <excludes>
+                        <exclude>${jacoco.exclude.1}</exclude>
+                        <exclude>${jacoco.exclude.2}</exclude>
+                        <exclude>${jacoco.exclude.3}</exclude>
+                        <exclude>${jacoco.exclude.4}</exclude>
+                        <exclude>${jacoco.exclude.5}</exclude>
+                    </excludes>
                     <formats>XML</formats>
                     <destFile>${jacoco.outdir}/jacoco.exec</destFile>
                     <dataFile>${jacoco.outdir}/jacoco.exec</dataFile>

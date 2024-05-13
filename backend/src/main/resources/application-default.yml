@@ -31,4 +31,8 @@ jwt:
   # If not set, the app name is used
   audience: tally.app
 
+  # The secret key to sign the JWT with
   key: SomeMoreThen30CharactersLongString
+
+  # Accept the JWT only if sent via HTTPS?
+  secure: false

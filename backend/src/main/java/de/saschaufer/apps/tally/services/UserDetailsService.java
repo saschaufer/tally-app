@@ -1,6 +1,7 @@
 package de.saschaufer.apps.tally.services;
 
 import de.saschaufer.apps.tally.config.security.JwtProperties;
+import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import de.saschaufer.apps.tally.management.UserAgent;
 import de.saschaufer.apps.tally.persistence.Persistence;
 import de.saschaufer.apps.tally.persistence.dto.User;
@@ -59,7 +60,7 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                 }));
     }
 
-    public String createJwtToken(final User user) {
+    public PostLoginResponse createJwtToken(final User user) {
 
         final String username = user.getUsername();
         final List<String> authorities = user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
@@ -78,6 +79,8 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
 
         final JwsHeader header = JwsHeader.with(() -> JwsAlgorithms.HS256).build();
 
-        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+        final String jwt = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+
+        return new PostLoginResponse(jwt, jwtProperties.secure());
     }
 }

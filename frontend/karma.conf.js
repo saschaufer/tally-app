@@ -18,9 +18,6 @@ module.exports = function (config) {
         client: {
             clearContext: false // leave Jasmine Spec Runner output visible in browser
         },
-        preprocessors: {
-            'src/app/**/!(*spec).ts': ['coverage']
-        },
         reporters: [
             'spec',
             'coverage',

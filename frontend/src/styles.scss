@@ -1,1 +1,139 @@
-/* You can add global styles to this file, and also import other style files */
+$custom-black: #181818;
+$custom-green: #33da7a;
+$custom-blue: #2563eb;
+$custom-red: #802929;
+
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("media/Roboto-Light.woff2") format("woff2");
+}
+
+body {
+  @extend .bg-black;
+  margin: 0 !important; /* Remove default margin */
+  font-family: "Roboto", sans-serif;
+}
+
+app-root {
+  @extend .mt-1_25;
+  @extend .border-red;
+
+  /* Center in the middle of the screen */
+  max-width: 28rem; /* 448px */
+  margin-left: auto;
+  margin-right: auto;
+
+  /* Scroll if content is higher then its parent */
+  overflow-y: scroll;
+
+  display: flex;
+  justify-content: center;
+}
+
+form {
+  max-width: 16rem;
+}
+
+label {
+  @extend .text-sm;
+  @extend .text-green;
+  @extend .text-b;
+}
+
+input {
+  @extend .w-full;
+  @extend .py-0_5;
+  @extend .bg-transparent;
+  @extend .border-round;
+  @extend .border-green;
+  @extend .text-sm;
+  @extend .text-green;
+  outline: none;
+  box-sizing: border-box; // Same size as form element
+}
+
+input:focus {
+  @extend .border-blue;
+}
+
+button {
+  @extend .w-full;
+  @extend .mt-0_5;
+  @extend .py-0_5;
+  @extend .bg-transparent;
+  @extend .border-green;
+  @extend .border-round;
+  @extend .text-sm;
+  @extend .text-green;
+}
+
+button:active {
+  @extend .border-blue;
+}
+
+////////////////////////////////////////////////
+// Raw Classes
+
+.border-green {
+  border: 2px solid $custom-green;
+}
+
+.border-blue {
+  border: 2px solid $custom-blue;
+}
+
+.border-red {
+  border: 2px solid $custom-red;
+}
+
+.border-round {
+  border-radius: 0.25rem; /* 4px */
+}
+
+.text-sm {
+  font-size: 0.875rem; /* 14px */
+  line-height: 1.25rem; /* 20px */
+}
+
+.text-green {
+  color: $custom-green;
+}
+
+.text-b {
+  font-weight: bold;
+}
+
+.mt-0_5 {
+  margin-top: 0.5rem; /* 8px */
+}
+
+.mt-1_25 {
+  margin-top: 1.25rem; /* 20px */
+}
+
+.py-0_5 {
+  padding-top: 0.5rem; /* 8px */
+  padding-bottom: 0.5rem; /* 8px */
+}
+
+.w-full {
+  width: 100%;
+}
+
+.bg-black {
+  background-color: $custom-black;
+}
+
+.bg-green {
+  background-color: $custom-green;
+}
+
+.bg-transparent {
+  background-color: transparent;
+}

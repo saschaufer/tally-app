@@ -1,5 +1,6 @@
 package de.saschaufer.apps.tally.controller;
 
+import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import de.saschaufer.apps.tally.persistence.dto.User;
 import de.saschaufer.apps.tally.services.UserDetailsService;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +30,10 @@ public class Handler {
                 .map(a -> (User) a.getPrincipal())
                 .doOnNext(auth -> log.atInfo().setMessage("User '{}' logged in.").addArgument(auth.getUsername()).log());
 
-        final Mono<String> jwt = user.map(userDetailsService::createJwtToken);
+        final Mono<PostLoginResponse> response = user.map(userDetailsService::createJwtToken);
 
-        return ok().contentType(MediaType.TEXT_PLAIN)
-                .body(BodyInserters.fromPublisher(jwt, String.class));
+        return ok().contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromPublisher(response, PostLoginResponse.class));
     }
 
     public Mono<ServerResponse> getNone(final ServerRequest request) {

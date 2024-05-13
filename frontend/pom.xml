@@ -28,6 +28,10 @@
         <sonar.javascript.lcov.reportPaths>
             ${project.build.directory}/coverage-report/lcov.info
         </sonar.javascript.lcov.reportPaths>
+        <sonar.coverage.exclusions>
+            src/main.ts,
+            src/app/**/*.config.ts
+        </sonar.coverage.exclusions>
 
     </properties>
 

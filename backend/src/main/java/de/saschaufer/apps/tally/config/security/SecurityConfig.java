@@ -58,7 +58,7 @@ public class SecurityConfig {
                 .authorizeExchange(authorize -> authorize
 
                         // Static resources are available without authorization
-                        .pathMatchers(HttpMethod.GET, "/", "*.js", "*.css", "*.ico").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/", "*.js", "*.css", "*.ico", "media/*.woff2").permitAll()
 
                         // All backend endpoints need authorization
                         .pathMatchers(HttpMethod.POST, "/login").authenticated()

@@ -1,6 +1,7 @@
 package de.saschaufer.apps.tally.config.security;
 
 import de.saschaufer.apps.tally.controller.Handler;
+import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
@@ -67,13 +68,13 @@ class SecurityConfigTest extends SecurityConfigSetup {
     @Test
     void postLogin_positive_Password() {
 
-        doReturn(ok().bodyValue("jwt")).when(handler).postLogin(any(ServerRequest.class));
+        doReturn(ok().bodyValue(new PostLoginResponse("jwt", true))).when(handler).postLogin(any(ServerRequest.class));
 
         webClient.post().uri("/login")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class).isEqualTo("jwt");
+                .expectBody(PostLoginResponse.class).isEqualTo(new PostLoginResponse("jwt", true));
 
         verify(handler, times(1)).postLogin(any(ServerRequest.class));
     }
@@ -105,13 +106,13 @@ class SecurityConfigTest extends SecurityConfigSetup {
     @Test
     void postLogin_positive_Jwt() {
 
-        doReturn(ok().bodyValue("jwt")).when(handler).postLogin(any(ServerRequest.class));
+        doReturn(ok().bodyValue(new PostLoginResponse("jwt", true))).when(handler).postLogin(any(ServerRequest.class));
 
         webClient.post().uri("/login")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER, Instant.now()))
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class).isEqualTo("jwt");
+                .expectBody(PostLoginResponse.class).isEqualTo(new PostLoginResponse("jwt", true));
 
         verify(handler, times(1)).postLogin(any(ServerRequest.class));
     }
