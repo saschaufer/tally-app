@@ -81,4 +81,22 @@ describe('AuthService', () => {
 
         expect(cookieServiceSpy.delete).toHaveBeenCalledOnceWith('TALLY_JWT');
     });
+
+    it('should get the JWT details', () => {
+
+        cookieServiceSpy.get.and.returnValue(jwt);
+
+        const result = authService.getJwtDetails();
+
+        const now = new Date().getTime();
+
+        expect(result.username).toBe('user');
+        expect(result.issuedAt).toBe(1715811485000);
+        expect(result.expiresAt).toBe(1715847485000);
+        expect(result.expiresLeft).toBeLessThan(result.expiresAt - now + 1);
+        expect(result.expiresLeft).toBeGreaterThan(result.expiresAt - now - 1);
+        expect(result.authorities).toEqual([role.user, role.admin]);
+
+        expect(cookieServiceSpy.get).toHaveBeenCalledOnceWith('TALLY_JWT');
+    });
 });

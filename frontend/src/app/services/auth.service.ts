@@ -1,6 +1,7 @@
 import {inject, Injectable} from '@angular/core';
 import {CookieService} from "ngx-cookie-service";
 import {Jwt} from "./models/Jwt";
+import {JwtDetails} from "./models/JwtDetails";
 
 export enum role {
     admin = 'admin',
@@ -57,6 +58,23 @@ export class AuthService {
 
     removeJwt() {
         this.cookieService.delete(this.cookieName);
+    }
+
+    public getJwtDetails(): JwtDetails {
+
+        const jwt = this.cookieService.get(this.cookieName);
+        const decodedJwt = this.decodeJwt(jwt);
+
+        const expire = new Date(decodedJwt.exp * 1000);
+        const now = new Date();
+
+        return {
+            username: decodedJwt.sub,
+            issuedAt: decodedJwt.iat * 1000,
+            expiresAt: decodedJwt.exp * 1000,
+            expiresLeft: expire.getTime() - now.getTime(),
+            authorities: decodedJwt.authorities
+        };
     }
 
     /**

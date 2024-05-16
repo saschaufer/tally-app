@@ -40,6 +40,29 @@ form {
   max-width: 16rem;
 }
 
+table {
+  max-width: 16rem;
+}
+
+.table-row-left {
+  @extend .text-green;
+  @extend .text-sm;
+  @extend .text-left;
+}
+
+.table-row-right {
+  @extend .text-green;
+  @extend .text-sm;
+  @extend .text-right;
+}
+
+h1 {
+  @extend .text-lg;
+  @extend .text-green;
+  @extend .text-b;
+  @extend .text-center;
+}
+
 label {
   @extend .text-sm;
   @extend .text-green;
@@ -101,12 +124,29 @@ button:active {
   line-height: 1.25rem; /* 20px */
 }
 
+.text-lg {
+  font-size: 1.125rem; /* 18px */
+  line-height: 1.75rem; /* 28px */
+}
+
 .text-green {
   color: $custom-green;
 }
 
 .text-b {
   font-weight: bold;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
 }
 
 .mt-0_5 {
