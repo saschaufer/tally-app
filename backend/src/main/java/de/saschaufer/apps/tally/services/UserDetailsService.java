@@ -12,6 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsPasswordService;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.JwsAlgorithms;
 import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -22,6 +23,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -32,6 +34,7 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
     private final JwtProperties jwtProperties;
     private final JwtEncoder jwtEncoder;
     private final UserAgent userAgent;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public Mono<UserDetails> findByUsername(final String username) {
@@ -82,5 +85,31 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
         final String jwt = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
 
         return new PostLoginResponse(jwt, jwtProperties.secure());
+    }
+
+    public void createAdminIfNotExists() {
+
+        persistence.existsUser("admin")
+                .flatMap(found -> {
+                    if (found.equals(Boolean.TRUE)) {
+                        return Mono.just(false);
+                    }
+
+                    final String password = UUID.randomUUID().toString();
+
+                    final User user = new User();
+                    user.setUsername("admin");
+                    user.setPassword(passwordEncoder.encode(password));
+                    user.setRoles(String.join(",", User.Role.USER, User.Role.ADMIN));
+
+                    return Mono.just(user)
+                            .flatMap(persistence::insertUser)
+                            .doOnSuccess(u -> log.atInfo().setMessage("Created admin user 'admin' with password: {}").addArgument(password).log())
+                            .map(u -> true);
+                })
+                .subscribe(
+                        created -> log.atInfo().setMessage("Admin user created: {}").addArgument(created).log(),
+                        error -> log.atInfo().setMessage("Error creating admin user if none exists.").setCause(error).log()
+                );
     }
 }

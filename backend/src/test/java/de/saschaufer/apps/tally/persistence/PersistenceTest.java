@@ -163,6 +163,30 @@ class PersistenceTest {
     }
 
     @Test
+    void existsUser_positive_UserExists() {
+
+        final String username = Objects.requireNonNull(persistence.insertUser(
+                new User(null, "test-username", "test-password", "test-role")
+        ).block()).getUsername();
+
+        Mono.just(username)
+                .flatMap(persistence::existsUser)
+                .as(StepVerifier::create)
+                .assertNext(exists -> assertThat(exists, is(true)))
+                .verifyComplete();
+    }
+
+    @Test
+    void existsUser_positive_UserNotExists() {
+
+        Mono.just("username")
+                .flatMap(persistence::existsUser)
+                .as(StepVerifier::create)
+                .assertNext(exists -> assertThat(exists, is(false)))
+                .verifyComplete();
+    }
+
+    @Test
     void updateUserPassword_positive_UserExists() {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(

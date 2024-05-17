@@ -28,6 +28,10 @@ public class Persistence {
                 .switchIfEmpty(Mono.error(new RuntimeException("User not found")));
     }
 
+    public Mono<Boolean> existsUser(final String username) {
+        return template.exists(query(where("username").is(username)), User.class);
+    }
+
     public Mono<Void> updateUserPassword(final Long id, final String newPassword) {
 
         return template

@@ -7,9 +7,10 @@ import de.saschaufer.apps.tally.persistence.Persistence;
 import de.saschaufer.apps.tally.persistence.dto.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.mockito.ArgumentCaptor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import reactor.core.publisher.Mono;
@@ -29,15 +30,17 @@ class UserDetailsServiceTest {
     private JwtProperties jwtProperties;
     private JwtEncoder jwtEncoder;
     private UserAgent userAgent;
+    private PasswordEncoder passwordEncoder;
     private UserDetailsService userDetailsService;
 
     @BeforeEach
     void beforeEach() {
-        persistence = Mockito.mock(Persistence.class);
-        jwtProperties = Mockito.mock(JwtProperties.class);
-        jwtEncoder = Mockito.mock(JwtEncoder.class);
-        userAgent = Mockito.mock(UserAgent.class);
-        userDetailsService = new UserDetailsService(persistence, jwtProperties, jwtEncoder, userAgent);
+        persistence = mock(Persistence.class);
+        jwtProperties = mock(JwtProperties.class);
+        jwtEncoder = mock(JwtEncoder.class);
+        userAgent = mock(UserAgent.class);
+        passwordEncoder = mock(PasswordEncoder.class);
+        userDetailsService = new UserDetailsService(persistence, jwtProperties, jwtEncoder, userAgent, passwordEncoder);
     }
 
     @Test
@@ -167,5 +170,50 @@ class UserDetailsServiceTest {
 
         assertThat(response.jwt(), is("ecoded-jwt"));
         assertThat(response.secure(), is(jwtProperties.secure()));
+    }
+
+    @Test
+    void createAdminIfNotExists_positive_UserNotExists() {
+
+        doReturn(Mono.just(false)).when(persistence).existsUser(any(String.class));
+        doReturn(Mono.just(new User())).when(persistence).insertUser(any(User.class));
+
+        doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
+
+        userDetailsService.createAdminIfNotExists();
+
+        verify(persistence, times(1)).existsUser(any(String.class));
+        verify(persistence, times(1)).insertUser(any(User.class));
+
+        ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
+        verify(persistence).existsUser(argumentCaptorExists.capture());
+
+        ArgumentCaptor<User> argumentCaptorInsert = ArgumentCaptor.forClass(User.class);
+        verify(persistence).insertUser(argumentCaptorInsert.capture());
+
+        assertThat(argumentCaptorExists.getValue(), is("admin"));
+
+        final User user = argumentCaptorInsert.getValue();
+
+        assertThat(user.getId(), nullValue());
+        assertThat(user.getUsername(), is("admin"));
+        assertThat(user.getPassword(), is("encoded-password"));
+        assertThat(user.getRoles(), is(String.join(",", User.Role.USER, User.Role.ADMIN)));
+    }
+
+    @Test
+    void createAdminIfNotExists_positive_UserExists() {
+
+        doReturn(Mono.just(true)).when(persistence).existsUser(any(String.class));
+
+        userDetailsService.createAdminIfNotExists();
+
+        verify(persistence, times(1)).existsUser(any(String.class));
+        verify(persistence, times(0)).insertUser(any(User.class));
+
+        ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
+        verify(persistence).existsUser(argumentCaptorExists.capture());
+
+        assertThat(argumentCaptorExists.getValue(), is("admin"));
     }
 }
