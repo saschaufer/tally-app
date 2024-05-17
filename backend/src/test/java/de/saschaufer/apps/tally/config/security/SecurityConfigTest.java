@@ -9,6 +9,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 
 import java.time.Instant;
 
+import static de.saschaufer.apps.tally.persistence.dto.User.Role.INVITATION;
 import static de.saschaufer.apps.tally.persistence.dto.User.Role.USER;
 import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
@@ -130,14 +131,56 @@ class SecurityConfigTest extends SecurityConfigSetup {
     }
 
     @Test
-    void postLogin_negative_JwtUserWrong() {
+    void postRegister_positive_Password() {
 
-        webClient.post().uri("/login")
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER + "-wrong", Instant.now().minusSeconds(100000)))
+        doReturn(ok().build()).when(handler).postRegisterNewUser(any(ServerRequest.class));
+
+        webClient.post().uri("/register")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
                 .exchange()
-                .expectStatus().isUnauthorized()
+                .expectStatus().isOk()
                 .expectBody().isEmpty();
 
-        verify(handler, times(0)).postLogin(any(ServerRequest.class));
+        verify(handler, times(1)).postRegisterNewUser(any(ServerRequest.class));
+    }
+
+    @Test
+    void postRegister_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/register")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postRegisterNewUser(any(ServerRequest.class));
+    }
+
+    @Test
+    void postRegister_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postRegisterNewUser(any(ServerRequest.class));
+
+        webClient.post().uri("/register")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(INVITATION, Instant.now()))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postRegisterNewUser(any(ServerRequest.class));
+    }
+
+    @Test
+    void postRegister_positive_JwtUserWrongRole() {
+
+        doReturn(ok().build()).when(handler).postRegisterNewUser(any(ServerRequest.class));
+
+        webClient.post().uri("/register")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER, Instant.now()))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postRegisterNewUser(any(ServerRequest.class));
     }
 }

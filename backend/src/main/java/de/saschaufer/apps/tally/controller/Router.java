@@ -16,6 +16,7 @@ public class Router {
         return RouterFunctions
                 .route()
                 .POST("/login", handler::postLogin)
+                .POST("/register", handler::postRegisterNewUser)
                 .GET("/none", handler::getNone)
                 .GET("/user", handler::getUser)
                 .GET("/admin", handler::getAdmin)

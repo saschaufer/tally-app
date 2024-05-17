@@ -8,15 +8,18 @@ import de.saschaufer.apps.tally.persistence.dto.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -173,6 +176,67 @@ class UserDetailsServiceTest {
     }
 
     @Test
+    void createUser_positive_UserCreated() {
+
+        doReturn(Mono.just(false)).when(persistence).existsUser(any(String.class));
+        doReturn(Mono.just(new User() {{
+            setId(1L);
+        }})).when(persistence).insertUser(any(User.class));
+
+        doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
+
+        userDetailsService.createUser("new-user", "test-password", List.of("a", "b", "c"))
+                .as(StepVerifier::create)
+                .assertNext(user -> {
+                    assertThat(user.getId(), is(1L));
+                    assertThat(user.getPassword(), nullValue());
+                })
+                .verifyComplete();
+
+        verify(persistence, times(1)).existsUser(any(String.class));
+        verify(persistence, times(1)).insertUser(any(User.class));
+
+        final ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
+        verify(persistence).existsUser(argumentCaptorExists.capture());
+
+        final ArgumentCaptor<User> argumentCaptorInsert = ArgumentCaptor.forClass(User.class);
+        verify(persistence).insertUser(argumentCaptorInsert.capture());
+
+        assertThat(argumentCaptorExists.getValue(), is("new-user"));
+
+        final User user = argumentCaptorInsert.getValue();
+
+        assertThat(user.getId(), nullValue());
+        assertThat(user.getUsername(), is("new-user"));
+        assertThat(user.getPassword(), is("encoded-password"));
+        assertThat(user.getRoles(), is(String.join(",", List.of("a", "b", "c"))));
+    }
+
+    @Test
+    void createUser_positive_UsernameTaken() {
+
+        doReturn(Mono.just(true)).when(persistence).existsUser(any(String.class));
+
+        userDetailsService.createUser("new-user", "test-password", List.of("a", "b", "c"))
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(ResponseStatusException.class));
+
+                    final ResponseStatusException e = (ResponseStatusException) error;
+                    assertThat(e.getStatusCode(), is(HttpStatus.BAD_REQUEST));
+                    assertThat(e.getReason(), is("Username is taken"));
+                });
+
+        verify(persistence, times(1)).existsUser(any(String.class));
+        verify(persistence, times(0)).insertUser(any(User.class));
+
+        final ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
+        verify(persistence).existsUser(argumentCaptorExists.capture());
+
+        assertThat(argumentCaptorExists.getValue(), is("new-user"));
+    }
+
+    @Test
     void createAdminIfNotExists_positive_UserNotExists() {
 
         doReturn(Mono.just(false)).when(persistence).existsUser(any(String.class));
@@ -185,10 +249,10 @@ class UserDetailsServiceTest {
         verify(persistence, times(1)).existsUser(any(String.class));
         verify(persistence, times(1)).insertUser(any(User.class));
 
-        ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
         verify(persistence).existsUser(argumentCaptorExists.capture());
 
-        ArgumentCaptor<User> argumentCaptorInsert = ArgumentCaptor.forClass(User.class);
+        final ArgumentCaptor<User> argumentCaptorInsert = ArgumentCaptor.forClass(User.class);
         verify(persistence).insertUser(argumentCaptorInsert.capture());
 
         assertThat(argumentCaptorExists.getValue(), is("admin"));
@@ -211,9 +275,54 @@ class UserDetailsServiceTest {
         verify(persistence, times(1)).existsUser(any(String.class));
         verify(persistence, times(0)).insertUser(any(User.class));
 
-        ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
+        final ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
         verify(persistence).existsUser(argumentCaptorExists.capture());
 
         assertThat(argumentCaptorExists.getValue(), is("admin"));
+    }
+
+    @Test
+    void createInvitationCodeIfNotExists_positive_InvitationNotExists() {
+
+        doReturn(Mono.just(false)).when(persistence).existsUser(any(String.class));
+        doReturn(Mono.just(new User())).when(persistence).insertUser(any(User.class));
+
+        doReturn("encoded-invitation-code").when(passwordEncoder).encode(any(String.class));
+
+        userDetailsService.createInvitationCodeIfNoneExists();
+
+        verify(persistence, times(1)).existsUser(any(String.class));
+        verify(persistence, times(1)).insertUser(any(User.class));
+
+        final ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
+        verify(persistence).existsUser(argumentCaptorExists.capture());
+
+        final ArgumentCaptor<User> argumentCaptorInsert = ArgumentCaptor.forClass(User.class);
+        verify(persistence).insertUser(argumentCaptorInsert.capture());
+
+        assertThat(argumentCaptorExists.getValue(), is("invitation-code"));
+
+        final User user = argumentCaptorInsert.getValue();
+
+        assertThat(user.getId(), nullValue());
+        assertThat(user.getUsername(), is("invitation-code"));
+        assertThat(user.getPassword(), is("encoded-invitation-code"));
+        assertThat(user.getRoles(), is(User.Role.INVITATION));
+    }
+
+    @Test
+    void createInvitationCodeIfNotExists_positive_InvitationCodeExists() {
+
+        doReturn(Mono.just(true)).when(persistence).existsUser(any(String.class));
+
+        userDetailsService.createInvitationCodeIfNoneExists();
+
+        verify(persistence, times(1)).existsUser(any(String.class));
+        verify(persistence, times(0)).insertUser(any(User.class));
+
+        final ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
+        verify(persistence).existsUser(argumentCaptorExists.capture());
+
+        assertThat(argumentCaptorExists.getValue(), is("invitation-code"));
     }
 }

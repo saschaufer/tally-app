@@ -1,6 +1,6 @@
 import {Component, inject, NgZone} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
-import {Router} from "@angular/router";
+import {Router, RouterLink} from "@angular/router";
 import {routeName} from "../../app.routes";
 import {AuthService} from "../../services/auth.service";
 import {HttpService} from "../../services/http.service";
@@ -10,13 +10,16 @@ import {HttpService} from "../../services/http.service";
     selector: 'app-login',
     standalone: true,
     imports: [
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        RouterLink
     ],
     templateUrl: './login.component.html',
     styles: ``
 })
 export class LoginComponent {
 
+    protected readonly routeName = routeName;
+    
     private authService = inject(AuthService);
     private httpService = inject(HttpService);
     private router = inject(Router);

@@ -24,6 +24,7 @@ public class User implements UserDetails {
         public static final String NONE = "none";
         public static final String USER = "user";
         public static final String ADMIN = "admin";
+        public static final String INVITATION = "invitation";
     }
 
     @Id

@@ -61,7 +61,8 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.GET, "/", "*.js", "*.css", "*.ico", "media/*.woff2").permitAll()
 
                         // All backend endpoints need authorization
-                        .pathMatchers(HttpMethod.POST, "/login").authenticated()
+                        .pathMatchers(HttpMethod.POST, "/login").hasAnyAuthority(User.Role.USER)
+                        .pathMatchers(HttpMethod.POST, "/register").hasAnyAuthority(User.Role.INVITATION)
                         .pathMatchers(HttpMethod.GET, "/none").hasAnyAuthority(User.Role.NONE)
                         .pathMatchers(HttpMethod.GET, "/user").hasAnyAuthority(User.Role.USER)
                         .pathMatchers(HttpMethod.GET, "/admin").hasAnyAuthority(User.Role.ADMIN)

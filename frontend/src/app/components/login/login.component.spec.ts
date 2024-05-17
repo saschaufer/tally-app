@@ -1,5 +1,6 @@
+import {provideLocationMocks} from "@angular/common/testing";
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {Router} from "@angular/router";
+import {provideRouter, Router} from "@angular/router";
 import {MockProvider} from "ng-mocks";
 import {firstValueFrom, of, throwError} from "rxjs";
 import {routeName} from "../../app.routes";
@@ -8,6 +9,7 @@ import {HttpService} from "../../services/http.service";
 import {LoginResponse} from "../../services/models/LoginResponse";
 
 import {LoginComponent} from './login.component';
+import Spy = jasmine.Spy;
 import SpyObj = jasmine.SpyObj;
 
 describe('LoginComponent', () => {
@@ -15,9 +17,10 @@ describe('LoginComponent', () => {
     let component: LoginComponent;
     let fixture: ComponentFixture<LoginComponent>;
 
-    let routerSpy: SpyObj<Router>;
     let authServiceSpy: SpyObj<AuthService>;
     let httpServiceSpy: SpyObj<HttpService>;
+
+    let routerNavigateSpy: Spy;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -25,7 +28,8 @@ describe('LoginComponent', () => {
             providers: [
                 MockProvider(AuthService),
                 MockProvider(HttpService),
-                MockProvider(Router)
+                provideRouter([]),
+                provideLocationMocks()
             ]
         })
             .compileComponents();
@@ -34,9 +38,10 @@ describe('LoginComponent', () => {
         component = fixture.componentInstance;
         fixture.detectChanges();
 
-        routerSpy = spyOnAllFunctions(TestBed.inject(Router));
         authServiceSpy = spyOnAllFunctions(TestBed.inject(AuthService));
         httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
+
+        routerNavigateSpy = spyOn(TestBed.inject(Router), 'navigate');
     });
 
     it('should create', () => {
@@ -51,7 +56,7 @@ describe('LoginComponent', () => {
         } as LoginResponse));
 
         authServiceSpy.setJwt.and.returnValue(true);
-        routerSpy.navigate.and.callFake(() => firstValueFrom(of(true)));
+        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
         component.loginForm.setValue({
             username: 'test-username',
@@ -62,7 +67,7 @@ describe('LoginComponent', () => {
 
         expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username', 'test-password');
         expect(authServiceSpy.setJwt).toHaveBeenCalledOnceWith('my-jwt', true);
-        expect(routerSpy.navigate).toHaveBeenCalledOnceWith(['/' + routeName.settings]);
+        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.settings]);
     });
 
     it('should not navigate to ' + routeName.settings + ' (username wrong)', () => {
@@ -74,7 +79,7 @@ describe('LoginComponent', () => {
 
         expect(httpServiceSpy.postLogin).not.toHaveBeenCalled();
         expect(authServiceSpy.setJwt).not.toHaveBeenCalled();
-        expect(routerSpy.navigate).not.toHaveBeenCalled();
+        expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
     it('should not navigate to ' + routeName.settings + ' (password wrong)', () => {
@@ -86,7 +91,7 @@ describe('LoginComponent', () => {
 
         expect(httpServiceSpy.postLogin).not.toHaveBeenCalled();
         expect(authServiceSpy.setJwt).not.toHaveBeenCalled();
-        expect(routerSpy.navigate).not.toHaveBeenCalled();
+        expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
     it('should not navigate to ' + routeName.settings + ' (login failed)', () => {
@@ -104,7 +109,7 @@ describe('LoginComponent', () => {
 
         expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username', 'test-password');
         expect(authServiceSpy.setJwt).not.toHaveBeenCalled();
-        expect(routerSpy.navigate).not.toHaveBeenCalled();
+        expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
     it('should not navigate to ' + routeName.settings + ' (Jwt not set)', () => {
@@ -125,6 +130,6 @@ describe('LoginComponent', () => {
 
         expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username', 'test-password');
         expect(authServiceSpy.setJwt).toHaveBeenCalledOnceWith('my-jwt', true);
-        expect(routerSpy.navigate).not.toHaveBeenCalled();
+        expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 });

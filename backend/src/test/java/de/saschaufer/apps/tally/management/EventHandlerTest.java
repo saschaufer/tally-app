@@ -28,5 +28,6 @@ class EventHandlerTest {
 
         verify(userAgent, times(1)).getFullName();
         verify(userDetailsService, times(1)).createAdminIfNotExists();
+        verify(userDetailsService, times(1)).createInvitationCodeIfNoneExists();
     }
 }

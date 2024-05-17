@@ -7,6 +7,7 @@ import de.saschaufer.apps.tally.persistence.Persistence;
 import de.saschaufer.apps.tally.persistence.dto.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsPasswordService;
@@ -19,6 +20,7 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -87,29 +89,59 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
         return new PostLoginResponse(jwt, jwtProperties.secure());
     }
 
-    public void createAdminIfNotExists() {
+    public Mono<User> createUser(final String username, final String password, final List<String> roles) {
 
-        persistence.existsUser("admin")
+        final User user = new User();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setRoles(String.join(",", roles));
+
+        return persistence.existsUser(username)
                 .flatMap(found -> {
                     if (found.equals(Boolean.TRUE)) {
-                        return Mono.just(false);
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is taken"));
+                    }
+
+                    return Mono.just(user)
+                            .flatMap(persistence::insertUser);
+                });
+    }
+
+    public void createAdminIfNotExists() {
+
+        createUserIfNotExists("admin", String.join(",", User.Role.USER, User.Role.ADMIN))
+                .subscribe(
+                        password -> log.atInfo().setMessage("Created admin user 'admin' with password: {}").addArgument(password).log(),
+                        error -> log.atInfo().setMessage("Error creating admin user if not exists.").setCause(error).log()
+                );
+    }
+
+    public void createInvitationCodeIfNoneExists() {
+
+        createUserIfNotExists("invitation-code", User.Role.INVITATION)
+                .subscribe(
+                        password -> log.atInfo().setMessage("Invitation code created: {}").addArgument(password).log(),
+                        error -> log.atInfo().setMessage("Error creating invitation code if not exists.").setCause(error).log()
+                );
+    }
+
+    private Mono<String> createUserIfNotExists(final String username, final String roles) {
+        return persistence.existsUser(username)
+                .flatMap(found -> {
+                    if (found.equals(Boolean.TRUE)) {
+                        return Mono.empty();
                     }
 
                     final String password = UUID.randomUUID().toString();
 
                     final User user = new User();
-                    user.setUsername("admin");
+                    user.setUsername(username);
                     user.setPassword(passwordEncoder.encode(password));
-                    user.setRoles(String.join(",", User.Role.USER, User.Role.ADMIN));
+                    user.setRoles(roles);
 
                     return Mono.just(user)
                             .flatMap(persistence::insertUser)
-                            .doOnSuccess(u -> log.atInfo().setMessage("Created admin user 'admin' with password: {}").addArgument(password).log())
-                            .map(u -> true);
-                })
-                .subscribe(
-                        created -> log.atInfo().setMessage("Admin user created: {}").addArgument(created).log(),
-                        error -> log.atInfo().setMessage("Error creating admin user if none exists.").setCause(error).log()
-                );
+                            .map(u -> password);
+                });
     }
 }

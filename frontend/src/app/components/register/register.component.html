@@ -1,0 +1,25 @@
+<form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+    <div class="mt-0_5">
+        <label for="username">User</label>
+        <input id="username" type="text" autocomplete="username" formControlName="username">
+    </div>
+
+    <div class="mt-0_5">
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" formControlName="password">
+    </div>
+
+    <div class="mt-0_5">
+        <label for="password-repeat">Password repeat</label>
+        <input id="password-repeat" type="password" autocomplete="current-password" formControlName="passwordRepeat">
+    </div>
+
+    <div class="mt-0_5">
+        <label for="invitation-code">Invitation code</label>
+        <input id="invitation-code" type="password" autocomplete="" formControlName="invitationCode">
+    </div>
+
+    <button type="submit" class="mt-1_25">Create account</button>
+
+</form>

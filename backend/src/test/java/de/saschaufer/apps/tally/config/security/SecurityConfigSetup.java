@@ -23,6 +23,7 @@ import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 
 import static de.saschaufer.apps.tally.persistence.dto.User.Role.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,6 +64,7 @@ public abstract class SecurityConfigSetup {
                 case NONE -> Mono.just(new User(1L, NONE, password, NONE));
                 case USER -> Mono.just(new User(2L, USER, password, USER));
                 case ADMIN -> Mono.just(new User(3L, ADMIN, password, String.join(",", USER, ADMIN)));
+                case INVITATION -> Mono.just(new User(4L, INVITATION, password, INVITATION));
                 case null, default -> Mono.error(new BadCredentialsException("Error finding user"));
             };
         }).when(userDetailsService).findByUsername(any(String.class));
@@ -78,11 +80,24 @@ public abstract class SecurityConfigSetup {
         return Base64.getEncoder().encodeToString(bytes);
     }
 
+    protected String testJwt(final String user) {
+        return testJwt(user, Instant.now(), List.of(user));
+    }
+
+    protected String testJwt(final String user, final List<String> roles) {
+        return testJwt(user, Instant.now(), roles);
+    }
+
     protected String testJwt(final String user, final Instant issuedAt) {
+        return testJwt(user, issuedAt, List.of(user));
+    }
+
+    protected String testJwt(final String user, final Instant issuedAt, final List<String> roles) {
         final JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plusSeconds(1L))
                 .subject(user)
+                .claim("authorities", roles)
                 .build();
 
         final JwsHeader header = JwsHeader.with(() -> JwsAlgorithms.HS256).build();

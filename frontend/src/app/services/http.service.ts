@@ -23,4 +23,22 @@ export class HttpService {
 
         return this.httpClient.post<LoginResponse>("/login", null, httpOptions);
     }
+
+    postRegisterNewUser(username: string, password: string, invitationCode: string): Observable<void> {
+
+        const httpOptions = {
+            headers: {
+                // Prevent Browsers from pop up a login window if response is 401
+                'X-Requested-With': 'XMLHttpRequest',
+                Authorization: 'Basic ' + window.btoa('invitation-code:' + invitationCode)
+            }
+        };
+
+        const body = {
+            username: username,
+            password: password
+        };
+
+        return this.httpClient.post<void>("/register", body, httpOptions);
+    }
 }
