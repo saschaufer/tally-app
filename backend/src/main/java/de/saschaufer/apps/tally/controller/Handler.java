@@ -87,6 +87,23 @@ public class Handler {
                 .onErrorResume(this::buildErrorResponse);
     }
 
+    public Mono<ServerResponse> postChangeInvitationCode(final ServerRequest request) {
+
+        log.atInfo().setMessage("Change invitation code.").log();
+
+        final Mono<User> invitationCodeUser = userDetailsService.findByUsername("invitation-code")
+                .map(u -> (User) u);
+
+        final Mono<String> newInvitationCode = request.bodyToMono(String.class)
+                .switchIfEmpty(badRequest("Body required"));
+
+        return invitationCodeUser.zipWith(newInvitationCode, Pair::of)
+                .flatMap(pair -> userDetailsService.changePassword(pair.getFirst(), pair.getSecond()))
+                .flatMap(u -> ok().build())
+                .doOnError(e -> log.atError().setMessage("Error changing invitation code.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
     private <T> Mono<T> badRequest(final String message) {
         return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, message));
     }

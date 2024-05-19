@@ -66,6 +66,7 @@ public abstract class SecurityConfigSetup {
                 case USER -> Mono.just(new User(2L, USER, password, USER));
                 case ADMIN -> Mono.just(new User(3L, ADMIN, password, String.join(",", USER, ADMIN)));
                 case INVITATION -> Mono.just(new User(4L, INVITATION, password, INVITATION));
+                case "invitation-code" -> Mono.just(new User(5L, "invitation-code", password, INVITATION));
                 case null, default -> Mono.error(new BadCredentialsException("Error finding user"));
             };
         }).when(userDetailsService).findByUsername(any(String.class));

@@ -96,19 +96,24 @@ button:active {
   @extend .border-blue;
 }
 
+hr {
+  @extend .mt-1_25;
+  @extend .border-green;
+}
+
 ////////////////////////////////////////////////
 // Raw Classes
 
 .border-green {
-  border: 2px solid $custom-green;
+  border: 1px solid $custom-green;
 }
 
 .border-blue {
-  border: 2px solid $custom-blue;
+  border: 1px solid $custom-blue;
 }
 
 .border-red {
-  border: 2px solid $custom-red;
+  border: 1px solid $custom-red;
 }
 
 .border-round {

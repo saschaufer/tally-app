@@ -15,8 +15,7 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import static de.saschaufer.apps.tally.persistence.dto.User.Role.INVITATION;
-import static de.saschaufer.apps.tally.persistence.dto.User.Role.USER;
+import static de.saschaufer.apps.tally.persistence.dto.User.Role.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -237,6 +236,94 @@ class RouterTest extends SecurityConfigSetup {
                 .expectBody().isEmpty();
 
         verify(userDetailsService, times(2)).findByUsername(USER);
+        verify(userDetailsService, times(1)).changePassword(any(User.class), any(String.class));
+    }
+
+    @Test
+    void postChangeInvitationCode_positive_User() {
+
+        doReturn(Mono.just(new User())).when(userDetailsService).changePassword(any(User.class), any(String.class));
+
+        webClient.post().uri("/settings/change-invitation-code")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just("new-invitation-code"), String.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).findByUsername(ADMIN);
+        verify(userDetailsService, times(1)).findByUsername("invitation-code");
+        verify(userDetailsService, times(1)).changePassword(any(User.class), any(String.class));
+
+        final ArgumentCaptor<User> argumentCaptorUser = ArgumentCaptor.forClass(User.class);
+        final ArgumentCaptor<String> argumentCaptorNewPassword = ArgumentCaptor.forClass(String.class);
+
+        verify(userDetailsService).changePassword(argumentCaptorUser.capture(), argumentCaptorNewPassword.capture());
+
+        final User user = argumentCaptorUser.getValue();
+        assertThat(user.getUsername(), is("invitation-code"));
+        assertThat(user.getPassword(), is(ENCODED_PASSWORD));
+        assertThat(user.getRoles(), is(INVITATION));
+
+        assertThat(argumentCaptorNewPassword.getValue(), is("new-invitation-code"));
+    }
+
+    @Test
+    void postChangeInvitationCode_positive_Jwt() {
+
+        doReturn(Mono.just(new User())).when(userDetailsService).changePassword(any(User.class), any(String.class));
+
+        webClient.post().uri("/settings/change-invitation-code")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .body(Mono.just("new-invitation-code"), String.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).findByUsername("invitation-code");
+        verify(userDetailsService, times(1)).changePassword(any(User.class), any(String.class));
+
+        final ArgumentCaptor<User> argumentCaptorUser = ArgumentCaptor.forClass(User.class);
+        final ArgumentCaptor<String> argumentCaptorNewPassword = ArgumentCaptor.forClass(String.class);
+
+        verify(userDetailsService).changePassword(argumentCaptorUser.capture(), argumentCaptorNewPassword.capture());
+
+        final User user = argumentCaptorUser.getValue();
+        assertThat(user.getUsername(), is("invitation-code"));
+        assertThat(user.getPassword(), is(ENCODED_PASSWORD));
+        assertThat(user.getRoles(), is(INVITATION));
+
+        assertThat(argumentCaptorNewPassword.getValue(), is("new-invitation-code"));
+    }
+
+    @Test
+    void postChangeInvitationCode_positive_NoBody() {
+
+        webClient.post().uri("/settings/change-invitation-code")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(userDetailsService, times(1)).findByUsername(ADMIN);
+        verify(userDetailsService, times(0)).changePassword(any(User.class), any(String.class));
+    }
+
+    @Test
+    void postChangeInvitationCode_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(userDetailsService).changePassword(any(User.class), any(String.class));
+
+        webClient.post().uri("/settings/change-invitation-code")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just("invitation-code"), String.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).findByUsername(ADMIN);
+        verify(userDetailsService, times(1)).findByUsername("invitation-code");
         verify(userDetailsService, times(1)).changePassword(any(User.class), any(String.class));
     }
 }

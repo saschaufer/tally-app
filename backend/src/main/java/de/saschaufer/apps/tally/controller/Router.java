@@ -18,6 +18,7 @@ public class Router {
                 .POST("/login", handler::postLogin)
                 .POST("/register", handler::postRegisterNewUser)
                 .POST("/settings/change-password", handler::postChangePassword)
+                .POST("/settings/change-invitation-code", handler::postChangeInvitationCode)
                 .build();
     }
 }

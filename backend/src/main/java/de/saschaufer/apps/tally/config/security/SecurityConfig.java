@@ -64,6 +64,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/login").hasAnyAuthority(User.Role.USER)
                         .pathMatchers(HttpMethod.POST, "/register").hasAnyAuthority(User.Role.INVITATION)
                         .pathMatchers(HttpMethod.POST, "/settings/change-password").hasAnyAuthority(User.Role.USER)
+                        .pathMatchers(HttpMethod.POST, "/settings/change-invitation-code").hasAnyAuthority(User.Role.ADMIN)
                         .anyExchange().authenticated()
                 )
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)

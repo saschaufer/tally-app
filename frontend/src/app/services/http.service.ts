@@ -56,4 +56,17 @@ export class HttpService {
 
         return this.httpClient.post<void>("/settings/change-password", password, httpOptions);
     }
+
+    postChangeInvitationCode(invitationCode: string): Observable<void> {
+
+        const jwt = this.authService.getJwt();
+
+        const httpOptions = {
+            headers: {
+                Authorization: 'Bearer ' + jwt
+            }
+        };
+
+        return this.httpClient.post<void>("/settings/change-invitation-code", invitationCode, httpOptions);
+    }
 }

@@ -21,6 +21,10 @@ export class AuthService {
         return this.cookieService.check(this.cookieName);
     }
 
+    isAdmin() {
+        return this.hasRoles([role.admin]);
+    }
+
     hasRoles(expectedRoles: readonly role[]) {
 
         const jwt = this.getJwt();

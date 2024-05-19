@@ -23,6 +23,13 @@ describe('AuthService', () => {
         expect(authService).toBeTruthy();
     });
 
+    it('should confirm that user is admin', () => {
+
+        cookieServiceSpy.get.and.returnValue(jwt);
+
+        expect(authService.isAdmin).toBeTruthy();
+    });
+
     it('should confirm the authorities in the JWT', () => {
 
         cookieServiceSpy.get.and.returnValue(jwt);

@@ -9,8 +9,7 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 
 import java.time.Instant;
 
-import static de.saschaufer.apps.tally.persistence.dto.User.Role.INVITATION;
-import static de.saschaufer.apps.tally.persistence.dto.User.Role.USER;
+import static de.saschaufer.apps.tally.persistence.dto.User.Role.*;
 import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -236,5 +235,59 @@ class SecurityConfigTest extends SecurityConfigSetup {
                 .expectBody().isEmpty();
 
         verify(handler, times(0)).postChangePassword(any(ServerRequest.class));
+    }
+
+    @Test
+    void postChangeInvitationCode_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postChangeInvitationCode(any(ServerRequest.class));
+
+        webClient.post().uri("/settings/change-invitation-code")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postChangeInvitationCode(any(ServerRequest.class));
+    }
+
+    @Test
+    void postChangeInvitationCode_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/settings/change-invitation-code")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postChangeInvitationCode(any(ServerRequest.class));
+    }
+
+    @Test
+    void postChangeInvitationCode_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postChangeInvitationCode(any(ServerRequest.class));
+
+        webClient.post().uri("/settings/change-invitation-code")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postChangeInvitationCode(any(ServerRequest.class));
+    }
+
+    @Test
+    void postChangeInvitationCode_positive_JwtUserWrongRole() {
+
+        doReturn(ok().build()).when(handler).postChangeInvitationCode(any(ServerRequest.class));
+
+        webClient.post().uri("/settings/change-invitation-code")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postChangeInvitationCode(any(ServerRequest.class));
     }
 }
