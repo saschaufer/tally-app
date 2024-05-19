@@ -19,7 +19,7 @@ import {HttpService} from "../../services/http.service";
 export class LoginComponent {
 
     protected readonly routeName = routeName;
-    
+
     private authService = inject(AuthService);
     private httpService = inject(HttpService);
     private router = inject(Router);
@@ -36,6 +36,8 @@ export class LoginComponent {
 
             const username = this.loginForm.controls.username.value;
             const password = this.loginForm.controls.password.value;
+
+            this.loginForm.reset();
 
             this.httpService.postLogin(username, password)
                 .subscribe({

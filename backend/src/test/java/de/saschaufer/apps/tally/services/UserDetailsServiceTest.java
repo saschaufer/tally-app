@@ -8,6 +8,7 @@ import de.saschaufer.apps.tally.persistence.dto.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -137,6 +138,50 @@ class UserDetailsServiceTest {
 
         verify(persistence, times(1)).selectUser(any(String.class));
         verify(persistence, times(1)).updateUserPassword(any(Long.class), any(String.class));
+    }
+
+    @Test
+    void changePassword_positive() {
+
+        final UserDetails userDetails = new User(1L, "username-1", null, null);
+        final User user = new User(null, "username-2", null, null);
+
+        doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
+        doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
+        doReturn(Mono.empty()).when(persistence).updateUserPassword(any(Long.class), any(String.class));
+
+        Mono.just(Pair.of(user, "password"))
+                .flatMap(pair -> userDetailsService.changePassword(pair.getFirst(), pair.getSecond()))
+                .as(StepVerifier::create)
+                .assertNext(userD -> {
+                    assertThat(userD.getUsername(), is("username-2"));
+                    assertThat(userD.getPassword(), is("encoded-password"));
+                })
+                .verifyComplete();
+
+        verify(passwordEncoder, times(1)).encode("password");
+        verify(persistence, times(1)).selectUser("username-2");
+        verify(persistence, times(1)).updateUserPassword(1L, "encoded-password");
+    }
+
+    @Test
+    void changePassword_negative_updatePasswordFailes() {
+
+        final User user = new User(null, "username-2", null, null);
+
+        doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
+        doReturn(Mono.error(new Exception("Error"))).when(persistence).selectUser(any(String.class));
+
+        Mono.just(Pair.of(user, "password"))
+                .flatMap(pair -> userDetailsService.changePassword(pair.getFirst(), pair.getSecond()))
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), is("Error"))
+                );
+
+        verify(passwordEncoder, times(1)).encode("password");
+        verify(persistence, times(1)).selectUser("username-2");
+        verify(persistence, times(0)).updateUserPassword(any(Long.class), any(String.class));
     }
 
     @Test

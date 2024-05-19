@@ -65,6 +65,13 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                 }));
     }
 
+    public Mono<UserDetails> changePassword(final User user, final String newPassword) {
+
+        final String encodedPassword = passwordEncoder.encode(newPassword);
+
+        return updatePassword(user, encodedPassword);
+    }
+
     public PostLoginResponse createJwtToken(final User user) {
 
         final String username = user.getUsername();

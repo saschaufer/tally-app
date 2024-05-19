@@ -17,10 +17,7 @@ public class Router {
                 .route()
                 .POST("/login", handler::postLogin)
                 .POST("/register", handler::postRegisterNewUser)
-                .GET("/none", handler::getNone)
-                .GET("/user", handler::getUser)
-                .GET("/admin", handler::getAdmin)
-                .GET("/user-admin", handler::getUseradmin)
+                .POST("/settings/change-password", handler::postChangePassword)
                 .build();
     }
 }

@@ -1,5 +1,5 @@
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject, NgZone} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {
     AbstractControl,
     FormControl,
@@ -9,24 +9,20 @@ import {
     ValidatorFn,
     Validators
 } from "@angular/forms";
-import {Router} from "@angular/router";
-import {routeName} from "../../app.routes";
-import {HttpService} from "../../services/http.service";
+import {HttpService} from "../../../services/http.service";
 
 @Component({
-    selector: 'app-register',
+    selector: 'app-change-user-details',
     standalone: true,
     imports: [
         ReactiveFormsModule
     ],
-    templateUrl: './register.component.html',
+    templateUrl: './change-user-details.component.html',
     styles: ``
 })
-export class RegisterComponent {
+export class ChangeUserDetailsComponent {
 
     private httpService = inject(HttpService);
-    private router = inject(Router);
-    private zone = inject(NgZone);
 
     readonly passwordsMatch: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
 
@@ -38,30 +34,23 @@ export class RegisterComponent {
         return password === passwordRepeat ? null : {passwordsMatch: true};
     };
 
-    readonly registerForm = new FormGroup({
-        username: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
+    readonly changePasswordForm = new FormGroup({
         password: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
         passwordRepeat: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
-        invitationCode: new FormControl('', {nonNullable: true, validators: [Validators.required]})
     }, {validators: this.passwordsMatch});
 
     onSubmit() {
 
-        if (this.registerForm.valid) {
+        if (this.changePasswordForm.valid) {
 
-            const username = this.registerForm.controls.username.value;
-            const password = this.registerForm.controls.password.value;
-            const invitationCode = this.registerForm.controls.invitationCode.value;
+            const password = this.changePasswordForm.controls.password.value;
 
-            this.registerForm.reset();
+            this.changePasswordForm.reset();
 
-            this.httpService.postRegisterNewUser(username, password, invitationCode)
+            this.httpService.postChangePassword(password)
                 .subscribe({
                     next: () => {
-                        console.log("Register successful");
-                        this.zone.run(() =>
-                            this.router.navigate(['/' + routeName.login]).then()
-                        ).then();
+                        console.log("Password change successful");
                     },
                     error: (error: HttpErrorResponse) => {
                         console.error(error.status + ' ' + error.statusText + ': ' + error.error);

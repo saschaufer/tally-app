@@ -63,10 +63,7 @@ public class SecurityConfig {
                         // All backend endpoints need authorization
                         .pathMatchers(HttpMethod.POST, "/login").hasAnyAuthority(User.Role.USER)
                         .pathMatchers(HttpMethod.POST, "/register").hasAnyAuthority(User.Role.INVITATION)
-                        .pathMatchers(HttpMethod.GET, "/none").hasAnyAuthority(User.Role.NONE)
-                        .pathMatchers(HttpMethod.GET, "/user").hasAnyAuthority(User.Role.USER)
-                        .pathMatchers(HttpMethod.GET, "/admin").hasAnyAuthority(User.Role.ADMIN)
-                        .pathMatchers(HttpMethod.GET, "/user-admin").hasAnyAuthority(User.Role.USER, User.Role.ADMIN)
+                        .pathMatchers(HttpMethod.POST, "/settings/change-password").hasAnyAuthority(User.Role.USER)
                         .anyExchange().authenticated()
                 )
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)

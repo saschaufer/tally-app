@@ -42,7 +42,8 @@ public abstract class SecurityConfigSetup {
     }
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-    private final String PASSWORD = "password";
+    protected final String PASSWORD = "password";
+    protected final String ENCODED_PASSWORD = "{bcrypt}" + encoder.encode(PASSWORD);
 
     @Autowired
     private ApplicationContext context;
@@ -59,7 +60,7 @@ public abstract class SecurityConfigSetup {
     protected void beforeEach() {
 
         doAnswer(invocation -> {
-            final String password = "{bcrypt}" + encoder.encode(PASSWORD);
+            final String password = ENCODED_PASSWORD;
             return switch (invocation.getArgument(0, String.class)) {
                 case NONE -> Mono.just(new User(1L, NONE, password, NONE));
                 case USER -> Mono.just(new User(2L, USER, password, USER));

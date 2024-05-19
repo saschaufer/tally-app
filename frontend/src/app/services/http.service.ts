@@ -1,6 +1,7 @@
 import {HttpClient} from "@angular/common/http";
 import {inject, Injectable} from '@angular/core';
 import {Observable} from "rxjs";
+import {AuthService} from "./auth.service";
 import {LoginResponse} from "./models/LoginResponse";
 
 @Injectable({
@@ -9,6 +10,7 @@ import {LoginResponse} from "./models/LoginResponse";
 export class HttpService {
 
     private httpClient = inject(HttpClient);
+    private authService = inject(AuthService);
 
     postLogin(username: string, password: string): Observable<LoginResponse> {
 
@@ -40,5 +42,18 @@ export class HttpService {
         };
 
         return this.httpClient.post<void>("/register", body, httpOptions);
+    }
+
+    postChangePassword(password: string): Observable<void> {
+
+        const jwt = this.authService.getJwt();
+
+        const httpOptions = {
+            headers: {
+                Authorization: 'Bearer ' + jwt
+            }
+        };
+
+        return this.httpClient.post<void>("/settings/change-password", password, httpOptions);
     }
 }

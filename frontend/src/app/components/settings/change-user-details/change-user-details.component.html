@@ -1,0 +1,17 @@
+<h1>Change password</h1>
+
+<form [formGroup]="changePasswordForm" (ngSubmit)="onSubmit()">
+
+    <div class="mt-0_5">
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="" formControlName="password">
+    </div>
+
+    <div class="mt-0_5">
+        <label for="password-repeat">Password repeat</label>
+        <input id="password-repeat" type="password" autocomplete="" formControlName="passwordRepeat">
+    </div>
+
+    <button type="submit" class="mt-1_25">Change Password</button>
+
+</form>

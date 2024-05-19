@@ -25,7 +25,7 @@ app-root {
   @extend .border-red;
 
   /* Center in the middle of the screen */
-  max-width: 28rem; /* 448px */
+  max-width: 16rem; /* 256px */
   margin-left: auto;
   margin-right: auto;
 
@@ -33,15 +33,11 @@ app-root {
   overflow-y: scroll;
 
   display: flex;
-  justify-content: center;
-}
-
-form {
-  max-width: 16rem;
+  flex-direction: column;
 }
 
 table {
-  max-width: 16rem;
+  @extend .w-full;
 }
 
 .table-row-left {

@@ -53,7 +53,6 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void postRegisterNewUser_positive() {
 
-        doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
         doReturn(Mono.just(new User())).when(userDetailsService).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
 
         webClient.post().uri("/register")
@@ -82,8 +81,6 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void postRegisterNewUser_negative_NoBody() {
 
-        doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
-
         webClient.post().uri("/register")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
                 .exchange()
@@ -97,8 +94,6 @@ class RouterTest extends SecurityConfigSetup {
 
     @Test
     void postRegisterNewUser_negative_BodyWrongType() {
-
-        doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
 
         webClient.post().uri("/register")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
@@ -115,8 +110,6 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void postRegisterNewUser_negative_Validator() {
 
-        doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
-
         webClient.post().uri("/register")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
                 .body(Mono.just(new PostRegisterNewUserRequest("", "test-password")), PostRegisterNewUserRequest.class)
@@ -132,7 +125,6 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void postRegisterNewUser_negative_InternalServerError() {
 
-        doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
         doReturn(Mono.error(new RuntimeException("Bad"))).when(userDetailsService).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
 
         webClient.post().uri("/register")
@@ -149,7 +141,6 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void postRegisterNewUser_negative_ResponseStatusException() {
 
-        doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
         doReturn(Mono.error(new ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "Bad"))).when(userDetailsService).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
 
         webClient.post().uri("/register")
@@ -164,30 +155,88 @@ class RouterTest extends SecurityConfigSetup {
     }
 
     @Test
-    void placeholder() {
+    void postChangePassword_positive_User() {
 
-        webClient.get().uri("/none")
-                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
-                .exchange()
-                .expectStatus().isForbidden()
-                .expectBody().isEmpty();
+        doReturn(Mono.just(new User())).when(userDetailsService).changePassword(any(User.class), any(String.class));
 
-        webClient.get().uri("/user")
+        webClient.post().uri("/settings/change-password")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just("new-password"), String.class)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class).isEqualTo("user");
-
-        webClient.get().uri("/admin")
-                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
-                .exchange()
-                .expectStatus().isForbidden()
                 .expectBody().isEmpty();
 
-        webClient.get().uri("/user-admin")
-                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+        verify(userDetailsService, times(2)).findByUsername(USER);
+        verify(userDetailsService, times(1)).changePassword(any(User.class), any(String.class));
+
+        final ArgumentCaptor<User> argumentCaptorUser = ArgumentCaptor.forClass(User.class);
+        final ArgumentCaptor<String> argumentCaptorNewPassword = ArgumentCaptor.forClass(String.class);
+
+        verify(userDetailsService).changePassword(argumentCaptorUser.capture(), argumentCaptorNewPassword.capture());
+
+        final User user = argumentCaptorUser.getValue();
+        assertThat(user.getUsername(), is(USER));
+        assertThat(user.getPassword(), is(ENCODED_PASSWORD));
+        assertThat(user.getRoles(), is(USER));
+
+        assertThat(argumentCaptorNewPassword.getValue(), is("new-password"));
+    }
+
+    @Test
+    void postChangePassword_positive_Jwt() {
+
+        doReturn(Mono.just(new User())).when(userDetailsService).changePassword(any(User.class), any(String.class));
+
+        webClient.post().uri("/settings/change-password")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just("new-password"), String.class)
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class).isEqualTo("useradmin");
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).findByUsername(USER);
+        verify(userDetailsService, times(1)).changePassword(any(User.class), any(String.class));
+
+        final ArgumentCaptor<User> argumentCaptorUser = ArgumentCaptor.forClass(User.class);
+        final ArgumentCaptor<String> argumentCaptorNewPassword = ArgumentCaptor.forClass(String.class);
+
+        verify(userDetailsService).changePassword(argumentCaptorUser.capture(), argumentCaptorNewPassword.capture());
+
+        final User user = argumentCaptorUser.getValue();
+        assertThat(user.getUsername(), is(USER));
+        assertThat(user.getPassword(), is(ENCODED_PASSWORD));
+        assertThat(user.getRoles(), is(USER));
+
+        assertThat(argumentCaptorNewPassword.getValue(), is("new-password"));
+    }
+
+    @Test
+    void postChangePassword_negative_NoBody() {
+
+        webClient.post().uri("/settings/change-password")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(userDetailsService, times(2)).findByUsername(USER);
+        verify(userDetailsService, times(0)).changePassword(any(User.class), any(String.class));
+    }
+
+    @Test
+    void postChangePassword_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(userDetailsService).changePassword(any(User.class), any(String.class));
+
+        webClient.post().uri("/settings/change-password")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just("new-password"), String.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(2)).findByUsername(USER);
+        verify(userDetailsService, times(1)).changePassword(any(User.class), any(String.class));
     }
 }

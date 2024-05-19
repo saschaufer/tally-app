@@ -183,4 +183,58 @@ class SecurityConfigTest extends SecurityConfigSetup {
 
         verify(handler, times(0)).postRegisterNewUser(any(ServerRequest.class));
     }
+
+    @Test
+    void postChangePassword_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postChangePassword(any(ServerRequest.class));
+
+        webClient.post().uri("/settings/change-password")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postChangePassword(any(ServerRequest.class));
+    }
+
+    @Test
+    void postChangePassword_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/settings/change-password")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postChangePassword(any(ServerRequest.class));
+    }
+
+    @Test
+    void postChangePassword_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postChangePassword(any(ServerRequest.class));
+
+        webClient.post().uri("/settings/change-password")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER, Instant.now()))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postChangePassword(any(ServerRequest.class));
+    }
+
+    @Test
+    void postChangePassword_positive_JwtUserWrongRole() {
+
+        doReturn(ok().build()).when(handler).postChangePassword(any(ServerRequest.class));
+
+        webClient.post().uri("/settings/change-password")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(INVITATION, Instant.now()))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postChangePassword(any(ServerRequest.class));
+    }
 }
