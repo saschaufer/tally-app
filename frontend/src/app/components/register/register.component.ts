@@ -9,7 +9,7 @@ import {
     ValidatorFn,
     Validators
 } from "@angular/forms";
-import {Router} from "@angular/router";
+import {Router, RouterLink} from "@angular/router";
 import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 
@@ -17,12 +17,15 @@ import {HttpService} from "../../services/http.service";
     selector: 'app-register',
     standalone: true,
     imports: [
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        RouterLink
     ],
     templateUrl: './register.component.html',
     styles: ``
 })
 export class RegisterComponent {
+
+    protected readonly routeName = routeName;
 
     private httpService = inject(HttpService);
     private router = inject(Router);

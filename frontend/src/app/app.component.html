@@ -1,1 +1,30 @@
-<router-outlet/>
+<div class="app-content">
+    <router-outlet/>
+</div>
+
+<ul *ngIf="showNavBar()" class="navbar">
+    <li class="navbar-element">
+        <a routerLink="/{{routeName.settings}}"
+           routerLinkActive #rla1="routerLinkActive"
+           class="navbar-link"
+           [ngClass]="rla1.isActive ? 'text-blue border-blue' : 'text-green border-black'">
+            Settings
+        </a>
+    </li>
+    <li class="navbar-element">
+        <a routerLink="/{{routeName.login}}"
+           routerLinkActive #rla2="routerLinkActive"
+           class="navbar-link"
+           [ngClass]="rla2.isActive ? 'text-blue border-blue' : 'text-green border-black'">
+            Login
+        </a>
+    </li>
+    <li class="navbar-element">
+        <a routerLink="/{{routeName.register}}"
+           routerLinkActive #rla3="routerLinkActive"
+           class="navbar-link"
+           [ngClass]="rla3.isActive ? 'text-blue border-blue' : 'text-green border-black'">
+            Register
+        </a>
+    </li>
+</ul>

@@ -21,6 +21,10 @@ body {
 }
 
 app-root {
+  @extend .w-full;
+}
+
+.app-content {
   @extend .mt-1_25;
   @extend .border-red;
 
@@ -32,8 +36,40 @@ app-root {
   /* Scroll if content is higher then its parent */
   overflow-y: scroll;
 
+  padding-bottom: 3rem;
+  margin-bottom: 1.25rem;
+
   display: flex;
   flex-direction: column;
+}
+
+.navbar {
+  @extend .bg-black;
+  @extend .w-full;
+  list-style-type: none;
+
+  margin: 0;
+  padding: 0;
+  bottom: 0;
+  position: fixed;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  border-top: 1px solid $custom-green;
+}
+
+.navbar-element {
+  height: 3rem;
+  width: 5rem;
+}
+
+.navbar-link {
+  @extend .h-full;
+  @extend .text-sm;
+  @extend .text-b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 table {
@@ -104,6 +140,10 @@ hr {
 ////////////////////////////////////////////////
 // Raw Classes
 
+.border-black {
+  border: 1px solid $custom-black;
+}
+
 .border-green {
   border: 1px solid $custom-green;
 }
@@ -132,6 +172,10 @@ hr {
 
 .text-green {
   color: $custom-green;
+}
+
+.text-blue {
+  color: $custom-blue;
 }
 
 .text-b {
@@ -165,6 +209,10 @@ hr {
 
 .w-full {
   width: 100%;
+}
+
+.h-full {
+  height: 100%;
 }
 
 .bg-black {
