@@ -11,20 +11,12 @@
             Settings
         </a>
     </li>
-    <li class="navbar-element">
-        <a routerLink="/{{routeName.login}}"
+    <li *ngIf="isAdmin()" class="navbar-element">
+        <a routerLink="/{{routeName.products}}"
            routerLinkActive #rla2="routerLinkActive"
            class="navbar-link"
            [ngClass]="rla2.isActive ? 'text-blue border-blue' : 'text-green border-black'">
-            Login
-        </a>
-    </li>
-    <li class="navbar-element">
-        <a routerLink="/{{routeName.register}}"
-           routerLinkActive #rla3="routerLinkActive"
-           class="navbar-link"
-           [ngClass]="rla3.isActive ? 'text-blue border-blue' : 'text-green border-black'">
-            Register
+            Products
         </a>
     </li>
 </ul>

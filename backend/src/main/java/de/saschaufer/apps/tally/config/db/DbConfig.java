@@ -50,7 +50,7 @@ public class DbConfig {
 
                 create table if not exists products (
                     id serial primary key,
-                    name varchar not null
+                    name varchar not null unique
                 );
 
                 create table if not exists product_prices (

@@ -1,0 +1,21 @@
+<h1>New Product</h1>
+
+<div class="nav-top">
+    <a routerLink="/{{routeName.products}}" class="nav-top-link">Back</a>
+</div>
+
+<form [formGroup]="newProductForm" (ngSubmit)="onSubmit()">
+
+    <div class="mt-0_5">
+        <label for="name">Name</label>
+        <input id="name" type="text" autocomplete="" formControlName="name">
+    </div>
+
+    <div class="mt-0_5">
+        <label for="price">Price</label>
+        <input id="price" type="text" autocomplete="" formControlName="price">
+    </div>
+
+    <button type="submit" class="mt-1_25">Save</button>
+
+</form>

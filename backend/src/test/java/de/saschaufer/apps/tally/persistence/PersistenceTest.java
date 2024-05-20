@@ -25,7 +25,9 @@ import java.util.stream.Stream;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
+import static org.springframework.data.relational.core.query.Criteria.where;
 import static org.springframework.data.relational.core.query.Query.empty;
+import static org.springframework.data.relational.core.query.Query.query;
 
 @Slf4j
 @DataR2dbcTest
@@ -224,202 +226,263 @@ class PersistenceTest {
     }
 
     @Test
-    void insertProduct_positive() {
-
-        assertCount(Product.class, 0);
-
-        Mono.just(new Product(null, "test-name"))
-                .flatMap(persistence::insertProduct)
-                .as(StepVerifier::create)
-                .assertNext(product -> {
-                    assertThat(product.getId(), notNullValue());
-                    assertThat(product.getName(), is("test-name"));
-                })
-                .verifyComplete()
-        ;
-
-        assertCount(Product.class, 1);
-    }
-
-    @Test
-    void insertProduct_negative_DuplicatePrimaryKey() {
-
-        assertCount(Product.class, 0);
-
-        Mono.just(new Product(1L, ""))
-                .flatMap(persistence::insertProduct)
-                .flatMap(persistence::insertProduct)
-                .as(StepVerifier::create)
-                .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("Unique index or primary key violation: \"PRIMARY KEY ON PUBLIC.PRODUCTS(ID)"))
-                )
-        ;
-
-        assertCount(Product.class, 1);
-    }
-
-    @ParameterizedTest
-    @MethodSource
-    void insertProduct_negative_NullNotAllowed(final Product product, final String errorMessage) {
-
-        assertCount(Product.class, 0);
-
-        Mono.just(product)
-                .flatMap(persistence::insertProduct)
-                .as(StepVerifier::create)
-                .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString(errorMessage))
-                )
-        ;
-
-        assertCount(Product.class, 0);
-    }
-
-    static Stream<Arguments> insertProduct_negative_NullNotAllowed() {
-        return Stream.of(
-                Arguments.of(
-                        new Product(1L, null),
-                        "NULL not allowed for column \"NAME\""
-                )
-        );
-    }
-
-    @Test
-    void insertProductPrice_positive() {
-
-        final Long productId = Objects.requireNonNull(persistence.insertProduct(
-                new Product(null, "test-name")
-        ).block()).getId();
-
-        assertCount(ProductPrice.class, 0);
-
-        Mono.just(new ProductPrice(null, productId, new BigDecimal("123.45"), null))
-                .flatMap(persistence::insertProductPrice)
-                .as(StepVerifier::create)
-                .assertNext(productPrice -> {
-                    assertThat(productPrice.getId(), notNullValue());
-                    assertThat(productPrice.getProductId(), notNullValue());
-                    assertThat(productPrice.getPrice(), is(new BigDecimal("123.45")));
-                    assertThat(productPrice.getValidUntil(), nullValue());
-                })
-                .verifyComplete()
-        ;
-
-        assertCount(ProductPrice.class, 1);
-    }
-
-    @Test
-    void insertProductPrice_negative_DuplicatePrimaryKey() {
-
-        final Long productId = Objects.requireNonNull(persistence.insertProduct(
-                new Product(null, "")
-        ).block()).getId();
-
-        assertCount(ProductPrice.class, 0);
-
-        Mono.just(new ProductPrice(1L, productId, BigDecimal.ONE, null))
-                .flatMap(persistence::insertProductPrice)
-                .flatMap(persistence::insertProductPrice)
-                .as(StepVerifier::create)
-                .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("Unique index or primary key violation: \"PRIMARY KEY ON PUBLIC.PRODUCT_PRICES(ID)"))
-                )
-        ;
-
-        assertCount(ProductPrice.class, 1);
-    }
-
-    @Test
-    void insertProductPrice_negative_ProductIdNull() {
-
-        assertCount(ProductPrice.class, 0);
-
-        Mono.just(new ProductPrice(null, null, BigDecimal.ONE, null))
-                .flatMap(persistence::insertProductPrice)
-                .as(StepVerifier::create)
-                .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("NULL not allowed for column \"PRODUCT_ID\""))
-                )
-        ;
-
-        assertCount(ProductPrice.class, 0);
-    }
-
-    @ParameterizedTest
-    @MethodSource
-    void insertProductPrice_negative_NullNotAllowed(final ProductPrice productPrice, final String errorMessage) {
-
-        final Long productId = Objects.requireNonNull(persistence.insertProduct(
-                new Product(null, "")
-        ).block()).getId();
-
-        assertCount(ProductPrice.class, 0);
-
-        productPrice.setProductId(productId);
-
-        Mono.just(productPrice)
-                .flatMap(persistence::insertProductPrice)
-                .as(StepVerifier::create)
-                .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString(errorMessage))
-                )
-        ;
-
-        assertCount(ProductPrice.class, 0);
-    }
-
-    static Stream<Arguments> insertProductPrice_negative_NullNotAllowed() {
-        return Stream.of(
-                Arguments.of(
-                        new ProductPrice(null, null, null, null),
-                        "NULL not allowed for column \"PRICE\""
-                )
-        );
-    }
-
-    @Test
     void insertProductAndPrice_positive() {
 
         assertCount(Product.class, 0);
         assertCount(ProductPrice.class, 0);
 
-        persistence.insertProductAndPrice(
-                        new Product(null, "test-name"),
-                        new ProductPrice(null, null, new BigDecimal("123.45"), LocalDateTime.of(2024, 2, 20, 14, 59, 2))
-                )
+        persistence.insertProductAndPrice("test-name", new BigDecimal("123.45"))
                 .as(StepVerifier::create)
-                .assertNext(productPrice -> {
-                    assertThat(productPrice.getId(), notNullValue());
-                    assertThat(productPrice.getProductId(), notNullValue());
-                    assertThat(productPrice.getPrice(), is(new BigDecimal("123.45")));
-                    assertThat(productPrice.getValidUntil(), is(LocalDateTime.of(2024, 2, 20, 14, 59, 2)));
-                })
-                .verifyComplete()
-        ;
+                .verifyComplete();
+
+        assertCount(Product.class, 1);
+        assertCount(ProductPrice.class, 1);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void insertProductAndPrice_negative_rollback(final String name, final BigDecimal price, final String expectedErrorMessage) {
+
+        assertCount(Product.class, 0);
+        assertCount(ProductPrice.class, 0);
+
+        persistence.insertProductAndPrice(name, price)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString(expectedErrorMessage))
+                );
+
+        assertCount(Product.class, 0);
+        assertCount(ProductPrice.class, 0);
+    }
+
+    static Stream<Arguments> insertProductAndPrice_negative_rollback() {
+        return Stream.of(
+                Arguments.of(null, new BigDecimal("123.45"), "executeMany; bad SQL grammar [INSERT INTO products VALUES (DEFAULT)]"),
+                Arguments.of("test-name", null, "NULL not allowed for column \"PRICE\"")
+        );
+    }
+
+    @Test
+    void insertProductAndPrice_negative_rollback_ProductNameExists() {
+
+        assertCount(Product.class, 0);
+        assertCount(ProductPrice.class, 0);
+
+        persistence.insertProductAndPrice("test-name", new BigDecimal("123.45"))
+                .then(persistence.insertProductAndPrice("test-name", new BigDecimal("123.45")))
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("Unique index or primary key violation"))
+                );
 
         assertCount(Product.class, 1);
         assertCount(ProductPrice.class, 1);
     }
 
     @Test
-    void insertProductAndPrice_negative_rollback() {
+    void selectProducts_positive_NoProductsExist() {
 
-        assertCount(Product.class, 0);
-        assertCount(ProductPrice.class, 0);
-
-        persistence.insertProductAndPrice(
-                        new Product(null, ""),
-                        new ProductPrice(null, null, null, null)
+        persistence.selectProducts()
+                .as(StepVerifier::create)
+                .assertNext(products ->
+                        assertThat(products.isEmpty(), is(true))
                 )
+                .verifyComplete();
+    }
+
+    @Test
+    void selectProducts_positive_ProductsExist() {
+
+        final Mono<Void> coffee = template.insert(new Product(null, "coffee"))
+                .flatMap(product ->
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.1"), null))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), LocalDateTime.now())))
+                )
+                .flatMap(p -> Mono.empty());
+
+        final Mono<Void> tea = template.insert(new Product(null, "tea"))
+                .flatMap(product ->
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.4"), null))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.5"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.6"), LocalDateTime.now())))
+                )
+                .flatMap(p -> Mono.empty());
+
+        final Mono<Void> hotChocolate = template.insert(new Product(null, "hot chocolate"))
+                .flatMap(product ->
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.7"), LocalDateTime.now()))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.8"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.9"), LocalDateTime.now())))
+                )
+                .flatMap(p -> Mono.empty());
+
+        coffee.then(tea).then(hotChocolate).then(persistence.selectProducts())
+                .as(StepVerifier::create)
+                .assertNext(products -> {
+                    assertThat(products.size(), is(2));
+
+                    assertThat(products.getFirst().getT1().getId(), notNullValue());
+                    assertThat(products.getFirst().getT1().getName(), is("coffee"));
+                    assertThat(products.getFirst().getT2().getPrice(), is(new BigDecimal("0.10")));
+                    assertThat(products.getFirst().getT2().getValidUntil(), nullValue());
+
+                    assertThat(products.get(1).getT1().getId(), notNullValue());
+                    assertThat(products.get(1).getT1().getName(), is("tea"));
+                    assertThat(products.get(1).getT2().getPrice(), is(new BigDecimal("0.40")));
+                    assertThat(products.get(1).getT2().getValidUntil(), nullValue());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void updateProduct_positive() {
+
+        final Long p1Id = Objects.requireNonNull(template.insert(new Product(null, "coffee")).block()).getId();
+        final Long p2Id = Objects.requireNonNull(template.insert(new Product(null, "tea")).block()).getId();
+
+        persistence.updateProduct(p1Id, "coffee-new")
+                .then(template.selectOne(query(where("id").is(p1Id)), Product.class))
+                .as(StepVerifier::create)
+                .assertNext(product -> {
+                    assertThat(product.getId(), notNullValue());
+                    assertThat(product.getName(), is("coffee-new"));
+                })
+                .verifyComplete();
+
+        template.selectOne(query(where("id").is(p2Id)), Product.class)
+                .as(StepVerifier::create)
+                .assertNext(product -> {
+                    assertThat(product.getId(), notNullValue());
+                    assertThat(product.getName(), is("tea"));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void updateProduct_negative_ProductNotExist() {
+
+        persistence.updateProduct(1L, "new")
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("NULL not allowed for column \"PRICE\""))
-                )
-        ;
-
-        assertCount(Product.class, 0);
-        assertCount(ProductPrice.class, 0);
+                        assertThat(error.getMessage(), containsString("Product not updated"))
+                );
     }
+
+    @Test
+    void updateProductPrice_positive_PriceExists() {
+
+        final Long p1Id = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
+                .flatMap(product ->
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.1"), null))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), LocalDateTime.now())))
+                                .then(Mono.just(product))
+                ).block()).getId();
+
+        template.insert(new Product(null, "tea"))
+                .flatMap(product ->
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.4"), null))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.5"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.6"), LocalDateTime.now())))
+                                .then(Mono.just(product))
+                ).block();
+
+        persistence.updateProductPrice(p1Id, BigDecimal.TEN)
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        persistence.selectProducts()
+                .as(StepVerifier::create)
+                .assertNext(products -> {
+                    assertThat(products.size(), is(2));
+
+                    assertThat(products.getFirst().getT1().getId(), notNullValue());
+                    assertThat(products.getFirst().getT1().getName(), is("coffee"));
+                    assertThat(products.getFirst().getT2().getPrice(), is(new BigDecimal("10.00")));
+                    assertThat(products.getFirst().getT2().getValidUntil(), nullValue());
+
+                    assertThat(products.get(1).getT1().getId(), notNullValue());
+                    assertThat(products.get(1).getT1().getName(), is("tea"));
+                    assertThat(products.get(1).getT2().getPrice(), is(new BigDecimal("0.40")));
+                    assertThat(products.get(1).getT2().getValidUntil(), nullValue());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void updateProductPrice_positive_PriceNotExists() {
+
+        final Long p1Id = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
+                .flatMap(product ->
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.1"), LocalDateTime.now()))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), LocalDateTime.now())))
+                                .then(Mono.just(product))
+                ).block()).getId();
+
+        template.insert(new Product(null, "tea"))
+                .flatMap(product ->
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.4"), null))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.5"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.6"), LocalDateTime.now())))
+                                .then(Mono.just(product))
+                ).block();
+
+        persistence.updateProductPrice(p1Id, BigDecimal.TEN)
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        persistence.selectProducts()
+                .as(StepVerifier::create)
+                .assertNext(products -> {
+                    assertThat(products.size(), is(2));
+
+                    assertThat(products.getFirst().getT1().getId(), notNullValue());
+                    assertThat(products.getFirst().getT1().getName(), is("coffee"));
+                    assertThat(products.getFirst().getT2().getPrice(), is(new BigDecimal("10.00")));
+                    assertThat(products.getFirst().getT2().getValidUntil(), nullValue());
+
+                    assertThat(products.get(1).getT1().getId(), notNullValue());
+                    assertThat(products.get(1).getT1().getName(), is("tea"));
+                    assertThat(products.get(1).getT2().getPrice(), is(new BigDecimal("0.40")));
+                    assertThat(products.get(1).getT2().getValidUntil(), nullValue());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void updateProductPrice_negative_ProductNotExist() {
+
+        final Long p1Id = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
+                .flatMap(product ->
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.1"), null))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), LocalDateTime.now())))
+                                .then(Mono.just(product))
+                ).block()).getId();
+
+        persistence.updateProductPrice(p1Id + 1, BigDecimal.TEN)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("Referential integrity constraint violation"))
+                );
+
+        persistence.selectProducts()
+                .as(StepVerifier::create)
+                .assertNext(products -> {
+                    assertThat(products.size(), is(1));
+
+                    assertThat(products.getFirst().getT1().getId(), notNullValue());
+                    assertThat(products.getFirst().getT1().getName(), is("coffee"));
+                    assertThat(products.getFirst().getT2().getPrice(), is(new BigDecimal("0.10")));
+                    assertThat(products.getFirst().getT2().getValidUntil(), nullValue());
+                })
+                .verifyComplete();
+    }
+
+    //////
 
     @Test
     void insertPurchase_positive() {
@@ -428,10 +491,10 @@ class PersistenceTest {
                 new User(null, "", "", "")
         ).block()).getId();
 
-        final Long productPriceId = Objects.requireNonNull(persistence.insertProductAndPrice(
-                new Product(null, ""),
-                new ProductPrice(null, null, BigDecimal.ONE, null)
-        ).block()).getId();
+        final Long productPriceId = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
+                .flatMap(product -> template
+                        .insert(new ProductPrice(null, product.getId(), BigDecimal.ONE, null))
+                ).block()).getId();
 
         assertCount(Purchase.class, 0);
 
@@ -457,10 +520,10 @@ class PersistenceTest {
                 new User(null, "", "", "")
         ).block()).getId();
 
-        final Long productPriceId = Objects.requireNonNull(persistence.insertProductAndPrice(
-                new Product(null, ""),
-                new ProductPrice(null, null, BigDecimal.ONE, null)
-        ).block()).getId();
+        final Long productPriceId = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
+                .flatMap(product -> template
+                        .insert(new ProductPrice(null, product.getId(), BigDecimal.ONE, null))
+                ).block()).getId();
 
         assertCount(Purchase.class, 0);
 
@@ -479,10 +542,10 @@ class PersistenceTest {
     @Test
     void insertPurchase_negative_UserIdNull() {
 
-        final Long productPriceId = Objects.requireNonNull(persistence.insertProductAndPrice(
-                new Product(null, ""),
-                new ProductPrice(null, null, BigDecimal.ONE, null)
-        ).block()).getId();
+        final Long productPriceId = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
+                .flatMap(product -> template
+                        .insert(new ProductPrice(null, product.getId(), BigDecimal.ONE, null))
+                ).block()).getId();
 
         assertCount(Purchase.class, 0);
 
@@ -525,10 +588,10 @@ class PersistenceTest {
                 new User(null, "", "", "")
         ).block()).getId();
 
-        final Long productPriceId = Objects.requireNonNull(persistence.insertProductAndPrice(
-                new Product(null, ""),
-                new ProductPrice(null, null, BigDecimal.ONE, null)
-        ).block()).getId();
+        final Long productPriceId = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
+                .flatMap(product -> template
+                        .insert(new ProductPrice(null, product.getId(), BigDecimal.ONE, null))
+                ).block()).getId();
 
         purchase.setUserId(userId);
         purchase.setProductPriceId(productPriceId);

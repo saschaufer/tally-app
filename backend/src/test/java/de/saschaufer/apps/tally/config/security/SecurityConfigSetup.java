@@ -3,6 +3,7 @@ package de.saschaufer.apps.tally.config.security;
 import de.saschaufer.apps.tally.controller.Handler;
 import de.saschaufer.apps.tally.controller.Router;
 import de.saschaufer.apps.tally.persistence.dto.User;
+import de.saschaufer.apps.tally.services.ProductService;
 import de.saschaufer.apps.tally.services.UserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +54,9 @@ public abstract class SecurityConfigSetup {
 
     @MockBean
     protected UserDetailsService userDetailsService;
+
+    @MockBean
+    protected ProductService productService;
 
     protected WebTestClient webClient;
 

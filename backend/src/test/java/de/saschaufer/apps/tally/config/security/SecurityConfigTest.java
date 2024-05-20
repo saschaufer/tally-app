@@ -170,9 +170,7 @@ class SecurityConfigTest extends SecurityConfigSetup {
     }
 
     @Test
-    void postRegister_positive_JwtUserWrongRole() {
-
-        doReturn(ok().build()).when(handler).postRegisterNewUser(any(ServerRequest.class));
+    void postRegister_negative_JwtUserWrongRole() {
 
         webClient.post().uri("/register")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER, Instant.now()))
@@ -224,9 +222,7 @@ class SecurityConfigTest extends SecurityConfigSetup {
     }
 
     @Test
-    void postChangePassword_positive_JwtUserWrongRole() {
-
-        doReturn(ok().build()).when(handler).postChangePassword(any(ServerRequest.class));
+    void postChangePassword_negative_JwtUserWrongRole() {
 
         webClient.post().uri("/settings/change-password")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(INVITATION, Instant.now()))
@@ -278,9 +274,7 @@ class SecurityConfigTest extends SecurityConfigSetup {
     }
 
     @Test
-    void postChangeInvitationCode_positive_JwtUserWrongRole() {
-
-        doReturn(ok().build()).when(handler).postChangeInvitationCode(any(ServerRequest.class));
+    void postChangeInvitationCode_negative_JwtUserWrongRole() {
 
         webClient.post().uri("/settings/change-invitation-code")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
@@ -289,5 +283,213 @@ class SecurityConfigTest extends SecurityConfigSetup {
                 .expectBody().isEmpty();
 
         verify(handler, times(0)).postChangeInvitationCode(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadProducts_positive_Password() {
+
+        doReturn(ok().build()).when(handler).getReadProducts(any(ServerRequest.class));
+
+        webClient.get().uri("/products")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadProducts(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadProducts_negative_PasswordUserWrongRole() {
+
+        webClient.get().uri("/products")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(NONE, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadProducts(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadProducts_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).getReadProducts(any(ServerRequest.class));
+
+        webClient.get().uri("/products")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadProducts(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadProducts_negative_JwtUserWrongRole() {
+
+        webClient.get().uri("/products")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(NONE))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadProducts(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreateProduct_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postCreateProduct(any(ServerRequest.class));
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postCreateProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreateProduct_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postCreateProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreateProduct_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postCreateProduct(any(ServerRequest.class));
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postCreateProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreateProduct_negative_JwtUserWrongRole() {
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postCreateProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postUpdateProduct_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postUpdateProduct(any(ServerRequest.class));
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postUpdateProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postUpdateProduct_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postUpdateProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postUpdateProduct_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postUpdateProduct(any(ServerRequest.class));
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postUpdateProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postUpdateProduct_negative_JwtUserWrongRole() {
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postUpdateProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postUpdateProductPrice_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postUpdateProductPrice(any(ServerRequest.class));
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postUpdateProductPrice(any(ServerRequest.class));
+    }
+
+    @Test
+    void postUpdateProductPrice_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postUpdateProductPrice(any(ServerRequest.class));
+    }
+
+    @Test
+    void postUpdateProductPrice_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postUpdateProductPrice(any(ServerRequest.class));
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postUpdateProductPrice(any(ServerRequest.class));
+    }
+
+    @Test
+    void postUpdateProductPrice_negative_JwtUserWrongRole() {
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postUpdateProductPrice(any(ServerRequest.class));
     }
 }

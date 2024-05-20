@@ -65,6 +65,12 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/register").hasAnyAuthority(User.Role.INVITATION)
                         .pathMatchers(HttpMethod.POST, "/settings/change-password").hasAnyAuthority(User.Role.USER)
                         .pathMatchers(HttpMethod.POST, "/settings/change-invitation-code").hasAnyAuthority(User.Role.ADMIN)
+
+                        .pathMatchers(HttpMethod.GET, "/products").hasAnyAuthority(User.Role.USER)
+                        .pathMatchers(HttpMethod.POST, "/products/create-product").hasAnyAuthority(User.Role.ADMIN)
+                        .pathMatchers(HttpMethod.POST, "/products/update-product").hasAnyAuthority(User.Role.ADMIN)
+                        .pathMatchers(HttpMethod.POST, "/products/update-price").hasAnyAuthority(User.Role.ADMIN)
+
                         .anyExchange().authenticated()
                 )
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)

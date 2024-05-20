@@ -1,8 +1,8 @@
 package de.saschaufer.apps.tally.controller;
 
-import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
-import de.saschaufer.apps.tally.controller.dto.PostRegisterNewUserRequest;
+import de.saschaufer.apps.tally.controller.dto.*;
 import de.saschaufer.apps.tally.persistence.dto.User;
+import de.saschaufer.apps.tally.services.ProductService;
 import de.saschaufer.apps.tally.services.UserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +33,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 public class Handler {
 
     private final UserDetailsService userDetailsService;
+    private final ProductService productService;
 
     public Mono<ServerResponse> postLogin(final ServerRequest request) {
 
@@ -101,6 +102,61 @@ public class Handler {
                 .flatMap(pair -> userDetailsService.changePassword(pair.getFirst(), pair.getSecond()))
                 .flatMap(u -> ok().build())
                 .doOnError(e -> log.atError().setMessage("Error changing invitation code.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> postCreateProduct(final ServerRequest request) {
+
+        log.atInfo().setMessage("Create product.").log();
+
+        return request.bodyToMono(PostCreateProductRequest.class)
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate)
+
+                .flatMap(r -> productService.createProduct(r.name(), r.price()))
+
+                .then(Mono.defer(() -> ok().build()))
+                .doOnError(e -> log.atError().setMessage("Error creating new product.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> getReadProducts(final ServerRequest request) {
+
+        log.atInfo().setMessage("Read products.").log();
+
+        return productService.readProducts()
+                .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+                .doOnError(e -> log.atError().setMessage("Error reading products.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> postUpdateProduct(final ServerRequest request) {
+
+        log.atInfo().setMessage("Update product.").log();
+
+        return request.bodyToMono(PostUpdateProductRequest.class)
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate)
+
+                .flatMap(r -> productService.updateProduct(r.id(), r.name()))
+
+                .then(Mono.defer(() -> ok().build()))
+                .doOnError(e -> log.atError().setMessage("Error updating product.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> postUpdateProductPrice(final ServerRequest request) {
+
+        log.atInfo().setMessage("Update product price.").log();
+
+        return request.bodyToMono(PostUpdateProductPriceRequest.class)
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate)
+
+                .flatMap(r -> productService.updateProductPrice(r.id(), r.price()))
+
+                .then(Mono.defer(() -> ok().build()))
+                .doOnError(e -> log.atError().setMessage("Error updating product price.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 

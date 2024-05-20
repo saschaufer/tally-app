@@ -2,6 +2,7 @@ import {HttpClient} from "@angular/common/http";
 import {inject, Injectable} from '@angular/core';
 import {Observable} from "rxjs";
 import {AuthService} from "./auth.service";
+import {GetProductsResponse} from "./models/GetProductsResponse";
 import {LoginResponse} from "./models/LoginResponse";
 
 @Injectable({
@@ -45,28 +46,54 @@ export class HttpService {
     }
 
     postChangePassword(password: string): Observable<void> {
-
-        const jwt = this.authService.getJwt();
-
-        const httpOptions = {
-            headers: {
-                Authorization: 'Bearer ' + jwt
-            }
-        };
-
-        return this.httpClient.post<void>("/settings/change-password", password, httpOptions);
+        return this.httpClient.post<void>("/settings/change-password", password, this.httpOptions());
     }
 
     postChangeInvitationCode(invitationCode: string): Observable<void> {
+        return this.httpClient.post<void>("/settings/change-invitation-code", invitationCode, this.httpOptions());
+    }
 
+    getReadProducts(): Observable<GetProductsResponse[]> {
+        return this.httpClient.get<GetProductsResponse[]>("/products", this.httpOptions());
+    }
+
+    postCreateProduct(name: string, price: Big): Observable<void> {
+
+        const body = {
+            name: name,
+            price: price
+        };
+
+        return this.httpClient.post<void>("/products/create-product", body, this.httpOptions());
+    }
+
+    postUpdateProduct(id: number, name: string): Observable<void> {
+
+        const body = {
+            id: id,
+            name: name
+        };
+
+        return this.httpClient.post<void>("/products/update-product", body, this.httpOptions());
+    }
+
+    postUpdateProductPrice(id: number, price: Big): Observable<void> {
+
+        const body = {
+            id: id,
+            price: price
+        };
+
+        return this.httpClient.post<void>("/products/update-price", body, this.httpOptions());
+    }
+
+    private httpOptions() {
         const jwt = this.authService.getJwt();
 
-        const httpOptions = {
+        return {
             headers: {
                 Authorization: 'Bearer ' + jwt
             }
         };
-
-        return this.httpClient.post<void>("/settings/change-invitation-code", invitationCode, httpOptions);
     }
 }

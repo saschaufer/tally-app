@@ -19,6 +19,12 @@ public class Router {
                 .POST("/register", handler::postRegisterNewUser)
                 .POST("/settings/change-password", handler::postChangePassword)
                 .POST("/settings/change-invitation-code", handler::postChangeInvitationCode)
+
+                .GET("/products", handler::getReadProducts)
+                .POST("/products/create-product", handler::postCreateProduct)
+                .POST("/products/update-product", handler::postUpdateProduct)
+                .POST("/products/update-price", handler::postUpdateProductPrice)
+
                 .build();
     }
 }

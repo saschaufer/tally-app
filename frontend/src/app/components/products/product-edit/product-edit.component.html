@@ -1,0 +1,29 @@
+<h1>Edit Product</h1>
+
+<div class="nav-top">
+    <a routerLink="/{{routeName.products}}" class="nav-top-link">Back</a>
+</div>
+
+<form [formGroup]="changeNameForm" (ngSubmit)="onSubmitChangeName()">
+
+    <div class="mt-0_5">
+        <label for="name">Name</label>
+        <input id="name" type="text" autocomplete="" formControlName="name">
+    </div>
+
+    <button type="submit" class="mt-1_25">Change</button>
+
+</form>
+
+<hr>
+
+<form [formGroup]="changePriceForm" (ngSubmit)="onSubmitChangePrice()" class="mt-1_25">
+
+    <div class="mt-0_5">
+        <label for="price">Price</label>
+        <input id="price" type="text" autocomplete="" formControlName="price">
+    </div>
+
+    <button type="submit" class="mt-1_25">Change</button>
+
+</form>

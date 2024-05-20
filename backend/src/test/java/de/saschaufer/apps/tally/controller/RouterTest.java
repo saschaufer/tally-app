@@ -1,8 +1,7 @@
 package de.saschaufer.apps.tally.controller;
 
 import de.saschaufer.apps.tally.config.security.SecurityConfigSetup;
-import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
-import de.saschaufer.apps.tally.controller.dto.PostRegisterNewUserRequest;
+import de.saschaufer.apps.tally.controller.dto.*;
 import de.saschaufer.apps.tally.persistence.dto.User;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -13,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static de.saschaufer.apps.tally.persistence.dto.User.Role.*;
@@ -325,5 +325,336 @@ class RouterTest extends SecurityConfigSetup {
         verify(userDetailsService, times(1)).findByUsername(ADMIN);
         verify(userDetailsService, times(1)).findByUsername("invitation-code");
         verify(userDetailsService, times(1)).changePassword(any(User.class), any(String.class));
+    }
+
+    @Test
+    void postCreateProduct_positive_User() {
+
+        doReturn(Mono.empty()).when(productService).createProduct(any(String.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostCreateProductRequest("test-name", BigDecimal.ONE)), PostCreateProductRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).createProduct("test-name", BigDecimal.ONE);
+    }
+
+    @Test
+    void postCreateProduct_positive_Jwt() {
+
+        doReturn(Mono.empty()).when(productService).createProduct(any(String.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .body(Mono.just(new PostCreateProductRequest("test-name", BigDecimal.ONE)), PostCreateProductRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).createProduct("test-name", BigDecimal.ONE);
+    }
+
+    @Test
+    void postCreateProduct_negative_NoBody() {
+
+        doReturn(Mono.empty()).when(productService).createProduct(any(String.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(productService, times(0)).createProduct(any(String.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void postCreateProduct_negative_BodyWrongType() {
+
+        doReturn(Mono.empty()).when(productService).createProduct(any(String.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just("Wrong"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+
+        verify(productService, times(0)).createProduct(any(String.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void postCreateProduct_negative_Validator() {
+
+        doReturn(Mono.empty()).when(productService).createProduct(any(String.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostCreateProductRequest(null, BigDecimal.ONE)), PostCreateProductRequest.class)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody(String.class).isEqualTo("Product name is required");
+
+        verify(productService, times(0)).createProduct(any(String.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void postCreateProduct_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(productService).createProduct(any(String.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/create-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostCreateProductRequest("test-name", BigDecimal.ONE)), PostCreateProductRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).createProduct("test-name", BigDecimal.ONE);
+    }
+
+    @Test
+    void getReadProducts_positive_User() {
+
+        doReturn(Mono.just(List.of(
+                new GetProductsResponse(2L, "name-1", BigDecimal.ONE),
+                new GetProductsResponse(1L, "name-2", BigDecimal.TWO)
+        ))).when(productService).readProducts();
+
+        webClient.get().uri("/products")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBodyList(GetProductsResponse.class).isEqualTo(List.of(
+                        new GetProductsResponse(2L, "name-1", BigDecimal.ONE),
+                        new GetProductsResponse(1L, "name-2", BigDecimal.TWO)
+                ));
+
+        verify(productService, times(1)).readProducts();
+    }
+
+    @Test
+    void getReadProducts_positive_Jwt() {
+
+        doReturn(Mono.just(List.of(
+                new GetProductsResponse(2L, "name-1", BigDecimal.ONE),
+                new GetProductsResponse(1L, "name-2", BigDecimal.TWO)
+        ))).when(productService).readProducts();
+
+        webClient.get().uri("/products")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN, List.of(USER, ADMIN)))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBodyList(GetProductsResponse.class).isEqualTo(List.of(
+                        new GetProductsResponse(2L, "name-1", BigDecimal.ONE),
+                        new GetProductsResponse(1L, "name-2", BigDecimal.TWO)
+                ));
+
+        verify(productService, times(1)).readProducts();
+    }
+
+    @Test
+    void getReadProducts_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(productService).readProducts();
+
+        webClient.get().uri("/products")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+
+        verify(productService, times(1)).readProducts();
+    }
+
+    @Test
+    void postUpdateProduct_positive_User() {
+
+        doReturn(Mono.empty()).when(productService).updateProduct(any(Long.class), any(String.class));
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostUpdateProductRequest(1L, "new-name")), PostUpdateProductRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).updateProduct(1L, "new-name");
+    }
+
+    @Test
+    void postUpdateProduct_positive_Jwt() {
+
+        doReturn(Mono.empty()).when(productService).updateProduct(any(Long.class), any(String.class));
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .body(Mono.just(new PostUpdateProductRequest(1L, "new-name")), PostUpdateProductRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).updateProduct(1L, "new-name");
+    }
+
+    @Test
+    void postUpdateProduct_negative_NoBody() {
+
+        doReturn(Mono.empty()).when(productService).updateProduct(any(Long.class), any(String.class));
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(productService, times(0)).updateProduct(any(Long.class), any(String.class));
+    }
+
+    @Test
+    void postUpdateProduct_negative_BodyWrongType() {
+
+        doReturn(Mono.empty()).when(productService).updateProduct(any(Long.class), any(String.class));
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just("Wrong"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+
+        verify(productService, times(0)).updateProduct(any(Long.class), any(String.class));
+    }
+
+    @Test
+    void postUpdateProduct_negative_Validator() {
+
+        doReturn(Mono.empty()).when(productService).updateProduct(any(Long.class), any(String.class));
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostUpdateProductRequest(null, "new-name")), PostUpdateProductRequest.class)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Product ID is required");
+
+        verify(productService, times(0)).updateProduct(any(Long.class), any(String.class));
+    }
+
+    @Test
+    void postUpdateProduct_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(productService).updateProduct(any(Long.class), any(String.class));
+
+        webClient.post().uri("/products/update-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostUpdateProductRequest(1L, "new-name")), PostUpdateProductRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).updateProduct(1L, "new-name");
+    }
+
+    @Test
+    void postUpdateProductPrice_positive_User() {
+
+        doReturn(Mono.empty()).when(productService).updateProductPrice(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostUpdateProductPriceRequest(1L, BigDecimal.ONE)), PostUpdateProductRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).updateProductPrice(1L, BigDecimal.ONE);
+    }
+
+    @Test
+    void postUpdateProductPrice_positive_Jwt() {
+
+        doReturn(Mono.empty()).when(productService).updateProductPrice(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .body(Mono.just(new PostUpdateProductPriceRequest(1L, BigDecimal.ONE)), PostUpdateProductRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).updateProductPrice(1L, BigDecimal.ONE);
+    }
+
+    @Test
+    void postUpdateProductPrice_negative_NoBody() {
+
+        doReturn(Mono.empty()).when(productService).updateProductPrice(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(productService, times(0)).updateProductPrice(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void postUpdateProductPrice_negative_BodyWrongType() {
+
+        doReturn(Mono.empty()).when(productService).updateProductPrice(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just("Wrong"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+
+        verify(productService, times(0)).updateProductPrice(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void postUpdateProductPrice_negative_Validator() {
+
+        doReturn(Mono.empty()).when(productService).updateProductPrice(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostUpdateProductPriceRequest(null, BigDecimal.ONE)), PostUpdateProductRequest.class)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Product ID is required");
+
+        verify(productService, times(0)).updateProductPrice(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void postUpdateProductPrice_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(productService).updateProductPrice(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/products/update-price")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostUpdateProductPriceRequest(1L, BigDecimal.ONE)), PostUpdateProductRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).updateProductPrice(1L, BigDecimal.ONE);
     }
 }

@@ -52,7 +52,7 @@ export class LoginComponent {
                         }
                     },
                     error: (error) => {
-                        console.error(error);
+                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
                     }
                 });
         }

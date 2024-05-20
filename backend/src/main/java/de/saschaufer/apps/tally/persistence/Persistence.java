@@ -7,6 +7,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
 import static org.springframework.data.relational.core.query.Criteria.where;
 import static org.springframework.data.relational.core.query.Query.query;
@@ -49,26 +56,67 @@ public class Persistence {
                 });
     }
 
-    public Mono<Product> insertProduct(final Product product) {
-        return Mono.just(product).flatMap(template::insert);
-    }
+    public Mono<Void> insertProductAndPrice(final String name, final BigDecimal price) {
 
-    public Mono<ProductPrice> insertProductPrice(final ProductPrice productPrice) {
-        return Mono.just(productPrice).flatMap(template::insert);
-    }
-
-    public Mono<ProductPrice> insertProductAndPrice(final Product product, final ProductPrice productPrice) {
+        final Product product = new Product(null, name);
+        final ProductPrice productPrice = new ProductPrice(null, null, price, null);
 
         final TransactionalOperator trans = TransactionalOperator.create(transactionManager);
 
         return trans.transactional(Mono.just(product)
-                .flatMap(this::insertProduct)
-                .map(p -> {
-                    productPrice.setProductId(p.getId());
-                    return productPrice;
-                })
-                .flatMap(this::insertProductPrice)
-        );
+                        .flatMap(template::insert)
+                        .map(p -> {
+                            productPrice.setProductId(p.getId());
+                            return productPrice;
+                        })
+                        .flatMap(template::insert)
+                )
+                .flatMap(p -> Mono.empty());
+    }
+
+    public Mono<List<Tuple2<Product, ProductPrice>>> selectProducts() {
+
+        final String query = """
+                select products.id, products.name, product_prices.price from products
+                right join product_prices on products.id = product_prices.product_id
+                where product_prices.valid_until is null
+                order by products.name
+                """;
+
+        return template.getDatabaseClient().sql(query).map((row, rowMetadata) -> {
+            final Long id = Objects.requireNonNull(row.get("id", Integer.class)).longValue();
+            final String name = row.get("name", String.class);
+            final BigDecimal price = row.get("price", BigDecimal.class);
+            return Tuples.of(new Product(id, name), new ProductPrice(null, id, price, null));
+        }).all().collectList();
+    }
+
+    public Mono<Void> updateProduct(final Long id, final String newName) {
+
+        return template
+                .update(Product.class)
+                .matching(query(where("id").is(id)))
+                .apply(update("name", newName))
+
+                .flatMap(updateCount -> switch (updateCount.intValue()) {
+                    case 0 -> Mono.error(new RuntimeException("Product not updated"));
+                    case 1 -> Mono.empty();
+                    default -> Mono.error(new RuntimeException("Too many products updated"));
+                });
+    }
+
+    public Mono<Void> updateProductPrice(final Long productId, final BigDecimal productPrice) {
+
+        final TransactionalOperator trans = TransactionalOperator.create(transactionManager);
+
+        return trans.transactional(template
+                        .update(ProductPrice.class)
+                        .matching(query(where("product_id").is(productId).and(where("valid_until").isNull())))
+                        .apply(update("valid_until", LocalDateTime.now()))
+                        .flatMap(count -> Mono.just(new ProductPrice(null, productId, productPrice, null)))
+                        .flatMap(template::insert)
+                )
+                .flatMap(p -> Mono.empty());
     }
 
     public Mono<Purchase> insertPurchase(final Purchase purchase) {

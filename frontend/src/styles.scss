@@ -41,6 +41,8 @@ app-root {
 
   display: flex;
   flex-direction: column;
+
+  position: relative;
 }
 
 .navbar {
@@ -70,6 +72,43 @@ app-root {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.nav-top {
+  position: absolute;
+  right: 0;
+  top: 0.85rem;
+}
+
+.nav-top-link {
+  @extend .text-sm;
+  @extend .text-green;
+}
+
+.list {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid $custom-green;
+  height: calc(100vh - 10rem);
+  overflow-y: scroll;
+}
+
+.list-item {
+  @extend .text-sm;
+  display: flex;
+  border-bottom: 1px solid $custom-green;
+}
+
+.list-item-left {
+  @extend .text-green;
+  @extend .text-left;
+  flex: 1;
+}
+
+.list-item-right {
+  @extend .text-green;
+  @extend .text-right;
 }
 
 table {

@@ -1,5 +1,5 @@
 import {DatePipe} from "@angular/common";
-import {Component, inject} from '@angular/core';
+import {Component, inject, NgZone} from '@angular/core';
 import {Router} from "@angular/router";
 import {interval, Subscription} from "rxjs";
 import {routeName} from "../../../app.routes";
@@ -18,6 +18,7 @@ export class LoginDetailsComponent {
 
     private authService = inject(AuthService);
     private router = inject(Router);
+    private zone = inject(NgZone);
 
     private time!: Subscription;
 
@@ -33,6 +34,8 @@ export class LoginDetailsComponent {
 
     onLogout() {
         this.authService.removeJwt();
-        this.router.navigate(["/" + routeName.login]).then();
+        this.zone.run(() =>
+            this.router.navigate(["/" + routeName.login]).then()
+        ).then();
     }
 }
