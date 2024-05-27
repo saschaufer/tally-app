@@ -1,5 +1,6 @@
 package de.saschaufer.apps.tally.persistence;
 
+import de.saschaufer.apps.tally.controller.dto.GetPurchasesResponse;
 import de.saschaufer.apps.tally.persistence.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
@@ -74,6 +75,27 @@ public class Persistence {
                 .flatMap(p -> Mono.empty());
     }
 
+    public Mono<Tuple2<Product, ProductPrice>> selectProduct(final Long productId) {
+
+        final String query = """
+                select products.id, products.name, product_prices.price from products
+                right join product_prices on products.id = product_prices.product_id
+                where products.id = :product_id
+                and product_prices.valid_until is null
+                order by products.name
+                """.toLowerCase();
+
+        return template.getDatabaseClient().sql(query)
+                .bind("product_id", productId)
+                .map((row, rowMetadata) -> {
+                    final Long id = Objects.requireNonNull(row.get("id", Integer.class)).longValue();
+                    final String name = row.get("name", String.class);
+                    final BigDecimal price = row.get("price", BigDecimal.class);
+                    return Tuples.of(new Product(id, name), new ProductPrice(null, id, price, null));
+                }).one()
+                .switchIfEmpty(Mono.error(new RuntimeException("Product not found")));
+    }
+
     public Mono<List<Tuple2<Product, ProductPrice>>> selectProducts() {
 
         final String query = """
@@ -81,7 +103,7 @@ public class Persistence {
                 right join product_prices on products.id = product_prices.product_id
                 where product_prices.valid_until is null
                 order by products.name
-                """;
+                """.toLowerCase();
 
         return template.getDatabaseClient().sql(query).map((row, rowMetadata) -> {
             final Long id = Objects.requireNonNull(row.get("id", Integer.class)).longValue();
@@ -119,8 +141,51 @@ public class Persistence {
                 .flatMap(p -> Mono.empty());
     }
 
-    public Mono<Purchase> insertPurchase(final Purchase purchase) {
-        return Mono.just(purchase).flatMap(template::insert);
+    public Mono<Void> insertPurchase(final Long userId, final Long productId) {
+
+        return template.selectOne(query(where("product_id").is(productId)
+                        .and(where("valid_until").isNull())), ProductPrice.class)
+                .switchIfEmpty(Mono.error(new Exception("Product price not found")))
+                .map(price -> new Purchase(null, userId, price.getId(), LocalDateTime.now()))
+                .flatMap(template::insert)
+                .flatMap(p -> Mono.empty());
+    }
+
+    public Mono<List<GetPurchasesResponse>> selectPurchases(final Long userId) {
+
+        final String query = """
+                select purchases.id, purchases.timestamp, product_prices.price, products.name
+                from purchases
+                    left join product_prices on product_prices.id = purchases.product_price_id
+                    left join products on products.id = product_prices.product_id
+                where purchases.user_id = :user_id
+                order by products.name
+                """.toLowerCase();
+
+        return template.getDatabaseClient().sql(query)
+                .bind("user_id", userId)
+                .map((row, rowMetadata) -> {
+                    final Long id = Objects.requireNonNull(row.get("id", Integer.class)).longValue();
+                    final LocalDateTime timestamp = row.get("timestamp", LocalDateTime.class);
+                    final String name = row.get("name", String.class);
+                    final BigDecimal price = row.get("price", BigDecimal.class);
+
+                    return new GetPurchasesResponse(id, timestamp, name, price);
+                }).all().collectList();
+    }
+
+    public Mono<Void> deletePurchase(final Long purchaseId) {
+
+        return template
+                .delete(Purchase.class)
+                .matching(query(where("id").is(purchaseId)))
+                .all()
+
+                .flatMap(deleteCount -> switch (deleteCount.intValue()) {
+                    case 0 -> Mono.error(new RuntimeException("Purchase not deleted"));
+                    case 1 -> Mono.empty();
+                    default -> Mono.error(new RuntimeException("Too many purchases deleted"));
+                });
     }
 
     public Mono<Payment> insertPayment(final Payment payment) {

@@ -21,9 +21,14 @@ public class Router {
                 .POST("/settings/change-invitation-code", handler::postChangeInvitationCode)
 
                 .GET("/products", handler::getReadProducts)
+                .POST("/products/read-product", handler::postReadProduct)
                 .POST("/products/create-product", handler::postCreateProduct)
                 .POST("/products/update-product", handler::postUpdateProduct)
                 .POST("/products/update-price", handler::postUpdateProductPrice)
+
+                .GET("/purchases", handler::getReadPurchases)
+                .POST("/purchases/create-purchase", handler::postCreatePurchase)
+                .POST("/purchases/delete-purchase", handler::postDeletePurchase)
 
                 .build();
     }

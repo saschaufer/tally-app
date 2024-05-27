@@ -19,4 +19,12 @@
             Products
         </a>
     </li>
+    <li class="navbar-element">
+        <a routerLink="/{{routeName.purchases}}"
+           routerLinkActive #rla3="routerLinkActive"
+           class="navbar-link"
+           [ngClass]="rla3.isActive ? 'text-blue border-blue' : 'text-green border-black'">
+            Purchases
+        </a>
+    </li>
 </ul>

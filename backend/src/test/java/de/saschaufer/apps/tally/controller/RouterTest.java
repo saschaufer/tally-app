@@ -13,6 +13,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static de.saschaufer.apps.tally.persistence.dto.User.Role.*;
@@ -418,6 +419,115 @@ class RouterTest extends SecurityConfigSetup {
     }
 
     @Test
+    void postReadProduct_positive_User() {
+
+        doReturn(Mono.just(
+                new GetProductsResponse(2L, "name-1", BigDecimal.ONE)
+        )).when(productService).readProduct(any(Long.class));
+
+        webClient.post().uri("/products/read-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostReadProductRequest(2L)), PostReadProductRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(GetProductsResponse.class).isEqualTo(
+                        new GetProductsResponse(2L, "name-1", BigDecimal.ONE)
+                );
+
+        verify(productService, times(1)).readProduct(2L);
+    }
+
+    @Test
+    void postReadProduct_positive_Jwt() {
+
+        doReturn(Mono.just(
+                new GetProductsResponse(2L, "name-1", BigDecimal.ONE)
+        )).when(productService).readProduct(any(Long.class));
+
+        webClient.post().uri("/products/read-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN, List.of(USER, ADMIN)))
+                .body(Mono.just(new PostReadProductRequest(2L)), PostReadProductRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(GetProductsResponse.class).isEqualTo(
+                        new GetProductsResponse(2L, "name-1", BigDecimal.ONE)
+                );
+
+        verify(productService, times(1)).readProduct(2L);
+    }
+
+    @Test
+    void postReadProduct_negative_NoBody() {
+
+        doReturn(Mono.just(
+                new GetProductsResponse(2L, "name-1", BigDecimal.ONE)
+        )).when(productService).readProduct(any(Long.class));
+
+        webClient.post().uri("/products/read-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN, List.of(USER, ADMIN)))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(productService, times(0)).readProduct(any(Long.class));
+    }
+
+    @Test
+    void postReadProduct_negative_BodyWrongType() {
+
+        doReturn(Mono.just(
+                new GetProductsResponse(2L, "name-1", BigDecimal.ONE)
+        )).when(productService).readProduct(any(Long.class));
+
+        webClient.post().uri("/products/read-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN, List.of(USER, ADMIN)))
+                .body(Mono.just("Wrong"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+
+        verify(productService, times(0)).readProduct(any(Long.class));
+    }
+
+    @Test
+    void postReadProduct_negative_Validator() {
+
+        doReturn(Mono.just(
+                new GetProductsResponse(2L, "name-1", BigDecimal.ONE)
+        )).when(productService).readProduct(any(Long.class));
+
+        webClient.post().uri("/products/read-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN, List.of(USER, ADMIN)))
+                .body(Mono.just(new PostReadProductRequest(null)), PostReadProductRequest.class)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Product ID is required");
+
+        verify(productService, times(0)).readProduct(any(Long.class));
+    }
+
+    @Test
+    void postReadProduct_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(productService).readProduct(any(Long.class));
+
+        webClient.post().uri("/products/read-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(new PostReadProductRequest(2L)), PostReadProductRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+
+        verify(productService, times(1)).readProduct(2L);
+    }
+
+    @Test
     void getReadProducts_positive_User() {
 
         doReturn(Mono.just(List.of(
@@ -656,5 +766,243 @@ class RouterTest extends SecurityConfigSetup {
                 .expectBody().isEmpty();
 
         verify(productService, times(1)).updateProductPrice(1L, BigDecimal.ONE);
+    }
+
+    @Test
+    void postCreatePurchase_positive_User() {
+
+        doReturn(Mono.empty()).when(purchaseService).createPurchase(any(Long.class), any(Long.class));
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just(new PostCreatePurchaseRequest(1L)), PostCreatePurchaseRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(purchaseService, times(1)).createPurchase(2L, 1L);
+    }
+
+    @Test
+    void postCreatePurchase_positive_Jwt() {
+
+        doReturn(Mono.empty()).when(purchaseService).createPurchase(any(Long.class), any(Long.class));
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just(new PostCreatePurchaseRequest(1L)), PostCreatePurchaseRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(purchaseService, times(1)).createPurchase(2L, 1L);
+    }
+
+    @Test
+    void postCreatePurchase_negative_NoBody() {
+
+        doReturn(Mono.empty()).when(purchaseService).createPurchase(any(Long.class), any(Long.class));
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(purchaseService, times(0)).createPurchase(any(Long.class), any(Long.class));
+    }
+
+    @Test
+    void postCreatePurchase_negative_ProductIdWrongType() {
+
+        doReturn(Mono.empty()).when(purchaseService).createPurchase(any(Long.class), any(Long.class));
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just("Wrong"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+
+        verify(purchaseService, times(0)).createPurchase(any(Long.class), any(Long.class));
+    }
+
+    @Test
+    void postCreatePurchase_negative_Validator() {
+
+        doReturn(Mono.empty()).when(purchaseService).createPurchase(any(Long.class), any(Long.class));
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just(new PostCreatePurchaseRequest(null)), PostCreatePurchaseRequest.class)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Product ID is required");
+
+
+        verify(purchaseService, times(0)).createPurchase(any(Long.class), any(Long.class));
+    }
+
+    @Test
+    void postCreatePurchase_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(purchaseService).createPurchase(any(Long.class), any(Long.class));
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just(new PostCreatePurchaseRequest(1L)), PostCreatePurchaseRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(purchaseService, times(1)).createPurchase(any(Long.class), any(Long.class));
+    }
+
+    @Test
+    void getReadPurchases_positive_User() {
+
+        doReturn(Mono.just(List.of(
+                new GetPurchasesResponse(1L, LocalDateTime.of(2024, 5, 1, 12, 54, 12), "product", BigDecimal.ONE)
+        ))).when(purchaseService).readPurchases(any(Long.class));
+
+        webClient.get().uri("/purchases")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBodyList(GetPurchasesResponse.class).isEqualTo(List.of(
+                        new GetPurchasesResponse(1L, LocalDateTime.of(2024, 5, 1, 12, 54, 12), "product", BigDecimal.ONE)
+                ));
+
+        verify(purchaseService, times(1)).readPurchases(2L);
+    }
+
+    @Test
+    void getReadPurchases_positive_Jwt() {
+
+        doReturn(Mono.just(List.of(
+                new GetPurchasesResponse(1L, LocalDateTime.of(2024, 5, 1, 12, 54, 12), "product", BigDecimal.ONE)
+        ))).when(purchaseService).readPurchases(any(Long.class));
+
+        webClient.get().uri("/purchases")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBodyList(GetPurchasesResponse.class).isEqualTo(List.of(
+                        new GetPurchasesResponse(1L, LocalDateTime.of(2024, 5, 1, 12, 54, 12), "product", BigDecimal.ONE)
+                ));
+
+        verify(purchaseService, times(1)).readPurchases(2L);
+    }
+
+    @Test
+    void getReadPurchases_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(purchaseService).readPurchases(any(Long.class));
+
+        webClient.get().uri("/purchases")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(purchaseService, times(1)).readPurchases(any(Long.class));
+    }
+
+    @Test
+    void postDeletePurchase_positive_User() {
+
+        doReturn(Mono.empty()).when(purchaseService).deletePurchase(any(Long.class));
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just(new PostDeletePurchaseRequest(1L)), PostDeletePurchaseRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(purchaseService, times(1)).deletePurchase(1L);
+    }
+
+    @Test
+    void postDeletePurchase_positive_Jwt() {
+
+        doReturn(Mono.empty()).when(purchaseService).deletePurchase(any(Long.class));
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just(new PostDeletePurchaseRequest(1L)), PostDeletePurchaseRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(purchaseService, times(1)).deletePurchase(1L);
+    }
+
+    @Test
+    void postDeletePurchase_negative_NoBody() {
+
+        doReturn(Mono.empty()).when(purchaseService).deletePurchase(any(Long.class));
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(purchaseService, times(0)).deletePurchase(any(Long.class));
+    }
+
+    @Test
+    void postDeletePurchase_negative_PurchaseIdWrongType() {
+
+        doReturn(Mono.empty()).when(purchaseService).deletePurchase(any(Long.class));
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just("Wrong"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+
+        verify(purchaseService, times(0)).deletePurchase(any(Long.class));
+    }
+
+    @Test
+    void postDeletePurchase_negative_Validator() {
+
+        doReturn(Mono.empty()).when(purchaseService).deletePurchase(any(Long.class));
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just(new PostDeletePurchaseRequest(null)), PostDeletePurchaseRequest.class)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Purchase ID is required");
+
+
+        verify(purchaseService, times(0)).deletePurchase(any(Long.class));
+    }
+
+    @Test
+    void postDeletePurchase_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(purchaseService).deletePurchase(any(Long.class));
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just(new PostDeletePurchaseRequest(1L)), PostDeletePurchaseRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(purchaseService, times(1)).deletePurchase(any(Long.class));
     }
 }

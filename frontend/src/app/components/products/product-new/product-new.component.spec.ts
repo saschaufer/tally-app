@@ -38,7 +38,7 @@ describe('ProductNewComponent', () => {
 
     it('should create the product', () => {
 
-        httpServiceSpy.postCreateProduct.and.callFake(() => of());
+        httpServiceSpy.postCreateProduct.and.callFake(() => of(undefined));
 
         component.newProductForm.setValue({
             name: 'new-product',
@@ -52,7 +52,7 @@ describe('ProductNewComponent', () => {
 
     it('should not create the product (name wrong)', () => {
 
-        httpServiceSpy.postCreateProduct.and.callFake(() => of());
+        httpServiceSpy.postCreateProduct.and.callFake(() => of(undefined));
 
         component.newProductForm.controls.name.setErrors(['wrong']);
         component.newProductForm.controls.price.patchValue('123.45');
@@ -64,7 +64,7 @@ describe('ProductNewComponent', () => {
 
     it('should not create the product (price wrong)', () => {
 
-        httpServiceSpy.postCreateProduct.and.callFake(() => of());
+        httpServiceSpy.postCreateProduct.and.callFake(() => of(undefined));
 
         component.newProductForm.controls.name.patchValue('new-product');
         component.newProductForm.controls.price.setErrors(['wrong']);

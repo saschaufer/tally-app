@@ -1,0 +1,15 @@
+<h1>Purchase</h1>
+
+<table aria-hidden="true">
+    <tr>
+        <td class="table-row-left">Product:</td>
+        <td class="table-row-right">{{ product?.name }}</td>
+    </tr>
+    <tr>
+        <td class="table-row-left">Price:</td>
+        <td class="table-row-right">{{ product?.price }}</td>
+    </tr>
+
+</table>
+
+<button (click)="onClickPurchase()" class="mt-1_25">Purchase</button>

@@ -492,4 +492,160 @@ class SecurityConfigTest extends SecurityConfigSetup {
 
         verify(handler, times(0)).postUpdateProductPrice(any(ServerRequest.class));
     }
+
+    @Test
+    void postCreatePurchase_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postCreatePurchase(any(ServerRequest.class));
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postCreatePurchase(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreatePurchase_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(NONE, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postCreatePurchase(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreatePurchase_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postCreatePurchase(any(ServerRequest.class));
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postCreatePurchase(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreatePurchase_negative_JwtUserWrongRole() {
+
+        webClient.post().uri("/purchases/create-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(NONE))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postCreatePurchase(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadPurchases_positive_Password() {
+
+        doReturn(ok().build()).when(handler).getReadPurchases(any(ServerRequest.class));
+
+        webClient.get().uri("/purchases")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadPurchases(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadPurchases_negative_PasswordUserWrongRole() {
+
+        webClient.get().uri("/purchases")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(NONE, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadPurchases(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadPurchases_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).getReadPurchases(any(ServerRequest.class));
+
+        webClient.get().uri("/purchases")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadPurchases(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadPurchases_negative_JwtUserWrongRole() {
+
+        webClient.get().uri("/purchases")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(NONE))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadPurchases(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeletePurchase_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postDeletePurchase(any(ServerRequest.class));
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postDeletePurchase(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeletePurchase_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(NONE, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postDeletePurchase(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeletePurchase_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postDeletePurchase(any(ServerRequest.class));
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postDeletePurchase(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeletePurchase_negative_JwtUserWrongRole() {
+
+        webClient.post().uri("/purchases/delete-purchase")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(NONE))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postDeletePurchase(any(ServerRequest.class));
+    }
 }

@@ -1,0 +1,15 @@
+<h1>Purchases</h1>
+
+<div class="nav-top">
+    <a routerLink="/{{routeName.purchases_new}}" class="nav-top-link">New</a>
+</div>
+
+<ul class="list">
+    <li *ngIf="purchases === undefined|| purchases?.length === 0" class="list-item">
+        <p class="text-green text-center">No purchases</p>
+    </li>
+    <li *ngFor="let purchase of purchases; let i = index" (click)="onClick(i)" (keydown)="onClick(i)" class="list-item">
+        <p class="list-item-left">{{ purchase.productName }}</p>
+        <p class="list-item-right">{{ purchase.productPrice }}</p>
+    </li>
+</ul>

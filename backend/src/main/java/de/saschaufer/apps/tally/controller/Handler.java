@@ -3,6 +3,7 @@ package de.saschaufer.apps.tally.controller;
 import de.saschaufer.apps.tally.controller.dto.*;
 import de.saschaufer.apps.tally.persistence.dto.User;
 import de.saschaufer.apps.tally.services.ProductService;
+import de.saschaufer.apps.tally.services.PurchaseService;
 import de.saschaufer.apps.tally.services.UserDetailsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,7 @@ public class Handler {
 
     private final UserDetailsService userDetailsService;
     private final ProductService productService;
+    private final PurchaseService purchaseService;
 
     public Mono<ServerResponse> postLogin(final ServerRequest request) {
 
@@ -120,6 +122,21 @@ public class Handler {
                 .onErrorResume(this::buildErrorResponse);
     }
 
+    public Mono<ServerResponse> postReadProduct(final ServerRequest request) {
+
+        log.atInfo().setMessage("Read product.").log();
+
+        return request.bodyToMono(PostReadProductRequest.class)
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate)
+
+                .flatMap(r -> productService.readProduct(r.id()))
+
+                .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+                .doOnError(e -> log.atError().setMessage("Error reading product.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
     public Mono<ServerResponse> getReadProducts(final ServerRequest request) {
 
         log.atInfo().setMessage("Read products.").log();
@@ -157,6 +174,65 @@ public class Handler {
 
                 .then(Mono.defer(() -> ok().build()))
                 .doOnError(e -> log.atError().setMessage("Error updating product price.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> postCreatePurchase(final ServerRequest request) {
+
+        log.atInfo().setMessage("Create purchase.").log();
+
+        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                .map(auth -> switch (auth.getPrincipal()) {
+                    case UserDetails u -> u.getUsername();
+                    case Jwt j -> j.getSubject();
+                    default ->
+                            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown authentication method");
+                })
+                .flatMap(userDetailsService::findByUsername)
+                .map(u -> (User) u);
+
+        final Mono<PostCreatePurchaseRequest> purchase = request.bodyToMono(PostCreatePurchaseRequest.class)
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate);
+
+        return user.zipWith(purchase, Pair::of)
+                .flatMap(pair -> purchaseService.createPurchase(pair.getFirst().getId(), pair.getSecond().productId()))
+                .then(Mono.defer(() -> ok().build()))
+                .doOnError(e -> log.atError().setMessage("Error creating new purchase.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> getReadPurchases(final ServerRequest request) {
+
+        log.atInfo().setMessage("Read purchases.").log();
+
+        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                .map(auth -> switch (auth.getPrincipal()) {
+                    case UserDetails u -> u.getUsername();
+                    case Jwt j -> j.getSubject();
+                    default ->
+                            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown authentication method");
+                })
+                .flatMap(userDetailsService::findByUsername)
+                .map(u -> (User) u);
+
+        return user.flatMap(u -> purchaseService.readPurchases(u.getId()))
+                .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+                .doOnError(e -> log.atError().setMessage("Error reading purchases.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> postDeletePurchase(final ServerRequest request) {
+
+        log.atInfo().setMessage("Delete purchase.").log();
+
+        final Mono<PostDeletePurchaseRequest> purchase = request.bodyToMono(PostDeletePurchaseRequest.class)
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate);
+
+        return purchase.flatMap(p -> purchaseService.deletePurchase(p.purchaseId()))
+                .then(Mono.defer(() -> ok().build()))
+                .doOnError(e -> log.atError().setMessage("Error deleting purchase.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 

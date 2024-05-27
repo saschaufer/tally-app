@@ -1,0 +1,24 @@
+<h1>New Purchase</h1>
+
+<div class="nav-top">
+    <a routerLink="/{{routeName.purchases}}" class="nav-top-link">Back</a>
+</div>
+
+<form>
+
+    <ul class="list">
+        <li *ngIf="products === undefined|| products?.length === 0" class="list-item">
+            <p class="text-green text-center">No products</p>
+        </li>
+        <li *ngFor="let product of products; let i = index" (click)="onClick(i)" (keydown)="onClick(i)"
+            class="list-item">
+            <p class="list-item-left"
+               [class.list-item-selected-text]="product.id == selectedProduct?.id">{{ product.name }}</p>
+            <p class="list-item-right"
+               [class.list-item-selected-text]="product.id == selectedProduct?.id">{{ product.price }}</p>
+        </li>
+    </ul>
+
+    <button type="submit" (click)="onSubmit()" class="mt-1_25">Purchase</button>
+
+</form>

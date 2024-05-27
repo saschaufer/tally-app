@@ -50,7 +50,7 @@ describe('ProductEditComponent', () => {
 
     it('should change the product name', () => {
 
-        httpServiceSpy.postUpdateProduct.and.callFake(() => of());
+        httpServiceSpy.postUpdateProduct.and.callFake(() => of(undefined));
 
         component.product = {id: 1, name: "product-name", price: Big('123.45')};
         component.changeNameForm.controls.name.patchValue('new-product-name');
@@ -62,7 +62,7 @@ describe('ProductEditComponent', () => {
 
     it('should not change the product name (name wrong)', () => {
 
-        httpServiceSpy.postUpdateProduct.and.callFake(() => of());
+        httpServiceSpy.postUpdateProduct.and.callFake(() => of(undefined));
 
         component.changeNameForm.controls.name.setErrors(['wrong']);
 
@@ -87,7 +87,7 @@ describe('ProductEditComponent', () => {
 
     it('should change the product price', () => {
 
-        httpServiceSpy.postUpdateProductPrice.and.callFake(() => of());
+        httpServiceSpy.postUpdateProductPrice.and.callFake(() => of(undefined));
 
         component.product = {id: 1, name: "product-name", price: Big('123.45')};
         component.changePriceForm.controls.price.patchValue('111');
@@ -99,7 +99,7 @@ describe('ProductEditComponent', () => {
 
     it('should not change the product price (price wrong)', () => {
 
-        httpServiceSpy.postUpdateProductPrice.and.callFake(() => of());
+        httpServiceSpy.postUpdateProductPrice.and.callFake(() => of(undefined));
 
         component.changePriceForm.controls.price.setErrors(['wrong']);
 

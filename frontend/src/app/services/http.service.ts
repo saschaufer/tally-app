@@ -3,6 +3,7 @@ import {inject, Injectable} from '@angular/core';
 import {Observable} from "rxjs";
 import {AuthService} from "./auth.service";
 import {GetProductsResponse} from "./models/GetProductsResponse";
+import {GetPurchasesResponse} from "./models/GetPurchasesResponse";
 import {LoginResponse} from "./models/LoginResponse";
 
 @Injectable({
@@ -57,6 +58,15 @@ export class HttpService {
         return this.httpClient.get<GetProductsResponse[]>("/products", this.httpOptions());
     }
 
+    postReadProduct(id: number): Observable<GetProductsResponse> {
+
+        const body = {
+            id: id
+        };
+
+        return this.httpClient.post<GetProductsResponse>("/products/read-product", body, this.httpOptions());
+    }
+
     postCreateProduct(name: string, price: Big): Observable<void> {
 
         const body = {
@@ -85,6 +95,28 @@ export class HttpService {
         };
 
         return this.httpClient.post<void>("/products/update-price", body, this.httpOptions());
+    }
+
+    getReadPurchases(): Observable<GetPurchasesResponse[]> {
+        return this.httpClient.get<GetPurchasesResponse[]>("/purchases", this.httpOptions());
+    }
+
+    postCreatePurchase(id: number): Observable<void> {
+
+        const body = {
+            productId: id
+        };
+
+        return this.httpClient.post<void>("/purchases/create-purchase", body, this.httpOptions());
+    }
+
+    postDeletePurchase(id: number): Observable<void> {
+
+        const body = {
+            purchaseId: id
+        };
+
+        return this.httpClient.post<void>("/purchases/delete-purchase", body, this.httpOptions());
     }
 
     private httpOptions() {

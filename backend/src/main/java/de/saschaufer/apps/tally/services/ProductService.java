@@ -19,6 +19,18 @@ public class ProductService {
         return persistence.insertProductAndPrice(name, price);
     }
 
+    public Mono<GetProductsResponse> readProduct(final Long productId) {
+        return persistence.selectProduct(productId)
+                .map(product -> {
+
+                    final Long id = product.getT1().getId();
+                    final String name = product.getT1().getName();
+                    final BigDecimal price = product.getT2().getPrice();
+
+                    return new GetProductsResponse(id, name, price);
+                });
+    }
+
     public Mono<List<GetProductsResponse>> readProducts() {
         return persistence.selectProducts()
                 .map(products -> products.stream()

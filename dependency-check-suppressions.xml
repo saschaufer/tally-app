@@ -5,7 +5,7 @@
     <!-- JAVA -->
     <!-- ############### -->
 
-    <suppress until="2024-06-30Z">
+    <suppress until="2024-12-31Z">
         <notes><![CDATA[
             file name: jackson-databind-2.15.4.jar
             To use this vulnerability (stack overflow) there probably already is another stack overflow being used.

@@ -281,6 +281,36 @@ class PersistenceTest {
     }
 
     @Test
+    void selectProduct_positive_ProductExists() {
+
+        final TestData testData = insertTestData();
+
+        Mono.just(testData.product1.getId())
+                .flatMap(persistence::selectProduct)
+                .as(StepVerifier::create)
+                .assertNext(product -> {
+                    assertThat(product.getT1().getId(), is(testData.product1.getId()));
+                    assertThat(product.getT1().getName(), is(testData.product1.getName()));
+                    assertThat(product.getT2().getPrice(), is(testData.productPrice1.getPrice()));
+                    assertThat(product.getT2().getValidUntil(), nullValue());
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void selectProduct_negative_ProductNotExists() {
+
+        final TestData testData = insertTestData();
+
+        Mono.just(testData.product1.getId() - 1)
+                .flatMap(persistence::selectProduct)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("Product not found"))
+                );
+    }
+
+    @Test
     void selectProducts_positive_NoProductsExist() {
 
         persistence.selectProducts()
@@ -482,140 +512,92 @@ class PersistenceTest {
                 .verifyComplete();
     }
 
-    //////
-
     @Test
     void insertPurchase_positive() {
 
-        final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "")
-        ).block()).getId();
+        final TestData testData = insertTestData();
 
-        final Long productPriceId = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
-                .flatMap(product -> template
-                        .insert(new ProductPrice(null, product.getId(), BigDecimal.ONE, null))
-                ).block()).getId();
+        assertCount(Purchase.class, testData.numOfPurchases);
 
-        assertCount(Purchase.class, 0);
-
-        Mono.just(new Purchase(null, userId, productPriceId, LocalDateTime.of(2024, 2, 20, 14, 59, 2)))
-                .flatMap(persistence::insertPurchase)
+        persistence.insertPurchase(testData.user1.getId(), testData.product1.getId())
                 .as(StepVerifier::create)
-                .assertNext(purchase -> {
-                    assertThat(purchase.getId(), notNullValue());
-                    assertThat(purchase.getUserId(), is(userId));
-                    assertThat(purchase.getProductPriceId(), is(productPriceId));
-                    assertThat(purchase.getTimestamp(), is(LocalDateTime.of(2024, 2, 20, 14, 59, 2)));
+                .verifyComplete();
+
+        assertCount(Purchase.class, testData.numOfPurchases + 1);
+    }
+
+    @Test
+    void insertPurchase_negative_ProductPriceNotExist() {
+
+        final TestData testData = insertTestData();
+
+        assertCount(Purchase.class, testData.numOfPurchases);
+
+        persistence.insertPurchase(testData.user1.getId(), testData.product3.getId())
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("Product price not found"))
+                );
+
+        assertCount(Purchase.class, testData.numOfPurchases);
+    }
+
+    @Test
+    void selectPurchases_positive() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectPurchases(testData.user1.getId())
+                .as(StepVerifier::create)
+                .assertNext(purchases -> {
+                    assertThat(purchases.size(), is(3));
+
+                    assertThat(purchases.getFirst().purchaseId(), is(testData.purchase1.getId()));
+                    assertThat(purchases.getFirst().purchaseTimestamp(), is(testData.purchase1.getTimestamp()));
+                    assertThat(purchases.getFirst().productName(), is(testData.product1.getName()));
+                    assertThat(purchases.getFirst().productPrice(), is(testData.productPrice1.getPrice()));
+
+                    assertThat(purchases.get(1).purchaseId(), is(testData.purchase3.getId()));
+                    assertThat(purchases.get(1).purchaseTimestamp(), is(testData.purchase3.getTimestamp()));
+                    assertThat(purchases.get(1).productName(), is(testData.product1.getName()));
+                    assertThat(purchases.get(1).productPrice(), is(testData.productPrice1.getPrice()));
+
+                    assertThat(purchases.getLast().purchaseId(), is(testData.purchase2.getId()));
+                    assertThat(purchases.getLast().purchaseTimestamp(), is(testData.purchase2.getTimestamp()));
+                    assertThat(purchases.getLast().productName(), is(testData.product2.getName()));
+                    assertThat(purchases.getLast().productPrice(), is(testData.productPrice5.getPrice()));
                 })
-                .verifyComplete()
-        ;
-
-        assertCount(Purchase.class, 1);
+                .verifyComplete();
     }
 
     @Test
-    void insertPurchase_negative_DuplicatePrimaryKey() {
+    void deletePurchase_positive() {
 
-        final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "")
-        ).block()).getId();
+        final TestData testData = insertTestData();
 
-        final Long productPriceId = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
-                .flatMap(product -> template
-                        .insert(new ProductPrice(null, product.getId(), BigDecimal.ONE, null))
-                ).block()).getId();
+        assertCount(Purchase.class, testData.numOfPurchases);
 
-        assertCount(Purchase.class, 0);
-
-        Mono.just(new Purchase(1L, userId, productPriceId, LocalDateTime.of(2024, 2, 20, 14, 59, 2)))
-                .flatMap(persistence::insertPurchase)
-                .flatMap(persistence::insertPurchase)
+        persistence.deletePurchase(testData.purchase1.getId())
                 .as(StepVerifier::create)
-                .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("Unique index or primary key violation: \"PRIMARY KEY ON PUBLIC.PURCHASES(ID)"))
-                )
-        ;
+                .verifyComplete();
 
-        assertCount(Purchase.class, 1);
+        assertCount(Purchase.class, testData.numOfPurchases - 1);
     }
 
     @Test
-    void insertPurchase_negative_UserIdNull() {
+    void deletePurchase_negative_PurchaseIdNotExist() {
 
-        final Long productPriceId = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
-                .flatMap(product -> template
-                        .insert(new ProductPrice(null, product.getId(), BigDecimal.ONE, null))
-                ).block()).getId();
+        final TestData testData = insertTestData();
 
-        assertCount(Purchase.class, 0);
+        assertCount(Purchase.class, testData.numOfPurchases);
 
-        Mono.just(new Purchase(1L, null, productPriceId, LocalDateTime.of(2024, 2, 20, 14, 59, 2)))
-                .flatMap(persistence::insertPurchase)
+        persistence.deletePurchase(testData.purchase1.getId() - 1)
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("NULL not allowed for column \"USER_ID\""))
-                )
-        ;
+                        assertThat(error.getMessage(), containsString("Purchase not deleted"))
+                );
 
-        assertCount(Purchase.class, 0);
-    }
-
-    @Test
-    void insertPurchase_negative_ProductIdNull() {
-
-        final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "")
-        ).block()).getId();
-
-        assertCount(Purchase.class, 0);
-
-        Mono.just(new Purchase(1L, userId, null, LocalDateTime.of(2024, 2, 20, 14, 59, 2)))
-                .flatMap(persistence::insertPurchase)
-                .as(StepVerifier::create)
-                .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("NULL not allowed for column \"PRODUCT_PRICE_ID\""))
-                )
-        ;
-
-        assertCount(Purchase.class, 0);
-    }
-
-    @ParameterizedTest
-    @MethodSource
-    void insertPurchase_negative_NullNotAllowed(final Purchase purchase, final String errorMessage) {
-
-        final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "")
-        ).block()).getId();
-
-        final Long productPriceId = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
-                .flatMap(product -> template
-                        .insert(new ProductPrice(null, product.getId(), BigDecimal.ONE, null))
-                ).block()).getId();
-
-        purchase.setUserId(userId);
-        purchase.setProductPriceId(productPriceId);
-
-        assertCount(Purchase.class, 0);
-
-        Mono.just(purchase)
-                .flatMap(persistence::insertPurchase)
-                .as(StepVerifier::create)
-                .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString(errorMessage))
-                )
-        ;
-
-        assertCount(Purchase.class, 0);
-    }
-
-    static Stream<Arguments> insertPurchase_negative_NullNotAllowed() {
-        return Stream.of(
-                Arguments.of(
-                        new Purchase(null, null, null, null),
-                        "NULL not allowed for column \"TIMESTAMP\""
-                )
-        );
+        assertCount(Purchase.class, testData.numOfPurchases);
     }
 
     @Test
@@ -721,5 +703,74 @@ class PersistenceTest {
                 .expectNext(count)
                 .verifyComplete()
         ;
+    }
+
+    private TestData insertTestData() {
+
+        final TestData testData = new TestData();
+
+        testData.numOfUsers = 2;
+        testData.user1 = template.insert(new User(null, "Alice", "password", "roles")).block();
+        testData.user2 = template.insert(new User(null, "Bob", "password", "roles")).block();
+
+        testData.numOfProducts = 2;
+        testData.product1 = template.insert(new Product(null, "Coffee")).block();
+        testData.product2 = template.insert(new Product(null, "Tea")).block();
+        testData.product3 = template.insert(new Product(null, "Soda")).block();
+
+        testData.numOfProductPrices = 7;
+        testData.productPrice1 = template.insert(new ProductPrice(null, testData.product1.getId(), new BigDecimal("0.30"), null)).block();
+        testData.productPrice2 = template.insert(new ProductPrice(null, testData.product1.getId(), new BigDecimal("0.20"), LocalDateTime.of(2024, 5, 19, 23, 54, 1))).block();
+        testData.productPrice3 = template.insert(new ProductPrice(null, testData.product1.getId(), new BigDecimal("0.10"), LocalDateTime.of(2024, 5, 20, 10, 23, 45))).block();
+
+        testData.productPrice4 = template.insert(new ProductPrice(null, testData.product2.getId(), new BigDecimal("0.50"), null)).block();
+        testData.productPrice5 = template.insert(new ProductPrice(null, testData.product2.getId(), new BigDecimal("0.45"), LocalDateTime.of(2024, 5, 19, 13, 41, 53))).block();
+        testData.productPrice6 = template.insert(new ProductPrice(null, testData.product2.getId(), new BigDecimal("0.40"), LocalDateTime.of(2024, 5, 20, 21, 32, 24))).block();
+
+        testData.productPrice7 = template.insert(new ProductPrice(null, testData.product3.getId(), new BigDecimal("0.60"), LocalDateTime.of(2024, 5, 20, 15, 10, 56))).block();
+
+        testData.numOfPurchases = 6;
+        testData.purchase1 = template.insert(new Purchase(null, testData.user1.getId(), testData.productPrice1.getId(), LocalDateTime.of(2024, 5, 23, 12, 45, 31))).block();
+        testData.purchase2 = template.insert(new Purchase(null, testData.user1.getId(), testData.productPrice5.getId(), LocalDateTime.of(2024, 5, 23, 16, 32, 53))).block();
+        testData.purchase3 = template.insert(new Purchase(null, testData.user1.getId(), testData.productPrice1.getId(), LocalDateTime.of(2024, 5, 23, 21, 51, 13))).block();
+
+        testData.purchase4 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice4.getId(), LocalDateTime.of(2024, 5, 23, 18, 13, 53))).block();
+        testData.purchase5 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice1.getId(), LocalDateTime.of(2024, 5, 23, 17, 24, 17))).block();
+        testData.purchase6 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice2.getId(), LocalDateTime.of(2024, 5, 23, 12, 36, 24))).block();
+
+        return testData;
+    }
+
+    private class TestData {
+
+        Integer numOfUsers;
+        Integer numOfProducts;
+        Integer numOfProductPrices;
+        Integer numOfPurchases;
+
+        User user1;
+        User user2;
+
+        Product product1;
+        Product product2;
+        Product product3;
+
+        ProductPrice productPrice1;
+        ProductPrice productPrice2;
+        ProductPrice productPrice3;
+
+        ProductPrice productPrice4;
+        ProductPrice productPrice5;
+        ProductPrice productPrice6;
+
+        ProductPrice productPrice7;
+
+        Purchase purchase1;
+        Purchase purchase2;
+        Purchase purchase3;
+
+        Purchase purchase4;
+        Purchase purchase6;
+        Purchase purchase5;
     }
 }

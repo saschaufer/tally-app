@@ -56,6 +56,43 @@ class ProductServiceTest {
     }
 
     @Test
+    void readProduct_positive() {
+
+        doReturn(Mono.just(
+                Tuples.of(
+                        new Product(2L, "test-name-1"),
+                        new ProductPrice(3L, null, BigDecimal.ONE, null)
+                )
+        )).when(persistence).selectProduct(any(Long.class));
+
+        productService.readProduct(2L)
+                .as(StepVerifier::create)
+                .assertNext(product -> {
+                    assertThat(product.id(), is(2L));
+                    assertThat(product.name(), is("test-name-1"));
+                    assertThat(product.price(), is(BigDecimal.ONE));
+                })
+                .verifyComplete();
+
+        verify(persistence, times(1)).selectProduct(2L);
+    }
+
+    @Test
+    void readProduct_negative() {
+
+        doReturn(Mono.error(new RuntimeException("Error"))).when(persistence).selectProduct(any(Long.class));
+
+        productService.readProduct(2L)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(RuntimeException.class));
+                    assertThat(error.getMessage(), containsString("Error"));
+                });
+
+        verify(persistence, times(1)).selectProduct(2L);
+    }
+
+    @Test
     void readProducts_positive() {
 
         doReturn(Mono.just(List.of(

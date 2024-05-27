@@ -9,6 +9,9 @@ import {routeName} from "./app.routes";
 import {ProductEditComponent} from "./components/products/product-edit/product-edit.component";
 import {ProductNewComponent} from "./components/products/product-new/product-new.component";
 import {ProductsComponent} from "./components/products/products.component";
+import {PurchaseDeleteComponent} from "./components/purchases/purchase-delete/purchase-delete.component";
+import {PurchaseNewComponent} from "./components/purchases/purchase-new/purchase-new.component";
+import {PurchasesComponent} from "./components/purchases/purchases.component";
 import {RegisterComponent} from "./components/register/register.component";
 import {LoginDetailsComponent} from "./components/settings/login-details/login-details.component";
 import {SettingsComponent} from "./components/settings/settings.component";
@@ -33,7 +36,10 @@ describe('AppComponent', () => {
                     {path: routeName.settings, component: MockComponent(SettingsComponent)},
                     {path: routeName.products, component: MockComponent(ProductsComponent)},
                     {path: routeName.products_new, component: MockComponent(ProductNewComponent)},
-                    {path: routeName.products_edit, component: MockComponent(ProductEditComponent)}
+                    {path: routeName.products_edit, component: MockComponent(ProductEditComponent)},
+                    {path: routeName.purchases, component: MockComponent(PurchasesComponent)},
+                    {path: routeName.purchases_delete, component: MockComponent(PurchaseDeleteComponent)},
+                    {path: routeName.purchases_new, component: MockComponent(PurchaseNewComponent)}
                 ]),
                 provideLocationMocks()
             ]
@@ -91,6 +97,24 @@ describe('AppComponent', () => {
 
         zone.run(() => {
             routerHarness.navigateByUrl('/' + routeName.products_edit);
+            tick(1);
+        });
+        expect(component.showNavBar()).toBeTruthy()
+
+        zone.run(() => {
+            routerHarness.navigateByUrl('/' + routeName.purchases);
+            tick(1);
+        });
+        expect(component.showNavBar()).toBeTruthy()
+
+        zone.run(() => {
+            routerHarness.navigateByUrl('/' + routeName.purchases_delete);
+            tick(1);
+        });
+        expect(component.showNavBar()).toBeTruthy()
+
+        zone.run(() => {
+            routerHarness.navigateByUrl('/' + routeName.purchases_new);
             tick(1);
         });
         expect(component.showNavBar()).toBeTruthy()
