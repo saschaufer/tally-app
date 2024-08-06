@@ -73,7 +73,7 @@ export class AuthService {
         const now = new Date();
 
         return {
-            username: decodedJwt.sub,
+            email: decodedJwt.sub,
             issuedAt: decodedJwt.iat * 1000,
             expiresAt: decodedJwt.exp * 1000,
             expiresLeft: expire.getTime() - now.getTime(),

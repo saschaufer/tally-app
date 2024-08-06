@@ -14,13 +14,13 @@ export class HttpService {
     private httpClient = inject(HttpClient);
     private authService = inject(AuthService);
 
-    postLogin(username: string, password: string): Observable<LoginResponse> {
+    postLogin(email: string, password: string): Observable<LoginResponse> {
 
         const httpOptions = {
             headers: {
                 // Prevent Browsers from pop up a login window if response is 401
                 'X-Requested-With': 'XMLHttpRequest',
-                Authorization: 'Basic ' + window.btoa(username + ':' + password)
+                Authorization: 'Basic ' + window.btoa(email + ':' + password)
             },
             responseType: 'json' as const
         };
@@ -28,7 +28,7 @@ export class HttpService {
         return this.httpClient.post<LoginResponse>("/login", null, httpOptions);
     }
 
-    postRegisterNewUser(username: string, password: string, invitationCode: string): Observable<void> {
+    postRegisterNewUser(email: string, password: string, invitationCode: string): Observable<void> {
 
         const httpOptions = {
             headers: {
@@ -39,7 +39,7 @@ export class HttpService {
         };
 
         const body = {
-            username: username,
+            email: email,
             password: password
         };
 

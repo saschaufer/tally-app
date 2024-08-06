@@ -1,3 +1,4 @@
+import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Component, inject, NgZone} from '@angular/core';
 import {
@@ -18,7 +19,8 @@ import {HttpService} from "../../services/http.service";
     standalone: true,
     imports: [
         ReactiveFormsModule,
-        RouterLink
+        RouterLink,
+        NgIf
     ],
     templateUrl: './register.component.html',
     styles: ``
@@ -42,23 +44,30 @@ export class RegisterComponent {
     };
 
     readonly registerForm = new FormGroup({
-        username: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
+        email: new FormControl('', {
+            nonNullable: true,
+            validators: [Validators.required, Validators.pattern('.+@.+\\..+')]
+        }),
         password: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
         passwordRepeat: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
         invitationCode: new FormControl('', {nonNullable: true, validators: [Validators.required]})
     }, {validators: this.passwordsMatch});
 
+    emailInvalid: boolean = false;
+
     onSubmit() {
+
+        this.emailInvalid = this.registerForm.get('email')!.hasError('pattern');
 
         if (this.registerForm.valid) {
 
-            const username = this.registerForm.controls.username.value;
+            const email = this.registerForm.controls.email.value;
             const password = this.registerForm.controls.password.value;
             const invitationCode = this.registerForm.controls.invitationCode.value;
 
             this.registerForm.reset();
 
-            this.httpService.postRegisterNewUser(username, password, invitationCode)
+            this.httpService.postRegisterNewUser(email, password, invitationCode)
                 .subscribe({
                     next: () => {
                         console.log("Register successful");

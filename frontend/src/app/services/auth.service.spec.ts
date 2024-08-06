@@ -9,7 +9,7 @@ describe('AuthService', () => {
 
     let authService: AuthService;
     let cookieServiceSpy: SpyObj<CookieService>;
-    const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0YWxseS5iYWNrZW5kIiwic3ViIjoidXNlciIsImF1ZCI6InRhbGx5LmFwcCIsImV4cCI6MTcxNTg0NzQ4NSwiaWF0IjoxNzE1ODExNDg1LCJhdXRob3JpdGllcyI6WyJ1c2VyIiwiYWRtaW4iXX0.cwSUKr7CWQ8xIGAJCN8lhtSuSbUW5qEPdl1jlLlEAeI';
+    const jwt: string = 'eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0YWxseS5iYWNrZW5kIiwic3ViIjoidXNlckBtYWlsLmNvbSIsImF1ZCI6InRhbGx5LmFwcCIsImV4cCI6MTcyMzQ0NzIzNSwiaWF0IjoxNzIzNDExMjM1LCJhdXRob3JpdGllcyI6WyJ1c2VyIiwiYWRtaW4iXX0.14_pdR8v1gdJwVwdlMBuuJTVPqyGugClnmKOD75m9aE';
 
     beforeEach(() => {
         TestBed.configureTestingModule({
@@ -50,7 +50,7 @@ describe('AuthService', () => {
         expect(cookieServiceSpy.set).toHaveBeenCalledOnceWith('TALLY_JWT', jwt, {
             sameSite: "Strict",
             secure: false,
-            expires: new Date(1715847485 * 1000),
+            expires: new Date(1723447235 * 1000),
         });
         expect(cookieServiceSpy.check).toHaveBeenCalledOnceWith('TALLY_JWT');
         expect(authService.isAuthenticated).toHaveBeenCalled();
@@ -67,7 +67,7 @@ describe('AuthService', () => {
         expect(cookieServiceSpy.set).toHaveBeenCalledOnceWith('TALLY_JWT', jwt, {
             sameSite: "Strict",
             secure: true,
-            expires: new Date(1715847485 * 1000),
+            expires: new Date(1723447235 * 1000),
         });
         expect(cookieServiceSpy.check).toHaveBeenCalledOnceWith('TALLY_JWT');
         expect(authService.isAuthenticated).toHaveBeenCalled();
@@ -97,9 +97,9 @@ describe('AuthService', () => {
 
         const now = new Date().getTime();
 
-        expect(result.username).toBe('user');
-        expect(result.issuedAt).toBe(1715811485000);
-        expect(result.expiresAt).toBe(1715847485000);
+        expect(result.email).toBe('user@mail.com');
+        expect(result.issuedAt).toBe(1723411235000);
+        expect(result.expiresAt).toBe(1723447235000);
         expect(result.expiresLeft).toBeLessThan(result.expiresAt - now + 1);
         expect(result.expiresLeft).toBeGreaterThan(result.expiresAt - now - 1);
         expect(result.authorities).toEqual([role.user, role.admin]);

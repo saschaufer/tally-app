@@ -59,20 +59,20 @@ describe('LoginComponent', () => {
         routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
         component.loginForm.setValue({
-            username: 'test-username',
+            email: 'test-username@mail.com',
             password: 'test-password'
         })
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username', 'test-password');
+        expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password');
         expect(authServiceSpy.setJwt).toHaveBeenCalledOnceWith('my-jwt', true);
         expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.settings]);
     });
 
-    it('should not navigate to ' + routeName.settings + ' (username wrong)', () => {
+    it('should not navigate to ' + routeName.settings + ' (email wrong)', () => {
 
-        component.loginForm.controls.username.setErrors(['wrong']);
+        component.loginForm.controls.email.setErrors(['wrong']);
         component.loginForm.controls.password.patchValue('test-password');
 
         component.onSubmit();
@@ -84,7 +84,7 @@ describe('LoginComponent', () => {
 
     it('should not navigate to ' + routeName.settings + ' (password wrong)', () => {
 
-        component.loginForm.controls.username.patchValue('test-username');
+        component.loginForm.controls.email.patchValue('test-username@mail.com');
         component.loginForm.controls.password.setErrors(['wrong']);
 
         component.onSubmit();
@@ -101,13 +101,13 @@ describe('LoginComponent', () => {
         );
 
         component.loginForm.setValue({
-            username: 'test-username',
+            email: 'test-username@mail.com',
             password: 'test-password'
         })
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username', 'test-password');
+        expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password');
         expect(authServiceSpy.setJwt).not.toHaveBeenCalled();
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
@@ -122,13 +122,13 @@ describe('LoginComponent', () => {
         authServiceSpy.setJwt.and.returnValue(false);
 
         component.loginForm.setValue({
-            username: 'test-username',
+            email: 'test-username@mail.com',
             password: 'test-password'
         })
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username', 'test-password');
+        expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password');
         expect(authServiceSpy.setJwt).toHaveBeenCalledOnceWith('my-jwt', true);
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });

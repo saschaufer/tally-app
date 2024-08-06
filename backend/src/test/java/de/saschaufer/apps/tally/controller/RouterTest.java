@@ -57,7 +57,7 @@ class RouterTest extends SecurityConfigSetup {
 
         webClient.post().uri("/register")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
-                .body(Mono.just(new PostRegisterNewUserRequest("test-user", "test-password")), PostRegisterNewUserRequest.class)
+                .body(Mono.just(new PostRegisterNewUserRequest("test-user@mail.com", "test-password")), PostRegisterNewUserRequest.class)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody().isEmpty();
@@ -73,7 +73,7 @@ class RouterTest extends SecurityConfigSetup {
 
         verify(userDetailsService).createUser(argumentCaptorUsername.capture(), argumentCaptorPassword.capture(), argumentCaptorRoles.capture());
 
-        assertThat(argumentCaptorUsername.getValue(), is("test-user"));
+        assertThat(argumentCaptorUsername.getValue(), is("test-user@mail.com"));
         assertThat(argumentCaptorPassword.getValue(), is("test-password"));
         assertThat(argumentCaptorRoles.getValue(), containsInAnyOrder(USER));
     }
@@ -116,7 +116,7 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isBadRequest()
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).isEqualTo("Username is required");
+                .expectBody(String.class).isEqualTo("Email is required");
 
         verify(userDetailsService, times(1)).findByUsername(any(String.class));
         verify(userDetailsService, times(0)).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
@@ -129,7 +129,7 @@ class RouterTest extends SecurityConfigSetup {
 
         webClient.post().uri("/register")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
-                .body(Mono.just(new PostRegisterNewUserRequest("test-user", "test-password")), PostRegisterNewUserRequest.class)
+                .body(Mono.just(new PostRegisterNewUserRequest("test-user@mail.com", "test-password")), PostRegisterNewUserRequest.class)
                 .exchange()
                 .expectStatus().is5xxServerError()
                 .expectBody().isEmpty();
@@ -145,7 +145,7 @@ class RouterTest extends SecurityConfigSetup {
 
         webClient.post().uri("/register")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
-                .body(Mono.just(new PostRegisterNewUserRequest("test-user", "test-password")), PostRegisterNewUserRequest.class)
+                .body(Mono.just(new PostRegisterNewUserRequest("test-user@mail.com", "test-password")), PostRegisterNewUserRequest.class)
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.I_AM_A_TEAPOT)
                 .expectBody(String.class).isEqualTo("Bad");

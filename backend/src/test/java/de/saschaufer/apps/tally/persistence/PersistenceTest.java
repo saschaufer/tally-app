@@ -68,12 +68,12 @@ class PersistenceTest {
 
         assertCount(User.class, 0);
 
-        Mono.just(new User(null, "test-username", "test-password", "test-role"))
+        Mono.just(new User(null, "test-username@mail.com", "test-password", "test-role"))
                 .flatMap(persistence::insertUser)
                 .as(StepVerifier::create)
                 .assertNext(user -> {
                     assertThat(user.getId(), notNullValue());
-                    assertThat(user.getUsername(), is("test-username"));
+                    assertThat(user.getUsername(), is("test-username@mail.com"));
                     assertThat(user.getPassword(), is("test-password"));
                     assertThat(user.getRoles(), is("test-role"));
                 })
@@ -121,7 +121,7 @@ class PersistenceTest {
         return Stream.of(
                 Arguments.of(
                         new User(null, null, "", ""),
-                        "NULL not allowed for column \"USERNAME\""
+                        "NULL not allowed for column \"EMAIL\""
                 ),
                 Arguments.of(
                         new User(null, "", null, ""),
@@ -138,7 +138,7 @@ class PersistenceTest {
     void selectUser_positive_UserExists() {
 
         final String username = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "test-username", "test-password", "test-role")
+                new User(null, "test-username@mail.com", "test-password", "test-role")
         ).block()).getUsername();
 
         Mono.just(username)
@@ -146,7 +146,7 @@ class PersistenceTest {
                 .as(StepVerifier::create)
                 .assertNext(user -> {
                     assertThat(user.getId(), notNullValue());
-                    assertThat(user.getUsername(), is("test-username"));
+                    assertThat(user.getUsername(), is("test-username@mail.com"));
                     assertThat(user.getPassword(), is("test-password"));
                     assertThat(user.getRoles(), is("test-role"));
                 })
@@ -156,7 +156,7 @@ class PersistenceTest {
     @Test
     void selectUser_negative_UserNotExists() {
 
-        Mono.just("username")
+        Mono.just("username@mail.com")
                 .flatMap(persistence::selectUser)
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error ->
@@ -168,7 +168,7 @@ class PersistenceTest {
     void existsUser_positive_UserExists() {
 
         final String username = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "test-username", "test-password", "test-role")
+                new User(null, "test-username@mail.com", "test-password", "test-role")
         ).block()).getUsername();
 
         Mono.just(username)
@@ -181,7 +181,7 @@ class PersistenceTest {
     @Test
     void existsUser_positive_UserNotExists() {
 
-        Mono.just("username")
+        Mono.just("username@mail.com")
                 .flatMap(persistence::existsUser)
                 .as(StepVerifier::create)
                 .assertNext(exists -> assertThat(exists, is(false)))
@@ -192,7 +192,7 @@ class PersistenceTest {
     void updateUserPassword_positive_UserExists() {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "test-username", "test-password", "test-role")
+                new User(null, "test-username@mail.com", "test-password", "test-role")
         ).block()).getId();
 
         Mono.just(userId)
@@ -201,12 +201,12 @@ class PersistenceTest {
                 .expectNext()
                 .verifyComplete();
 
-        Mono.just("test-username")
+        Mono.just("test-username@mail.com")
                 .flatMap(persistence::selectUser)
                 .as(StepVerifier::create)
                 .assertNext(user -> {
                     assertThat(user.getId(), notNullValue());
-                    assertThat(user.getUsername(), is("test-username"));
+                    assertThat(user.getUsername(), is("test-username@mail.com"));
                     assertThat(user.getPassword(), is("test-password-changed"));
                     assertThat(user.getRoles(), is("test-role"));
                 })
@@ -710,8 +710,8 @@ class PersistenceTest {
         final TestData testData = new TestData();
 
         testData.numOfUsers = 2;
-        testData.user1 = template.insert(new User(null, "Alice", "password", "roles")).block();
-        testData.user2 = template.insert(new User(null, "Bob", "password", "roles")).block();
+        testData.user1 = template.insert(new User(null, "Alice@mail.com", "password", "roles")).block();
+        testData.user2 = template.insert(new User(null, "Bob@mail.com", "password", "roles")).block();
 
         testData.numOfProducts = 2;
         testData.product1 = template.insert(new Product(null, "Coffee")).block();

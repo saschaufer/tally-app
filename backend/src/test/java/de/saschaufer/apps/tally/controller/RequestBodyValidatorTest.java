@@ -21,11 +21,11 @@ class RequestBodyValidatorTest {
     @Test
     void validatePostRegisterNewUser_positive() {
 
-        Mono.just(new PostRegisterNewUserRequest("user", "password"))
+        Mono.just(new PostRegisterNewUserRequest("user@mail.com", "password"))
                 .flatMap(RequestBodyValidator::validate)
                 .as(StepVerifier::create)
                 .assertNext(request -> {
-                    assertThat(request.username(), is("user"));
+                    assertThat(request.email(), is("user@mail.com"));
                     assertThat(request.password(), is("password"));
                 })
                 .verifyComplete();
@@ -52,20 +52,25 @@ class RequestBodyValidatorTest {
                 Arguments.of(
                         new PostRegisterNewUserRequest(null, "password"),
                         HttpStatus.BAD_REQUEST,
-                        "Username is required"
+                        "Email is required"
                 ),
                 Arguments.of(
                         new PostRegisterNewUserRequest("\t\r\n  ", "password"),
                         HttpStatus.BAD_REQUEST,
-                        "Username is required"
+                        "Email is required"
                 ),
                 Arguments.of(
-                        new PostRegisterNewUserRequest("user", null),
+                        new PostRegisterNewUserRequest("not an email", "password"),
+                        HttpStatus.BAD_REQUEST,
+                        "Must be a valid email address"
+                ),
+                Arguments.of(
+                        new PostRegisterNewUserRequest("user@mail.com", null),
                         HttpStatus.BAD_REQUEST,
                         "Password is required"
                 ),
                 Arguments.of(
-                        new PostRegisterNewUserRequest("user", "\t\r\n  "),
+                        new PostRegisterNewUserRequest("user@mail.com", "\t\r\n  "),
                         HttpStatus.BAD_REQUEST,
                         "Password is required"
                 )

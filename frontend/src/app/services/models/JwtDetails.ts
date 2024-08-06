@@ -1,5 +1,5 @@
 export type JwtDetails = {
-    readonly username: string,
+    readonly email: string,
     readonly issuedAt: number,
     readonly expiresAt: number,
     readonly expiresLeft: number,

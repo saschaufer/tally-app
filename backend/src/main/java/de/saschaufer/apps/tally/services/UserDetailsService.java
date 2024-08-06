@@ -1,5 +1,6 @@
 package de.saschaufer.apps.tally.services;
 
+import de.saschaufer.apps.tally.config.admin.AdminProperties;
 import de.saschaufer.apps.tally.config.security.JwtProperties;
 import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import de.saschaufer.apps.tally.management.UserAgent;
@@ -24,6 +25,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -34,13 +36,14 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
 
     private final Persistence persistence;
     private final JwtProperties jwtProperties;
+    private final AdminProperties adminProperties;
     private final JwtEncoder jwtEncoder;
     private final UserAgent userAgent;
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public Mono<UserDetails> findByUsername(final String username) {
-        return persistence.selectUser(username)
+    public Mono<UserDetails> findByUsername(final String email) {
+        return persistence.selectUser(email)
                 .onErrorMap(err -> new BadCredentialsException("Error finding user", err))
                 .doOnError(err -> log.atError().setMessage("Error finding user.").setCause(err).log())
                 .doOnSuccess(user -> log.atInfo().setMessage("User found.").log())
@@ -74,8 +77,13 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
 
     public PostLoginResponse createJwtToken(final User user) {
 
-        final String username = user.getUsername();
-        final List<String> authorities = user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
+        final List<String> authorities = new ArrayList<>(user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList());
+
+        if (adminProperties.emails().contains(user.getEmail())) {
+            authorities.add(User.Role.ADMIN);
+        }
+
+        final String email = user.getEmail();
         final String issuer = jwtProperties.issuer() == null ? userAgent.getHostName() : jwtProperties.issuer();
         final String audience = jwtProperties.audience() == null ? userAgent.getAppName() : jwtProperties.audience();
         final Instant issuedAt = Instant.now();
@@ -85,7 +93,7 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                 .audience(List.of(audience))
                 .issuedAt(issuedAt)
                 .expiresAt(issuedAt.plusSeconds(36000L)) // 10h
-                .subject(username)
+                .subject(email)
                 .claim("authorities", authorities)
                 .build();
 
@@ -96,17 +104,17 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
         return new PostLoginResponse(jwt, jwtProperties.secure());
     }
 
-    public Mono<User> createUser(final String username, final String password, final List<String> roles) {
+    public Mono<User> createUser(final String email, final String password, final List<String> roles) {
 
         final User user = new User();
-        user.setUsername(username);
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setRoles(String.join(",", roles));
 
-        return persistence.existsUser(username)
+        return persistence.existsUser(email)
                 .flatMap(found -> {
                     if (found.equals(Boolean.TRUE)) {
-                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Username is taken"));
+                        return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email is taken"));
                     }
 
                     return Mono.just(user)
@@ -114,26 +122,9 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                 });
     }
 
-    public void createAdminIfNotExists() {
-
-        createUserIfNotExists("admin", String.join(",", User.Role.USER, User.Role.ADMIN))
-                .subscribe(
-                        password -> log.atInfo().setMessage("Created admin user 'admin' with password: {}").addArgument(password).log(),
-                        error -> log.atInfo().setMessage("Error creating admin user if not exists.").setCause(error).log()
-                );
-    }
-
     public void createInvitationCodeIfNoneExists() {
 
-        createUserIfNotExists("invitation-code", User.Role.INVITATION)
-                .subscribe(
-                        password -> log.atInfo().setMessage("Invitation code created: {}").addArgument(password).log(),
-                        error -> log.atInfo().setMessage("Error creating invitation code if not exists.").setCause(error).log()
-                );
-    }
-
-    private Mono<String> createUserIfNotExists(final String username, final String roles) {
-        return persistence.existsUser(username)
+        persistence.existsUser("invitation-code")
                 .flatMap(found -> {
                     if (found.equals(Boolean.TRUE)) {
                         return Mono.empty();
@@ -142,13 +133,17 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                     final String password = UUID.randomUUID().toString();
 
                     final User user = new User();
-                    user.setUsername(username);
+                    user.setEmail("invitation-code");
                     user.setPassword(passwordEncoder.encode(password));
-                    user.setRoles(roles);
+                    user.setRoles(User.Role.INVITATION);
 
                     return Mono.just(user)
                             .flatMap(persistence::insertUser)
                             .map(u -> password);
-                });
+                })
+                .subscribe(
+                        password -> log.atInfo().setMessage("Invitation code created: {}").addArgument(password).log(),
+                        error -> log.atInfo().setMessage("Error creating invitation code if not exists.").setCause(error).log()
+                );
     }
 }

@@ -18,7 +18,7 @@ describe('LoginDetailsComponent', () => {
     let authServiceSpy: SpyObj<AuthService>;
 
     const jwtDetails = {
-        username: "user",
+        email: "user@mail.com",
         issuedAt: 1715811485000,
         expiresAt: 1715847485000,
         expiresLeft: 1715847485000 - 1715811485000,

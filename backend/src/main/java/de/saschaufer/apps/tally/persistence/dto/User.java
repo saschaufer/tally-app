@@ -29,7 +29,7 @@ public class User implements UserDetails {
 
     @Id
     private Long id;
-    private String username;
+    private String email;
     private String password;
     private String roles;
 
@@ -38,6 +38,11 @@ public class User implements UserDetails {
         return Arrays.stream(this.roles.split(","))
                 .map(SimpleGrantedAuthority::new)
                 .toList();
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
     }
 
     @Override

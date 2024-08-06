@@ -20,7 +20,6 @@ public class EventHandler {
 
         log.atInfo().setMessage("Ready. I am {}.").addArgument(userAgent.getFullName()).log();
 
-        userDetailsService.createAdminIfNotExists();
         userDetailsService.createInvitationCodeIfNoneExists();
     }
 }

@@ -1,3 +1,4 @@
+import {NgIf} from "@angular/common";
 import {Component, inject, NgZone} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {Router, RouterLink} from "@angular/router";
@@ -11,7 +12,8 @@ import {HttpService} from "../../services/http.service";
     standalone: true,
     imports: [
         ReactiveFormsModule,
-        RouterLink
+        RouterLink,
+        NgIf
     ],
     templateUrl: './login.component.html',
     styles: ``
@@ -26,20 +28,27 @@ export class LoginComponent {
     private zone = inject(NgZone);
 
     readonly loginForm = new FormGroup({
-        username: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
+        email: new FormControl('', {
+            nonNullable: true,
+            validators: [Validators.required, Validators.pattern('.+@.+\\..+')]
+        }),
         password: new FormControl('', {nonNullable: true, validators: [Validators.required]})
     });
 
+    emailInvalid: boolean = false;
+
     onSubmit() {
+
+        this.emailInvalid = this.loginForm.get('email')!.hasError('pattern');
 
         if (this.loginForm.valid) {
 
-            const username = this.loginForm.controls.username.value;
+            const email = this.loginForm.controls.email.value;
             const password = this.loginForm.controls.password.value;
 
             this.loginForm.reset();
 
-            this.httpService.postLogin(username, password)
+            this.httpService.postLogin(email, password)
                 .subscribe({
                     next: (loginResponse) => {
                         if (this.authService.setJwt(loginResponse.jwt, loginResponse.secure)) {

@@ -43,7 +43,7 @@ public class DbConfig {
 
                 create table if not exists users (
                     id serial primary key,
-                    username varchar not null unique,
+                    email varchar not null unique,
                     password varchar not null,
                     roles varchar not null
                 );

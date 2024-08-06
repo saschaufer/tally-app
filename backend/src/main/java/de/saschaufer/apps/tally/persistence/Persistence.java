@@ -31,13 +31,13 @@ public class Persistence {
         return Mono.just(user).flatMap(template::insert);
     }
 
-    public Mono<User> selectUser(final String username) {
-        return template.selectOne(query(where("username").is(username)), User.class)
+    public Mono<User> selectUser(final String email) {
+        return template.selectOne(query(where("email").is(email)), User.class)
                 .switchIfEmpty(Mono.error(new RuntimeException("User not found")));
     }
 
-    public Mono<Boolean> existsUser(final String username) {
-        return template.exists(query(where("username").is(username)), User.class);
+    public Mono<Boolean> existsUser(final String email) {
+        return template.exists(query(where("email").is(email)), User.class);
     }
 
     public Mono<Void> updateUserPassword(final Long id, final String newPassword) {

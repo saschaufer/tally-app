@@ -3,6 +3,14 @@
 
 server.port: 8000
 
+# Admin
+# ==================================================================
+
+# Configure the admins via their emails
+admin.emails:
+# - "admin1@mail.com"
+# - "admin2@mail.com"
+
 # Database
 # ==================================================================
 
@@ -32,7 +40,7 @@ jwt:
   audience: tally.app
 
   # The secret key to sign the JWT with
-  key: SomeMoreThen30CharactersLongString
+  key: SomeMoreThan30CharactersLongString
 
   # Accept the JWT only if sent via HTTPS?
   secure: false

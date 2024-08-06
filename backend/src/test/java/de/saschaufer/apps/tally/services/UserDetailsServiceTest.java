@@ -1,5 +1,6 @@
 package de.saschaufer.apps.tally.services;
 
+import de.saschaufer.apps.tally.config.admin.AdminProperties;
 import de.saschaufer.apps.tally.config.security.JwtProperties;
 import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import de.saschaufer.apps.tally.management.UserAgent;
@@ -32,6 +33,7 @@ class UserDetailsServiceTest {
 
     private Persistence persistence;
     private JwtProperties jwtProperties;
+    private AdminProperties adminProperties;
     private JwtEncoder jwtEncoder;
     private UserAgent userAgent;
     private PasswordEncoder passwordEncoder;
@@ -41,16 +43,17 @@ class UserDetailsServiceTest {
     void beforeEach() {
         persistence = mock(Persistence.class);
         jwtProperties = mock(JwtProperties.class);
+        adminProperties = mock(AdminProperties.class);
         jwtEncoder = mock(JwtEncoder.class);
         userAgent = mock(UserAgent.class);
         passwordEncoder = mock(PasswordEncoder.class);
-        userDetailsService = new UserDetailsService(persistence, jwtProperties, jwtEncoder, userAgent, passwordEncoder);
+        userDetailsService = new UserDetailsService(persistence, jwtProperties, adminProperties, jwtEncoder, userAgent, passwordEncoder);
     }
 
     @Test
     void findByUsername_positive_UserExists() {
 
-        final UserDetails userDetails = new User(1L, "username", "password", "roles");
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles");
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
 
@@ -85,7 +88,7 @@ class UserDetailsServiceTest {
     @Test
     void updatePassword_positive_UserExists() {
 
-        final UserDetails userDetails = new User(1L, "username", "password", "roles");
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles");
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
         doReturn(Mono.empty()).when(persistence).updateUserPassword(any(Long.class), any(String.class));
@@ -106,7 +109,7 @@ class UserDetailsServiceTest {
     @Test
     void updatePassword_negative_UserNotExists() {
 
-        final UserDetails userDetails = new User(1L, "username", "password", "roles");
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles");
 
         doReturn(Mono.error(new RuntimeException("User not found"))).when(persistence).selectUser(any(String.class));
 
@@ -124,7 +127,7 @@ class UserDetailsServiceTest {
     @Test
     void updatePassword_negative_UserNotUpdated() {
 
-        final UserDetails userDetails = new User(1L, "username", "password", "roles");
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles");
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
         doReturn(Mono.error(new RuntimeException("User not updated"))).when(persistence).updateUserPassword(any(Long.class), any(String.class));
@@ -143,8 +146,8 @@ class UserDetailsServiceTest {
     @Test
     void changePassword_positive() {
 
-        final UserDetails userDetails = new User(1L, "username-1", null, null);
-        final User user = new User(null, "username-2", null, null);
+        final UserDetails userDetails = new User(1L, "username-1@mail.com", null, null);
+        final User user = new User(null, "username-2@mail.com", null, null);
 
         doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
@@ -154,20 +157,20 @@ class UserDetailsServiceTest {
                 .flatMap(pair -> userDetailsService.changePassword(pair.getFirst(), pair.getSecond()))
                 .as(StepVerifier::create)
                 .assertNext(userD -> {
-                    assertThat(userD.getUsername(), is("username-2"));
+                    assertThat(userD.getUsername(), is("username-2@mail.com"));
                     assertThat(userD.getPassword(), is("encoded-password"));
                 })
                 .verifyComplete();
 
         verify(passwordEncoder, times(1)).encode("password");
-        verify(persistence, times(1)).selectUser("username-2");
+        verify(persistence, times(1)).selectUser("username-2@mail.com");
         verify(persistence, times(1)).updateUserPassword(1L, "encoded-password");
     }
 
     @Test
     void changePassword_negative_updatePasswordFailes() {
 
-        final User user = new User(null, "username-2", null, null);
+        final User user = new User(null, "username-2@mail.com", null, null);
 
         doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
         doReturn(Mono.error(new Exception("Error"))).when(persistence).selectUser(any(String.class));
@@ -180,14 +183,14 @@ class UserDetailsServiceTest {
                 );
 
         verify(passwordEncoder, times(1)).encode("password");
-        verify(persistence, times(1)).selectUser("username-2");
+        verify(persistence, times(1)).selectUser("username-2@mail.com");
         verify(persistence, times(0)).updateUserPassword(any(Long.class), any(String.class));
     }
 
     @Test
     void createJwtToken_positive_FromProperties() {
 
-        final User user = new User(1L, "username", "password", User.Role.USER);
+        final User user = new User(1L, "username@mail.com", "password", User.Role.USER);
 
         doReturn("issuer").when(jwtProperties).issuer();
         doReturn("audience").when(jwtProperties).audience();
@@ -197,6 +200,7 @@ class UserDetailsServiceTest {
         final PostLoginResponse response = userDetailsService.createJwtToken(user);
 
         verify(jwtEncoder, times(1)).encode(any());
+        verify(adminProperties, times(1)).emails();
 
         assertThat(response.jwt(), is("ecoded-jwt"));
         assertThat(response.secure(), is(jwtProperties.secure()));
@@ -205,7 +209,7 @@ class UserDetailsServiceTest {
     @Test
     void createJwtToken_positive_FromUserAgent() {
 
-        final User user = new User(1L, "username", "password", User.Role.USER);
+        final User user = new User(1L, "username@mail.com", "password", User.Role.USER);
 
         doReturn("host").when(userAgent).getHostName();
         doReturn("app").when(userAgent).getAppName();
@@ -215,6 +219,7 @@ class UserDetailsServiceTest {
         final PostLoginResponse response = userDetailsService.createJwtToken(user);
 
         verify(jwtEncoder, times(1)).encode(any());
+        verify(adminProperties, times(1)).emails();
 
         assertThat(response.jwt(), is("ecoded-jwt"));
         assertThat(response.secure(), is(jwtProperties.secure()));
@@ -230,7 +235,7 @@ class UserDetailsServiceTest {
 
         doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
 
-        userDetailsService.createUser("new-user", "test-password", List.of("a", "b", "c"))
+        userDetailsService.createUser("new-user@mail.com", "test-password", List.of("a", "b", "c"))
                 .as(StepVerifier::create)
                 .assertNext(user -> {
                     assertThat(user.getId(), is(1L));
@@ -247,12 +252,12 @@ class UserDetailsServiceTest {
         final ArgumentCaptor<User> argumentCaptorInsert = ArgumentCaptor.forClass(User.class);
         verify(persistence).insertUser(argumentCaptorInsert.capture());
 
-        assertThat(argumentCaptorExists.getValue(), is("new-user"));
+        assertThat(argumentCaptorExists.getValue(), is("new-user@mail.com"));
 
         final User user = argumentCaptorInsert.getValue();
 
         assertThat(user.getId(), nullValue());
-        assertThat(user.getUsername(), is("new-user"));
+        assertThat(user.getUsername(), is("new-user@mail.com"));
         assertThat(user.getPassword(), is("encoded-password"));
         assertThat(user.getRoles(), is(String.join(",", List.of("a", "b", "c"))));
     }
@@ -262,14 +267,14 @@ class UserDetailsServiceTest {
 
         doReturn(Mono.just(true)).when(persistence).existsUser(any(String.class));
 
-        userDetailsService.createUser("new-user", "test-password", List.of("a", "b", "c"))
+        userDetailsService.createUser("new-user@mail.com", "test-password", List.of("a", "b", "c"))
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error -> {
                     assertThat(error, instanceOf(ResponseStatusException.class));
 
                     final ResponseStatusException e = (ResponseStatusException) error;
                     assertThat(e.getStatusCode(), is(HttpStatus.BAD_REQUEST));
-                    assertThat(e.getReason(), is("Username is taken"));
+                    assertThat(e.getReason(), is("Email is taken"));
                 });
 
         verify(persistence, times(1)).existsUser(any(String.class));
@@ -278,52 +283,7 @@ class UserDetailsServiceTest {
         final ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
         verify(persistence).existsUser(argumentCaptorExists.capture());
 
-        assertThat(argumentCaptorExists.getValue(), is("new-user"));
-    }
-
-    @Test
-    void createAdminIfNotExists_positive_UserNotExists() {
-
-        doReturn(Mono.just(false)).when(persistence).existsUser(any(String.class));
-        doReturn(Mono.just(new User())).when(persistence).insertUser(any(User.class));
-
-        doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
-
-        userDetailsService.createAdminIfNotExists();
-
-        verify(persistence, times(1)).existsUser(any(String.class));
-        verify(persistence, times(1)).insertUser(any(User.class));
-
-        final ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
-        verify(persistence).existsUser(argumentCaptorExists.capture());
-
-        final ArgumentCaptor<User> argumentCaptorInsert = ArgumentCaptor.forClass(User.class);
-        verify(persistence).insertUser(argumentCaptorInsert.capture());
-
-        assertThat(argumentCaptorExists.getValue(), is("admin"));
-
-        final User user = argumentCaptorInsert.getValue();
-
-        assertThat(user.getId(), nullValue());
-        assertThat(user.getUsername(), is("admin"));
-        assertThat(user.getPassword(), is("encoded-password"));
-        assertThat(user.getRoles(), is(String.join(",", User.Role.USER, User.Role.ADMIN)));
-    }
-
-    @Test
-    void createAdminIfNotExists_positive_UserExists() {
-
-        doReturn(Mono.just(true)).when(persistence).existsUser(any(String.class));
-
-        userDetailsService.createAdminIfNotExists();
-
-        verify(persistence, times(1)).existsUser(any(String.class));
-        verify(persistence, times(0)).insertUser(any(User.class));
-
-        final ArgumentCaptor<String> argumentCaptorExists = ArgumentCaptor.forClass(String.class);
-        verify(persistence).existsUser(argumentCaptorExists.capture());
-
-        assertThat(argumentCaptorExists.getValue(), is("admin"));
+        assertThat(argumentCaptorExists.getValue(), is("new-user@mail.com"));
     }
 
     @Test

@@ -43,7 +43,7 @@ public class Handler {
 
         final Mono<User> user = request.principal().map(Authentication.class::cast)
                 .map(a -> (User) a.getPrincipal())
-                .doOnNext(u -> log.atInfo().setMessage("User '{}' logged in.").addArgument(u.getUsername()).log());
+                .doOnNext(u -> log.atInfo().setMessage("User '{}' logged in.").addArgument(u.getEmail()).log());
 
         final Mono<PostLoginResponse> response = user.map(userDetailsService::createJwtToken);
 
@@ -58,7 +58,7 @@ public class Handler {
         final Mono<User> createdUser = request.bodyToMono(PostRegisterNewUserRequest.class)
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate)
-                .flatMap(user -> userDetailsService.createUser(user.username(), user.password(), List.of(User.Role.USER)));
+                .flatMap(user -> userDetailsService.createUser(user.email(), user.password(), List.of(User.Role.USER)));
 
         return createdUser
                 .flatMap(user -> ok().build())

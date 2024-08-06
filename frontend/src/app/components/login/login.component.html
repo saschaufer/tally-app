@@ -1,8 +1,9 @@
 <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
 
     <div class="mt-0_5">
-        <label for="username">User</label>
-        <input id="username" type="text" autocomplete="username" formControlName="username">
+        <label for="email">Email</label>
+        <label for="email" *ngIf="emailInvalid"> - Invalid email</label>
+        <input id="email" type="text" autocomplete="email" formControlName="email">
     </div>
 
     <div class="mt-0_5">

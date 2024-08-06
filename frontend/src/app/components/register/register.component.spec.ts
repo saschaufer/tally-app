@@ -50,7 +50,7 @@ describe('RegisterComponent', () => {
         routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
         component.registerForm.setValue({
-            username: 'test-username',
+            email: 'test-username@mail.com',
             password: 'test-password',
             passwordRepeat: 'test-password',
             invitationCode: 'test-invitation-code',
@@ -58,13 +58,13 @@ describe('RegisterComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postRegisterNewUser).toHaveBeenCalledOnceWith('test-username', 'test-password', 'test-invitation-code');
+        expect(httpServiceSpy.postRegisterNewUser).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password', 'test-invitation-code');
         expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.login]);
     });
 
-    it('should not navigate to ' + routeName.login + ' (username wrong)', () => {
+    it('should not navigate to ' + routeName.login + ' (email wrong)', () => {
 
-        component.registerForm.controls.username.setErrors(['wrong']);
+        component.registerForm.controls.email.setErrors(['wrong']);
         component.registerForm.controls.password.patchValue('test-password');
         component.registerForm.controls.passwordRepeat.patchValue('test-password');
         component.registerForm.controls.invitationCode.patchValue('test-invitation-code');
@@ -77,7 +77,7 @@ describe('RegisterComponent', () => {
 
     it('should not navigate to ' + routeName.login + ' (password wrong)', () => {
 
-        component.registerForm.controls.username.patchValue('test-username');
+        component.registerForm.controls.email.patchValue('test-username@mail.com');
         component.registerForm.controls.password.setErrors(['wrong']);
         component.registerForm.controls.passwordRepeat.patchValue('test-password');
         component.registerForm.controls.invitationCode.patchValue('test-invitation-code');
@@ -90,7 +90,7 @@ describe('RegisterComponent', () => {
 
     it('should not navigate to ' + routeName.login + ' (password-repeat wrong)', () => {
 
-        component.registerForm.controls.username.patchValue('test-username');
+        component.registerForm.controls.email.patchValue('test-username@mail.com');
         component.registerForm.controls.password.patchValue('test-password');
         component.registerForm.controls.passwordRepeat.setErrors(['wrong']);
         component.registerForm.controls.invitationCode.patchValue('test-invitation-code');
@@ -103,7 +103,7 @@ describe('RegisterComponent', () => {
 
     it('should not navigate to ' + routeName.login + ' (invitation-code wrong)', () => {
 
-        component.registerForm.controls.username.patchValue('test-username');
+        component.registerForm.controls.email.patchValue('test-username@mail.com');
         component.registerForm.controls.password.patchValue('test-password');
         component.registerForm.controls.passwordRepeat.patchValue('test-password');
         component.registerForm.controls.invitationCode.setErrors(['wrong']);
@@ -116,7 +116,7 @@ describe('RegisterComponent', () => {
 
     it('should not navigate to ' + routeName.login + ' (password and password-repeat unequal)', () => {
 
-        component.registerForm.controls.username.patchValue('test-username');
+        component.registerForm.controls.email.patchValue('test-username@mail.com');
         component.registerForm.controls.password.patchValue('test-password');
         component.registerForm.controls.passwordRepeat.patchValue('test-password-unequal');
         component.registerForm.controls.invitationCode.patchValue('test-invitation-code');
@@ -134,7 +134,7 @@ describe('RegisterComponent', () => {
         );
 
         component.registerForm.setValue({
-            username: 'test-username',
+            email: 'test-username@mail.com',
             password: 'test-password',
             passwordRepeat: 'test-password',
             invitationCode: 'test-invitation-code',
@@ -142,7 +142,7 @@ describe('RegisterComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postRegisterNewUser).toHaveBeenCalledOnceWith('test-username', 'test-password', 'test-invitation-code');
+        expect(httpServiceSpy.postRegisterNewUser).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password', 'test-invitation-code');
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 });
