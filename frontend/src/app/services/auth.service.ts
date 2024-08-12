@@ -28,6 +28,11 @@ export class AuthService {
     hasRoles(expectedRoles: readonly role[]) {
 
         const jwt = this.getJwt();
+
+        if (!jwt) {
+            return false;
+        }
+
         const decodedJwt = this.decodeJwt(jwt);
 
         for (let r of expectedRoles) {

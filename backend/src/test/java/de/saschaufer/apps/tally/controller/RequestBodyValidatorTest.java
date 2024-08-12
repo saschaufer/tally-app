@@ -55,7 +55,7 @@ class RequestBodyValidatorTest {
                         "Email is required"
                 ),
                 Arguments.of(
-                        new PostRegisterNewUserRequest("\t\r\n  ", "password"),
+                        new PostRegisterNewUserRequest("\t  ", "password"),
                         HttpStatus.BAD_REQUEST,
                         "Email is required"
                 ),

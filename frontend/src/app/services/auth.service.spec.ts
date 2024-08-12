@@ -32,6 +32,11 @@ describe('AuthService', () => {
 
     it('should confirm the authorities in the JWT', () => {
 
+        expect(authService.hasRoles([])).toBeFalsy();
+        expect(authService.hasRoles([role.user])).toBeFalsy();
+        expect(authService.hasRoles([role.admin])).toBeFalsy();
+        expect(authService.hasRoles([role.user, role.admin])).toBeFalsy();
+
         cookieServiceSpy.get.and.returnValue(jwt);
 
         expect(authService.hasRoles([role.user])).toBeTruthy();
