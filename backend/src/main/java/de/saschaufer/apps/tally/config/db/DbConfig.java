@@ -45,7 +45,10 @@ public class DbConfig {
                     id serial primary key,
                     email varchar not null unique,
                     password varchar not null,
-                    roles varchar not null
+                    roles varchar not null,
+                    registration_secret varchar not null,
+                    registration_on timestamp not null,
+                    registration_complete boolean not null
                 );
 
                 create table if not exists products (

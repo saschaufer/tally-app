@@ -2,6 +2,7 @@ package de.saschaufer.apps.tally.controller;
 
 import de.saschaufer.apps.tally.controller.dto.*;
 import de.saschaufer.apps.tally.persistence.dto.User;
+import de.saschaufer.apps.tally.services.EmailService;
 import de.saschaufer.apps.tally.services.ProductService;
 import de.saschaufer.apps.tally.services.PurchaseService;
 import de.saschaufer.apps.tally.services.UserDetailsService;
@@ -14,7 +15,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ResponseStatusException;
@@ -36,6 +36,7 @@ public class Handler {
     private final UserDetailsService userDetailsService;
     private final ProductService productService;
     private final PurchaseService purchaseService;
+    private final EmailService emailService;
 
     public Mono<ServerResponse> postLogin(final ServerRequest request) {
 
@@ -43,12 +44,15 @@ public class Handler {
 
         final Mono<User> user = request.principal().map(Authentication.class::cast)
                 .map(a -> (User) a.getPrincipal())
+                .flatMap(userDetailsService::checkRegistered)
                 .doOnNext(u -> log.atInfo().setMessage("User '{}' logged in.").addArgument(u.getEmail()).log());
 
         final Mono<PostLoginResponse> response = user.map(userDetailsService::createJwtToken);
 
-        return ok().contentType(MediaType.APPLICATION_JSON)
-                .body(BodyInserters.fromPublisher(response, PostLoginResponse.class));
+        return response
+                .flatMap(res -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(res))
+                .doOnError(e -> log.atError().setMessage("Error logging in.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postRegisterNewUser(final ServerRequest request) {
@@ -58,11 +62,31 @@ public class Handler {
         final Mono<User> createdUser = request.bodyToMono(PostRegisterNewUserRequest.class)
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate)
-                .flatMap(user -> userDetailsService.createUser(user.email(), user.password(), List.of(User.Role.USER)));
+                .flatMap(user -> userDetailsService.createUser(user.email(), user.password(), List.of(User.Role.USER)))
+                .flatMap(user -> {
+                    emailService.sendRegistrationEmail(user.getEmail(), user.getRegistrationSecret());
+                    return Mono.just(user);
+                });
 
         return createdUser
                 .flatMap(user -> ok().build())
                 .doOnError(e -> log.atError().setMessage("Error creating new user.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> postRegisterNewUserConfirm(final ServerRequest request) {
+
+        log.atInfo().setMessage("Confirm register new user.").log();
+
+        final Mono<Void> userConfirmed = request.bodyToMono(PostRegisterNewUserConfirmRequest.class)
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate)
+                .flatMap(confirmRequest -> userDetailsService.checkRegistrationSecret(confirmRequest.email(), confirmRequest.registrationSecret()))
+                .flatMap(user -> userDetailsService.updateUserRegistrationComplete(user.getEmail()));
+
+        return userConfirmed
+                .then(Mono.defer(() -> ok().build()))
+                .doOnError(e -> log.atError().setMessage("Error confirming registration of new user.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 

@@ -6,6 +6,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+
+import java.time.Duration;
 
 @Slf4j
 @Component
@@ -21,5 +24,13 @@ public class EventHandler {
         log.atInfo().setMessage("Ready. I am {}.").addArgument(userAgent.getFullName()).log();
 
         userDetailsService.createInvitationCodeIfNoneExists();
+
+        Flux.interval(Duration.ofMillis(0), Duration.ofMinutes(5))
+                .onBackpressureDrop()
+                .flatMap(ignore -> userDetailsService.deleteUnregisteredUsers(), 1)
+                .subscribe(
+                        count -> log.atInfo().setMessage("Deleted unregistered users: {}.").addArgument(count).log(),
+                        error -> log.atInfo().setMessage("Error deleting unregistered users.").setCause(error).log()
+                );
     }
 }

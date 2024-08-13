@@ -17,6 +17,7 @@ public class Router {
                 .route()
                 .POST("/login", handler::postLogin)
                 .POST("/register", handler::postRegisterNewUser)
+                .POST("/register/confirm", handler::postRegisterNewUserConfirm)
                 .POST("/settings/change-password", handler::postChangePassword)
                 .POST("/settings/change-invitation-code", handler::postChangeInvitationCode)
 

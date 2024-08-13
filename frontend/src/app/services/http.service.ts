@@ -46,6 +46,16 @@ export class HttpService {
         return this.httpClient.post<void>("/register", body, httpOptions);
     }
 
+    postRegisterNewUserConfirm(email: string, secret: string): Observable<void> {
+
+        const body = {
+            email: email,
+            registrationSecret: secret
+        };
+
+        return this.httpClient.post<void>("/register/confirm", body);
+    }
+
     postChangePassword(password: string): Observable<void> {
         return this.httpClient.post<void>("/settings/change-password", password, this.httpOptions());
     }

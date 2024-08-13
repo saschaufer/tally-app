@@ -40,6 +40,23 @@ public class Persistence {
         return template.exists(query(where("email").is(email)), User.class);
     }
 
+    public Mono<Void> updateUserRegistrationComplete(final String email) {
+
+        return template
+
+                // Update user
+                .update(User.class)
+                .matching(query(where("email").is(email)))
+                .apply(update("registration_complete", true))
+
+                // If no user was updated, return an error
+                .flatMap(updateCount -> switch (updateCount.intValue()) {
+                    case 0 -> Mono.error(new RuntimeException("User not updated"));
+                    case 1 -> Mono.empty();
+                    default -> Mono.error(new RuntimeException("Too many users updated"));
+                });
+    }
+
     public Mono<Void> updateUserPassword(final Long id, final String newPassword) {
 
         return template
@@ -55,6 +72,15 @@ public class Persistence {
                     case 1 -> Mono.empty();
                     default -> Mono.error(new RuntimeException("Too many users updated"));
                 });
+    }
+
+    public Mono<Long> deleteUnregisteredUsers(final LocalDateTime registrationBefore) {
+
+        return template
+                .delete(User.class)
+                .matching(query(where("registration_complete").isFalse()
+                        .and("registration_on").lessThan(registrationBefore)))
+                .all();
     }
 
     public Mono<Void> insertProductAndPrice(final String name, final BigDecimal price) {

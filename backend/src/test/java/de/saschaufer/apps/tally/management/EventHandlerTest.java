@@ -3,6 +3,7 @@ package de.saschaufer.apps.tally.management;
 import de.saschaufer.apps.tally.services.UserDetailsService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import reactor.core.publisher.Mono;
 
 import static org.mockito.Mockito.*;
 
@@ -17,6 +18,8 @@ class EventHandlerTest {
         userAgent = mock(UserAgent.class);
         userDetailsService = mock(UserDetailsService.class);
         eventHandler = new EventHandler(userAgent, userDetailsService);
+
+        doReturn(Mono.just(0L)).when(userDetailsService).deleteUnregisteredUsers();
     }
 
     @Test
@@ -28,5 +31,6 @@ class EventHandlerTest {
 
         verify(userAgent, times(1)).getFullName();
         verify(userDetailsService, times(1)).createInvitationCodeIfNoneExists();
+        verify(userDetailsService, times(1)).deleteUnregisteredUsers();
     }
 }

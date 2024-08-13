@@ -182,6 +182,19 @@ class SecurityConfigTest extends SecurityConfigSetup {
     }
 
     @Test
+    void postRegisterNewUserConfirm_positive() {
+
+        doReturn(ok().build()).when(handler).postRegisterNewUserConfirm(any(ServerRequest.class));
+
+        webClient.post().uri("/register/confirm")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postRegisterNewUserConfirm(any(ServerRequest.class));
+    }
+
+    @Test
     void postChangePassword_positive_Password() {
 
         doReturn(ok().build()).when(handler).postChangePassword(any(ServerRequest.class));

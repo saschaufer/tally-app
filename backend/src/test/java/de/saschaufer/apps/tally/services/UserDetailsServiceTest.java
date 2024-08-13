@@ -1,6 +1,7 @@
 package de.saschaufer.apps.tally.services;
 
 import de.saschaufer.apps.tally.config.admin.AdminProperties;
+import de.saschaufer.apps.tally.config.email.EmailProperties;
 import de.saschaufer.apps.tally.config.security.JwtProperties;
 import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import de.saschaufer.apps.tally.management.UserAgent;
@@ -21,6 +22,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -47,13 +49,13 @@ class UserDetailsServiceTest {
         jwtEncoder = mock(JwtEncoder.class);
         userAgent = mock(UserAgent.class);
         passwordEncoder = mock(PasswordEncoder.class);
-        userDetailsService = new UserDetailsService(persistence, jwtProperties, adminProperties, jwtEncoder, userAgent, passwordEncoder);
+        userDetailsService = new UserDetailsService(persistence, jwtProperties, adminProperties, mock(EmailProperties.class), jwtEncoder, userAgent, passwordEncoder);
     }
 
     @Test
     void findByUsername_positive_UserExists() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles");
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
 
@@ -86,9 +88,43 @@ class UserDetailsServiceTest {
     }
 
     @Test
+    void checkRegistered_positive_RegistrationCompleteTrue() {
+
+        final User user = new User();
+        user.setRegistrationComplete(true);
+
+        Mono.just(user)
+                .flatMap(userDetailsService::checkRegistered)
+                .as(StepVerifier::create)
+                .assertNext(userD -> {
+                    assertThat(userD.getUsername(), is(user.getUsername()));
+                    assertThat(userD.getPassword(), is(user.getPassword()));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void checkRegistered_negative_RegistrationCompleteFalse() {
+
+        final User user = new User();
+        user.setRegistrationComplete(false);
+
+        Mono.just(user)
+                .flatMap(userDetailsService::checkRegistered)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(ResponseStatusException.class));
+                    assertThat(error.getMessage(), containsString("Registration is not completed"));
+
+                    final ResponseStatusException e = (ResponseStatusException) error;
+                    assertThat(e.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
+                });
+    }
+
+    @Test
     void updatePassword_positive_UserExists() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles");
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
         doReturn(Mono.empty()).when(persistence).updateUserPassword(any(Long.class), any(String.class));
@@ -109,7 +145,7 @@ class UserDetailsServiceTest {
     @Test
     void updatePassword_negative_UserNotExists() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles");
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
 
         doReturn(Mono.error(new RuntimeException("User not found"))).when(persistence).selectUser(any(String.class));
 
@@ -127,7 +163,7 @@ class UserDetailsServiceTest {
     @Test
     void updatePassword_negative_UserNotUpdated() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles");
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
         doReturn(Mono.error(new RuntimeException("User not updated"))).when(persistence).updateUserPassword(any(Long.class), any(String.class));
@@ -146,8 +182,8 @@ class UserDetailsServiceTest {
     @Test
     void changePassword_positive() {
 
-        final UserDetails userDetails = new User(1L, "username-1@mail.com", null, null);
-        final User user = new User(null, "username-2@mail.com", null, null);
+        final UserDetails userDetails = new User(1L, "username-1@mail.com", null, null, null, null, null);
+        final User user = new User(null, "username-2@mail.com", null, null, null, null, null);
 
         doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
@@ -170,7 +206,7 @@ class UserDetailsServiceTest {
     @Test
     void changePassword_negative_updatePasswordFailes() {
 
-        final User user = new User(null, "username-2@mail.com", null, null);
+        final User user = new User(null, "username-2@mail.com", null, null, null, null, null);
 
         doReturn("encoded-password").when(passwordEncoder).encode(any(String.class));
         doReturn(Mono.error(new Exception("Error"))).when(persistence).selectUser(any(String.class));
@@ -190,7 +226,7 @@ class UserDetailsServiceTest {
     @Test
     void createJwtToken_positive_FromProperties() {
 
-        final User user = new User(1L, "username@mail.com", "password", User.Role.USER);
+        final User user = new User(1L, "username@mail.com", "password", User.Role.USER, null, null, null);
 
         doReturn("issuer").when(jwtProperties).issuer();
         doReturn("audience").when(jwtProperties).audience();
@@ -209,7 +245,7 @@ class UserDetailsServiceTest {
     @Test
     void createJwtToken_positive_FromUserAgent() {
 
-        final User user = new User(1L, "username@mail.com", "password", User.Role.USER);
+        final User user = new User(1L, "username@mail.com", "password", User.Role.USER, null, null, null);
 
         doReturn("host").when(userAgent).getHostName();
         doReturn("app").when(userAgent).getAppName();
@@ -260,6 +296,11 @@ class UserDetailsServiceTest {
         assertThat(user.getUsername(), is("new-user@mail.com"));
         assertThat(user.getPassword(), is("encoded-password"));
         assertThat(user.getRoles(), is(String.join(",", List.of("a", "b", "c"))));
+        assertThat(Integer.valueOf(user.getRegistrationSecret()), greaterThanOrEqualTo(16234));
+        assertThat(Integer.valueOf(user.getRegistrationSecret()), lessThanOrEqualTo(97942));
+        assertThat(user.getRegistrationOn().isAfter(LocalDateTime.now().minusMinutes(1)), is(true));
+        assertThat(user.getRegistrationOn().isBefore(LocalDateTime.now()), is(true));
+        assertThat(user.getRegistrationComplete(), is(false));
     }
 
     @Test
@@ -284,6 +325,91 @@ class UserDetailsServiceTest {
         verify(persistence).existsUser(argumentCaptorExists.capture());
 
         assertThat(argumentCaptorExists.getValue(), is("new-user@mail.com"));
+    }
+
+    @Test
+    void checkRegistrationSecret_positive() {
+
+        final User user = new User();
+        user.setRegistrationSecret("12345");
+
+        doReturn(Mono.just(user)).when(persistence).selectUser(any(String.class));
+
+        userDetailsService.checkRegistrationSecret("user@mail.com", "12345")
+                .as(StepVerifier::create)
+                .assertNext(u -> {
+                    assertThat(user.getRegistrationSecret(), is("12345"));
+                })
+                .verifyComplete();
+
+        verify(persistence, times(1)).selectUser("user@mail.com");
+    }
+
+    @Test
+    void checkRegistrationSecret_negative_RegistrationSecretUnequal() {
+
+        final User user = new User();
+        user.setRegistrationSecret("12345");
+
+        doReturn(Mono.just(user)).when(persistence).selectUser(any(String.class));
+
+        userDetailsService.checkRegistrationSecret("user@mail.com", "54321")
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(ResponseStatusException.class));
+                    assertThat(error.getMessage(), containsString("The registration secret is not correct"));
+
+                    final ResponseStatusException e = (ResponseStatusException) error;
+                    assertThat(e.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
+                });
+
+        verify(persistence, times(1)).selectUser("user@mail.com");
+    }
+
+    @Test
+    void updateUserRegistrationComplete_positive() {
+
+        doReturn(Mono.empty()).when(persistence).updateUserRegistrationComplete(any(String.class));
+
+        userDetailsService.updateUserRegistrationComplete("user@mail.com")
+                .as(StepVerifier::create)
+                .expectNext()
+                .verifyComplete();
+
+        verify(persistence, times(1)).updateUserRegistrationComplete("user@mail.com");
+    }
+
+    @Test
+    void updateUserRegistrationComplete_negative() {
+
+        doReturn(Mono.error(new Exception("Error"))).when(persistence).updateUserRegistrationComplete(any(String.class));
+
+        userDetailsService.updateUserRegistrationComplete("user@mail.com")
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), is("Error"))
+                );
+
+        verify(persistence, times(1)).updateUserRegistrationComplete("user@mail.com");
+    }
+
+    @Test
+    void deleteUnregisteredUsers_positive() {
+
+        doReturn(Mono.just(2L)).when(persistence).deleteUnregisteredUsers(any(LocalDateTime.class));
+
+        userDetailsService.deleteUnregisteredUsers()
+                .as(StepVerifier::create)
+                .assertNext(count -> assertThat(count, is(2L)))
+                .verifyComplete();
+
+        verify(persistence, times(1)).deleteUnregisteredUsers(any(LocalDateTime.class));
+
+        final ArgumentCaptor<LocalDateTime> argumentCaptorExists = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(persistence).deleteUnregisteredUsers(argumentCaptorExists.capture());
+
+        assertThat(argumentCaptorExists.getValue().isAfter(LocalDateTime.now().minusMinutes(1)), is(true));
+        assertThat(argumentCaptorExists.getValue().isBefore(LocalDateTime.now()), is(true));
     }
 
     @Test

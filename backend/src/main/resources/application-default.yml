@@ -44,3 +44,37 @@ jwt:
 
   # Accept the JWT only if sent via HTTPS?
   secure: false
+
+# Email
+# ==================================================================
+
+email:
+
+  # The sender of the email.
+  from: # tally@mail.com
+
+  # The scheme, host and port where the app lives. It is used in the registration email, where
+  # users have to click on a link to confirm their registration. Without trailing slash ('/')!
+  registration-url: http://localhost:4200
+
+  # If a user registers but does not confirm the registration over the link in the email,
+  # the user will be deleted after the specified time. (10m-24h)
+  delete-unregistered-users-after: 1h
+
+# Email configuration of Spring:
+# https://docs.spring.io/spring-boot/appendix/application-properties/index.html#appendix.application-properties.mail
+spring.mail:
+  host: # smtp.gmail.com
+  username: ${email.from}
+  password: # secret password
+  properties.mail:
+    transport.protocol: smtp
+    smtp:
+      port: # 587
+      connectiontimeout: 2000
+      timeout: 2000
+      writetimeout: 2000
+      ssl.enable: true
+      starttls:
+        enabled: true
+        required: true

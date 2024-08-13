@@ -15,6 +15,7 @@ import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
@@ -68,7 +69,7 @@ class PersistenceTest {
 
         assertCount(User.class, 0);
 
-        Mono.just(new User(null, "test-username@mail.com", "test-password", "test-role"))
+        Mono.just(new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false))
                 .flatMap(persistence::insertUser)
                 .as(StepVerifier::create)
                 .assertNext(user -> {
@@ -76,6 +77,9 @@ class PersistenceTest {
                     assertThat(user.getUsername(), is("test-username@mail.com"));
                     assertThat(user.getPassword(), is("test-password"));
                     assertThat(user.getRoles(), is("test-role"));
+                    assertThat(user.getRegistrationSecret(), is("registration-secret"));
+                    assertThat(user.getRegistrationOn(), is(LocalDateTime.of(2024, 5, 19, 23, 54, 1)));
+                    assertThat(user.getRegistrationComplete(), is(false));
                 })
                 .verifyComplete()
         ;
@@ -88,7 +92,7 @@ class PersistenceTest {
 
         assertCount(User.class, 0);
 
-        Mono.just(new User(1L, "", "", ""))
+        Mono.just(new User(1L, "", "", "", "", LocalDateTime.now(), false))
                 .flatMap(persistence::insertUser)
                 .flatMap(persistence::insertUser)
                 .as(StepVerifier::create)
@@ -120,16 +124,28 @@ class PersistenceTest {
     static Stream<Arguments> insertUser_negative_NullNotAllowed() {
         return Stream.of(
                 Arguments.of(
-                        new User(null, null, "", ""),
+                        new User(null, null, "", "", "", LocalDateTime.now(), true),
                         "NULL not allowed for column \"EMAIL\""
                 ),
                 Arguments.of(
-                        new User(null, "", null, ""),
+                        new User(null, "", null, "", "", LocalDateTime.now(), true),
                         "NULL not allowed for column \"PASSWORD\""
                 ),
                 Arguments.of(
-                        new User(null, "", "", null),
+                        new User(null, "", "", null, "", LocalDateTime.now(), true),
                         "NULL not allowed for column \"ROLES\""
+                ),
+                Arguments.of(
+                        new User(null, "", "", "", null, LocalDateTime.now(), true),
+                        "NULL not allowed for column \"REGISTRATION_SECRET\""
+                ),
+                Arguments.of(
+                        new User(null, "", "", "", "", null, true),
+                        "NULL not allowed for column \"REGISTRATION_ON\""
+                ),
+                Arguments.of(
+                        new User(null, "", "", "", "", LocalDateTime.now(), null),
+                        "NULL not allowed for column \"REGISTRATION_COMPLETE\""
                 )
         );
     }
@@ -138,7 +154,7 @@ class PersistenceTest {
     void selectUser_positive_UserExists() {
 
         final String username = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "test-username@mail.com", "test-password", "test-role")
+                new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)
         ).block()).getUsername();
 
         Mono.just(username)
@@ -149,6 +165,9 @@ class PersistenceTest {
                     assertThat(user.getUsername(), is("test-username@mail.com"));
                     assertThat(user.getPassword(), is("test-password"));
                     assertThat(user.getRoles(), is("test-role"));
+                    assertThat(user.getRegistrationSecret(), is("registration-secret"));
+                    assertThat(user.getRegistrationOn(), is(LocalDateTime.of(2024, 5, 19, 23, 54, 1)));
+                    assertThat(user.getRegistrationComplete(), is(true));
                 })
                 .verifyComplete();
     }
@@ -168,7 +187,7 @@ class PersistenceTest {
     void existsUser_positive_UserExists() {
 
         final String username = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "test-username@mail.com", "test-password", "test-role")
+                new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)
         ).block()).getUsername();
 
         Mono.just(username)
@@ -189,10 +208,83 @@ class PersistenceTest {
     }
 
     @Test
+    void updateUserRegistrationComplete_positive_OneUserUpdated() {
+
+        Flux.just(
+                        new User(null, "test-1@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false),
+                        new User(null, "test-2@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false),
+                        new User(null, "test-3@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false)
+                )
+                .flatMap(persistence::insertUser)
+                .subscribe();
+
+        Mono.just("test-2@mail.com")
+                .flatMap(persistence::updateUserRegistrationComplete)
+                .as(StepVerifier::create)
+                .expectNext()
+                .verifyComplete();
+
+        Mono.just("test-1@mail.com")
+                .flatMap(persistence::selectUser)
+                .as(StepVerifier::create)
+                .assertNext(user -> assertThat(user.getRegistrationComplete(), is(false)))
+                .verifyComplete();
+
+        Mono.just("test-2@mail.com")
+                .flatMap(persistence::selectUser)
+                .as(StepVerifier::create)
+                .assertNext(user -> assertThat(user.getRegistrationComplete(), is(true)))
+                .verifyComplete();
+
+        Mono.just("test-3@mail.com")
+                .flatMap(persistence::selectUser)
+                .as(StepVerifier::create)
+                .assertNext(user -> assertThat(user.getRegistrationComplete(), is(false)))
+                .verifyComplete();
+    }
+
+    @Test
+    void updateUserRegistrationComplete_negative_NoUserUpdated() {
+
+        Flux.just(
+                        new User(null, "test-1@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false),
+                        new User(null, "test-2@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false),
+                        new User(null, "test-3@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false)
+                )
+                .flatMap(persistence::insertUser)
+                .subscribe();
+
+        Mono.just("test-4@mail.com")
+                .flatMap(persistence::updateUserRegistrationComplete)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("User not updated"))
+                );
+
+        Mono.just("test-1@mail.com")
+                .flatMap(persistence::selectUser)
+                .as(StepVerifier::create)
+                .assertNext(user -> assertThat(user.getRegistrationComplete(), is(false)))
+                .verifyComplete();
+
+        Mono.just("test-2@mail.com")
+                .flatMap(persistence::selectUser)
+                .as(StepVerifier::create)
+                .assertNext(user -> assertThat(user.getRegistrationComplete(), is(false)))
+                .verifyComplete();
+
+        Mono.just("test-3@mail.com")
+                .flatMap(persistence::selectUser)
+                .as(StepVerifier::create)
+                .assertNext(user -> assertThat(user.getRegistrationComplete(), is(false)))
+                .verifyComplete();
+    }
+
+    @Test
     void updateUserPassword_positive_UserExists() {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "test-username@mail.com", "test-password", "test-role")
+                new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)
         ).block()).getId();
 
         Mono.just(userId)
@@ -209,6 +301,9 @@ class PersistenceTest {
                     assertThat(user.getUsername(), is("test-username@mail.com"));
                     assertThat(user.getPassword(), is("test-password-changed"));
                     assertThat(user.getRoles(), is("test-role"));
+                    assertThat(user.getRegistrationSecret(), is("registration-secret"));
+                    assertThat(user.getRegistrationOn(), is(LocalDateTime.of(2024, 5, 19, 23, 54, 1)));
+                    assertThat(user.getRegistrationComplete(), is(true));
                 })
                 .verifyComplete();
     }
@@ -223,6 +318,52 @@ class PersistenceTest {
                 .verifyErrorSatisfies(error ->
                         assertThat(error.getMessage(), containsString("User not updated"))
                 );
+    }
+
+    @Test
+    void deleteUnregisteredUsers_positive_NoUserToDelete() {
+
+        insertTestData();
+
+        assertCount(User.class, 2);
+
+        Mono.just(1L)
+                .flatMap(id -> persistence.deleteUnregisteredUsers(LocalDateTime.of(2024, 5, 20, 0, 0, 0)))
+                .as(StepVerifier::create)
+                .expectNext().expectNext(0L)
+                .verifyComplete();
+
+        assertCount(User.class, 2);
+    }
+
+    @Test
+    void deleteUnregisteredUsers_positive_TwoUsersToDelete() {
+
+        insertTestData();
+
+        Mono.just(1L)
+                .flatMap(n -> persistence.insertUser(new User(null, "a", "", "", "", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false)))
+                .flatMap(n -> persistence.insertUser(new User(null, "b", "", "", "", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false)))
+                .flatMap(n -> persistence.insertUser(new User(null, "c", "", "", "", LocalDateTime.of(2024, 5, 21, 0, 0, 0), false)))
+                .block();
+
+        assertCount(User.class, 5);
+
+        Mono.just(1L)
+                .flatMap(id -> persistence.deleteUnregisteredUsers(LocalDateTime.of(2024, 5, 20, 0, 0, 0)))
+                .as(StepVerifier::create)
+                .expectNext().expectNext(2L)
+                .verifyComplete();
+
+        assertCount(User.class, 3);
+
+        Flux.just("Alice@mail.com", "Bob@mail.com", "c")
+                .flatMap(persistence::existsUser)
+                .as(StepVerifier::create)
+                .assertNext(exists -> assertThat(exists, is(true)))
+                .assertNext(exists -> assertThat(exists, is(true)))
+                .assertNext(exists -> assertThat(exists, is(true)))
+                .verifyComplete();
     }
 
     @Test
@@ -604,7 +745,7 @@ class PersistenceTest {
     void insertPayment_positive() {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "")
+                new User(null, "", "", "", "", LocalDateTime.now(), true)
         ).block()).getId();
 
         assertCount(Payment.class, 0);
@@ -628,7 +769,7 @@ class PersistenceTest {
     void insertPayment_negative_DuplicatePrimaryKey() {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "")
+                new User(null, "", "", "", "", LocalDateTime.now(), true)
         ).block()).getId();
 
         assertCount(Payment.class, 0);
@@ -666,7 +807,7 @@ class PersistenceTest {
     void insertPayment_negative_NullNotAllowed(final Payment payment, final String errorMessage) {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "")
+                new User(null, "", "", "", "", LocalDateTime.now(), true)
         ).block()).getId();
 
         payment.setUserId(userId);
@@ -710,8 +851,8 @@ class PersistenceTest {
         final TestData testData = new TestData();
 
         testData.numOfUsers = 2;
-        testData.user1 = template.insert(new User(null, "Alice@mail.com", "password", "roles")).block();
-        testData.user2 = template.insert(new User(null, "Bob@mail.com", "password", "roles")).block();
+        testData.user1 = template.insert(new User(null, "Alice@mail.com", "password", "roles", "11111", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)).block();
+        testData.user2 = template.insert(new User(null, "Bob@mail.com", "password", "roles", "22222", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)).block();
 
         testData.numOfProducts = 2;
         testData.product1 = template.insert(new Product(null, "Coffee")).block();

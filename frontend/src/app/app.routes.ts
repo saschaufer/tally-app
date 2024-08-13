@@ -7,6 +7,7 @@ import {PurchaseDeleteComponent} from "./components/purchases/purchase-delete/pu
 import {PurchaseNewComponent} from "./components/purchases/purchase-new/purchase-new.component";
 import {PurchasesComponent} from "./components/purchases/purchases.component";
 import {QrComponent} from "./components/qr/qr.component";
+import {RegisterConfirmComponent} from "./components/register/register-confirm/register-confirm.component";
 import {RegisterComponent} from "./components/register/register.component";
 import {SettingsComponent} from "./components/settings/settings.component";
 import {authGuard} from "./guards/auth.guard";
@@ -22,6 +23,7 @@ export enum routeName {
     purchases_delete = 'purchases/delete',
     purchases_new = 'purchases/new',
     register = 'register',
+    register_confirm = 'register/confirm',
     settings = 'settings',
     qr = 'qr'
 }
@@ -42,6 +44,11 @@ export const routes: Routes = [
         path: routeName.register,
         pathMatch: 'full',
         component: RegisterComponent
+    },
+    {
+        path: routeName.register_confirm,
+        pathMatch: 'full',
+        component: RegisterConfirmComponent
     },
     {
         path: routeName.settings,

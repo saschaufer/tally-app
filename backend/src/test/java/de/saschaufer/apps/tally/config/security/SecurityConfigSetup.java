@@ -3,6 +3,7 @@ package de.saschaufer.apps.tally.config.security;
 import de.saschaufer.apps.tally.controller.Handler;
 import de.saschaufer.apps.tally.controller.Router;
 import de.saschaufer.apps.tally.persistence.dto.User;
+import de.saschaufer.apps.tally.services.EmailService;
 import de.saschaufer.apps.tally.services.ProductService;
 import de.saschaufer.apps.tally.services.PurchaseService;
 import de.saschaufer.apps.tally.services.UserDetailsService;
@@ -24,6 +25,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 
@@ -62,27 +64,36 @@ public abstract class SecurityConfigSetup {
     @MockBean
     protected PurchaseService purchaseService;
 
+    @MockBean
+    protected EmailService emailService;
+
     protected WebTestClient webClient;
 
     @BeforeEach
     protected void beforeEach() {
 
-        doAnswer(invocation -> {
-            final String password = ENCODED_PASSWORD;
-            return switch (invocation.getArgument(0, String.class)) {
-                case NONE -> Mono.just(new User(1L, NONE, password, NONE));
-                case USER -> Mono.just(new User(2L, USER, password, USER));
-                case ADMIN -> Mono.just(new User(3L, ADMIN, password, String.join(",", USER, ADMIN)));
-                case INVITATION -> Mono.just(new User(4L, INVITATION, password, INVITATION));
-                case "invitation-code" -> Mono.just(new User(5L, "invitation-code", password, INVITATION));
-                case null, default -> Mono.error(new BadCredentialsException("Error finding user"));
-            };
-        }).when(userDetailsService).findByUsername(any(String.class));
+        doAnswer(invocation ->
+                getUserByUsername(invocation.getArgument(0, String.class))
+        ).when(userDetailsService).findByUsername(any(String.class));
 
         webClient = WebTestClient
                 .bindToApplicationContext(context)
                 .configureClient()
                 .build();
+    }
+
+    protected Mono<User> getUserByUsername(final String name) {
+        final String password = ENCODED_PASSWORD;
+        //@formatter:off
+        return switch (name) {
+            case NONE -> Mono.just(new User(1L, NONE, password, NONE, null, LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
+            case USER -> Mono.just(new User(2L, USER, password, USER, "registration-secret-user", LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
+            case ADMIN -> Mono.just(new User(3L, ADMIN, password, String.join(",", USER, ADMIN), "registration-secret-admin", LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
+            case INVITATION -> Mono.just(new User(4L, INVITATION, password, INVITATION, null, LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
+            case "invitation-code" -> Mono.just(new User(5L, "invitation-code", password, INVITATION, null, LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
+            case null, default -> Mono.error(new BadCredentialsException("Error finding user"));
+        };
+        //@formatter:on
     }
 
     protected String credentials(final String user, final boolean passwordOk) {

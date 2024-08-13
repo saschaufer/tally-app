@@ -1,6 +1,7 @@
 package de.saschaufer.apps.tally.services;
 
 import de.saschaufer.apps.tally.config.admin.AdminProperties;
+import de.saschaufer.apps.tally.config.email.EmailProperties;
 import de.saschaufer.apps.tally.config.security.JwtProperties;
 import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import de.saschaufer.apps.tally.management.UserAgent;
@@ -24,7 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
+import java.security.SecureRandom;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -34,9 +37,12 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserDetailsService implements ReactiveUserDetailsService, ReactiveUserDetailsPasswordService {
 
+    private static final SecureRandom random = new SecureRandom();
+
     private final Persistence persistence;
     private final JwtProperties jwtProperties;
     private final AdminProperties adminProperties;
+    private final EmailProperties emailProperties;
     private final JwtEncoder jwtEncoder;
     private final UserAgent userAgent;
     private final PasswordEncoder passwordEncoder;
@@ -48,6 +54,17 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                 .doOnError(err -> log.atError().setMessage("Error finding user.").setCause(err).log())
                 .doOnSuccess(user -> log.atInfo().setMessage("User found.").log())
                 .map(user -> user);
+    }
+
+    public Mono<User> checkRegistered(final User user) {
+
+        return Mono.just(user)
+                .flatMap(u -> {
+                    if (u.getRegistrationComplete().equals(Boolean.FALSE)) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Registration is not completed"));
+                    }
+                    return Mono.just(u);
+                });
     }
 
     @Override
@@ -110,6 +127,9 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setRoles(String.join(",", roles));
+        user.setRegistrationSecret(String.valueOf(random.nextInt(97942 - 16234 + 1) + 16234)); // Number between 16234 and 97942.
+        user.setRegistrationOn(LocalDateTime.now());
+        user.setRegistrationComplete(false);
 
         return persistence.existsUser(email)
                 .flatMap(found -> {
@@ -120,6 +140,32 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                     return Mono.just(user)
                             .flatMap(persistence::insertUser);
                 });
+    }
+
+    public Mono<User> checkRegistrationSecret(final String email, final String givenRegistrationSecret) {
+
+        return findByUsername(email)
+                .map(User.class::cast)
+                .flatMap(user -> {
+                    if (!user.getRegistrationSecret().equals(givenRegistrationSecret)) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.UNAUTHORIZED, "The registration secret is not correct"));
+                    }
+                    return Mono.just(user);
+                });
+    }
+
+    public Mono<Void> updateUserRegistrationComplete(final String email) {
+
+        log.atInfo().setMessage("Confirming user registration for user '{}'.").addArgument(email).log();
+
+        return persistence.updateUserRegistrationComplete(email)
+                .doOnSuccess(v -> log.atInfo().setMessage("User registration confirmed.").log())
+                .doOnError(err -> log.atInfo().setMessage("Error confirming user registration.").setCause(err).log());
+    }
+
+    public Mono<Long> deleteUnregisteredUsers() {
+        final LocalDateTime deleteRegisteredBefore = LocalDateTime.now().minus(emailProperties.deleteUnregisteredUsersAfter());
+        return persistence.deleteUnregisteredUsers(deleteRegisteredBefore);
     }
 
     public void createInvitationCodeIfNoneExists() {
@@ -136,6 +182,9 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                     user.setEmail("invitation-code");
                     user.setPassword(passwordEncoder.encode(password));
                     user.setRoles(User.Role.INVITATION);
+                    user.setRegistrationSecret("00000");
+                    user.setRegistrationOn(LocalDateTime.now());
+                    user.setRegistrationComplete(true);
 
                     return Mono.just(user)
                             .flatMap(persistence::insertUser)

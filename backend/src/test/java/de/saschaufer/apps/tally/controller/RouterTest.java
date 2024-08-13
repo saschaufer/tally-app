@@ -27,6 +27,7 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void postLogin_positive() {
 
+        doReturn(getUserByUsername(USER)).when(userDetailsService).checkRegistered(any(User.class));
         doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
 
         webClient.post().uri("/login")
@@ -36,24 +37,64 @@ class RouterTest extends SecurityConfigSetup {
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody(PostLoginResponse.class).isEqualTo(new PostLoginResponse("jwt", true));
 
-        verify(userDetailsService, times(1)).findByUsername(any(String.class));
+        verify(userDetailsService, times(1)).findByUsername(USER);
+        verify(userDetailsService, times(1)).checkRegistered(any(User.class));
         verify(userDetailsService, times(1)).createJwtToken(any(User.class));
 
-        final ArgumentCaptor<User> argumentCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userDetailsService).createJwtToken(argumentCaptor.capture());
+        final ArgumentCaptor<User> argumentCaptor1 = ArgumentCaptor.forClass(User.class);
+        verify(userDetailsService).checkRegistered(argumentCaptor1.capture());
 
-        final User user = argumentCaptor.getValue();
+        final User user1 = argumentCaptor1.getValue();
 
-        assertThat(user.getId(), is(2L));
-        assertThat(user.getUsername(), is(USER));
-        assertThat(user.getPassword(), notNullValue());
-        assertThat(user.getRoles(), is(USER));
+        assertThat(user1.getId(), is(2L));
+        assertThat(user1.getUsername(), is(USER));
+        assertThat(user1.getPassword(), notNullValue());
+        assertThat(user1.getRoles(), is(USER));
+
+        final ArgumentCaptor<User> argumentCaptor2 = ArgumentCaptor.forClass(User.class);
+        verify(userDetailsService).createJwtToken(argumentCaptor2.capture());
+
+        final User user2 = argumentCaptor2.getValue();
+
+        assertThat(user2.getId(), is(2L));
+        assertThat(user2.getUsername(), is(USER));
+        assertThat(user2.getPassword(), notNullValue());
+        assertThat(user2.getRoles(), is(USER));
+    }
+
+    @Test
+    void postLogin_negative_UserRegistrationCompleteFalse() {
+
+        final Mono<User> user = getUserByUsername(USER)
+                .map(u -> {
+                    u.setRegistrationComplete(false);
+                    return u;
+                });
+
+        doReturn(user).when(userDetailsService).findByUsername(any(String.class));
+        doCallRealMethod().when(userDetailsService).checkRegistered(any(User.class));
+        doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
+
+        webClient.post().uri("/login")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Registration is not completed");
+
+        verify(userDetailsService, times(1)).findByUsername(USER);
+        verify(userDetailsService, times(1)).checkRegistered(any(User.class));
+        verify(userDetailsService, times(0)).createJwtToken(any(User.class));
     }
 
     @Test
     void postRegisterNewUser_positive() {
 
-        doReturn(Mono.just(new User())).when(userDetailsService).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        doReturn(Mono.just(new User() {{
+            setEmail("test@mail.com");
+            setRegistrationSecret("12345");
+        }})).when(userDetailsService).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        doNothing().when(emailService).sendRegistrationEmail(any(String.class), any(String.class));
 
         webClient.post().uri("/register")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
@@ -62,8 +103,9 @@ class RouterTest extends SecurityConfigSetup {
                 .expectStatus().isOk()
                 .expectBody().isEmpty();
 
-        verify(userDetailsService, times(1)).findByUsername(any(String.class));
+        verify(userDetailsService, times(1)).findByUsername(INVITATION);
         verify(userDetailsService, times(1)).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        verify(emailService, times(1)).sendRegistrationEmail("test@mail.com", "12345");
 
         final ArgumentCaptor<String> argumentCaptorUsername = ArgumentCaptor.forClass(String.class);
         final ArgumentCaptor<String> argumentCaptorPassword = ArgumentCaptor.forClass(String.class);
@@ -90,6 +132,7 @@ class RouterTest extends SecurityConfigSetup {
 
         verify(userDetailsService, times(1)).findByUsername(any(String.class));
         verify(userDetailsService, times(0)).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        verify(emailService, times(0)).sendRegistrationEmail(any(String.class), any(String.class));
     }
 
     @Test
@@ -105,6 +148,7 @@ class RouterTest extends SecurityConfigSetup {
 
         verify(userDetailsService, times(1)).findByUsername(any(String.class));
         verify(userDetailsService, times(0)).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        verify(emailService, times(0)).sendRegistrationEmail(any(String.class), any(String.class));
     }
 
     @Test
@@ -120,6 +164,7 @@ class RouterTest extends SecurityConfigSetup {
 
         verify(userDetailsService, times(1)).findByUsername(any(String.class));
         verify(userDetailsService, times(0)).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        verify(emailService, times(0)).sendRegistrationEmail(any(String.class), any(String.class));
     }
 
     @Test
@@ -136,6 +181,7 @@ class RouterTest extends SecurityConfigSetup {
 
         verify(userDetailsService, times(1)).findByUsername(any(String.class));
         verify(userDetailsService, times(1)).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        verify(emailService, times(0)).sendRegistrationEmail(any(String.class), any(String.class));
     }
 
     @Test
@@ -152,6 +198,133 @@ class RouterTest extends SecurityConfigSetup {
 
         verify(userDetailsService, times(1)).findByUsername(any(String.class));
         verify(userDetailsService, times(1)).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        verify(emailService, times(0)).sendRegistrationEmail(any(String.class), any(String.class));
+    }
+
+    @Test
+    void postRegisterNewUser_negative_SendRegistrationEmailException() {
+
+        doReturn(Mono.just(new User() {{
+            setEmail("test@mail.com");
+            setRegistrationSecret("12345");
+        }})).when(userDetailsService).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        doThrow(new RuntimeException("Bad")).when(emailService).sendRegistrationEmail(any(String.class), any(String.class));
+
+        webClient.post().uri("/register")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
+                .body(Mono.just(new PostRegisterNewUserRequest("test-user@mail.com", "test-password")), PostRegisterNewUserRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).findByUsername(any(String.class));
+        verify(userDetailsService, times(1)).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        verify(emailService, times(1)).sendRegistrationEmail(any(String.class), any(String.class));
+    }
+
+    @Test
+    void postRegisterNewUserConfirm_positive() {
+
+        final User user = new User();
+        user.setEmail("test-user@mail.com");
+
+        doReturn(Mono.just(user)).when(userDetailsService).checkRegistrationSecret(any(String.class), any(String.class));
+        doReturn(Mono.empty()).when(userDetailsService).updateUserRegistrationComplete(any(String.class));
+
+        webClient.post().uri("/register/confirm")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
+                .body(Mono.just(new PostRegisterNewUserConfirmRequest("test-user@mail.com", "registration-secret")), PostRegisterNewUserConfirmRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).findByUsername(INVITATION);
+        verify(userDetailsService, times(1)).checkRegistrationSecret("test-user@mail.com", "registration-secret");
+        verify(userDetailsService, times(1)).updateUserRegistrationComplete("test-user@mail.com");
+    }
+
+    @Test
+    void postRegisterNewUserConfirm_negative_NoBody() {
+
+        webClient.post().uri("/register/confirm")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(userDetailsService, times(1)).findByUsername(INVITATION);
+        verify(userDetailsService, times(0)).checkRegistrationSecret(any(String.class), any(String.class));
+        verify(userDetailsService, times(0)).updateUserRegistrationComplete(any(String.class));
+    }
+
+    @Test
+    void postRegisterNewUserConfirm_negative_BodyWrongType() {
+
+        webClient.post().uri("/register/confirm")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
+                .body(Mono.just("Wrong Type"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).value(stringContainsInOrder("Content type '", "' not supported. Supported: '"));
+
+        verify(userDetailsService, times(1)).findByUsername(INVITATION);
+        verify(userDetailsService, times(0)).checkRegistrationSecret(any(String.class), any(String.class));
+        verify(userDetailsService, times(0)).updateUserRegistrationComplete(any(String.class));
+    }
+
+    @Test
+    void postRegisterNewUserConfirm_negative_Validator() {
+
+        webClient.post().uri("/register/confirm")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
+                .body(Mono.just(new PostRegisterNewUserConfirmRequest("", "registration-secret")), PostRegisterNewUserConfirmRequest.class)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Email is required");
+
+        verify(userDetailsService, times(1)).findByUsername(INVITATION);
+        verify(userDetailsService, times(0)).checkRegistrationSecret(any(String.class), any(String.class));
+        verify(userDetailsService, times(0)).updateUserRegistrationComplete(any(String.class));
+    }
+
+    @Test
+    void postRegisterNewUserConfirm_negative_InternalServerError() {
+
+        final User user = new User();
+        user.setEmail("test-user@mail.com");
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(userDetailsService).checkRegistrationSecret(any(String.class), any(String.class));
+
+        webClient.post().uri("/register/confirm")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
+                .body(Mono.just(new PostRegisterNewUserConfirmRequest("test-user@mail.com", "registration-secret")), PostRegisterNewUserConfirmRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).findByUsername(INVITATION);
+        verify(userDetailsService, times(1)).checkRegistrationSecret("test-user@mail.com", "registration-secret");
+        verify(userDetailsService, times(0)).updateUserRegistrationComplete(any(String.class));
+    }
+
+    @Test
+    void postRegisterNewUserConfirm_ResponseStatusException() {
+
+        doReturn(Mono.error(new ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "Bad"))).when(userDetailsService).checkRegistrationSecret(any(String.class), any(String.class));
+
+        webClient.post().uri("/register/confirm")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
+                .body(Mono.just(new PostRegisterNewUserConfirmRequest("test-user@mail.com", "registration-secret")), PostRegisterNewUserConfirmRequest.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.I_AM_A_TEAPOT)
+                .expectBody(String.class).isEqualTo("Bad");
+
+        verify(userDetailsService, times(1)).findByUsername(INVITATION);
+        verify(userDetailsService, times(1)).checkRegistrationSecret("test-user@mail.com", "registration-secret");
+        verify(userDetailsService, times(0)).updateUserRegistrationComplete("test-user@mail.com");
     }
 
     @Test
