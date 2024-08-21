@@ -21,19 +21,19 @@ describe('PurchaseDeleteComponent', () => {
 
     beforeEach(async () => {
 
-        const base64 = window.btoa(JSON.stringify({
+        const urlAppend = encodeURIComponent(window.btoa(JSON.stringify({
             purchaseId: 1,
             purchaseTimestamp: 132,
-            productName: "product-name",
+            productName: "product-name%&/+=",
             productPrice: Big('123.45')
-        }));
+        })));
 
         await TestBed.configureTestingModule({
             imports: [PurchaseDeleteComponent],
             providers: [
                 MockProvider(HttpService),
                 provideRouter([]),
-                {provide: ActivatedRoute, useValue: {params: of({purchase: base64})}}
+                {provide: ActivatedRoute, useValue: {params: of({purchase: urlAppend})}}
             ]
         })
             .compileComponents();
@@ -52,7 +52,7 @@ describe('PurchaseDeleteComponent', () => {
         expect(component).toBeTruthy();
 
         expect(component.purchase?.purchaseId).toBe(1);
-        expect(component.purchase?.productName).toBe('product-name');
+        expect(component.purchase?.productName).toBe('product-name%&/+=');
         expect(component.purchase?.productPrice).toEqual(Big('123.45'));
         expect(component.purchase?.purchaseTimestamp).toEqual(132);
     });

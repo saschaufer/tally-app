@@ -30,8 +30,8 @@ export class PurchaseDeleteComponent {
 
     ngOnInit(): void {
         this.activatedRoute.params.subscribe(params => {
-            const base64 = params['purchase'];
-            const json = window.atob(base64);
+            const urlAppend = params['purchase'];
+            const json = window.atob(decodeURIComponent(urlAppend));
             let purchase = JSON.parse(json) as GetPurchasesResponse;
             this.purchase = {
                 purchaseId: purchase.purchaseId,

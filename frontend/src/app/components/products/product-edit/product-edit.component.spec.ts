@@ -17,14 +17,18 @@ describe('ProductEditComponent', () => {
 
     beforeEach(async () => {
 
-        const base64 = window.btoa(JSON.stringify({id: 1, name: "product-name", price: Big('123.45')}));
+        const urlAppend = encodeURIComponent(window.btoa(JSON.stringify({
+            id: 1,
+            name: "product-name%&/+=",
+            price: Big('123.45')
+        })));
 
         await TestBed.configureTestingModule({
             imports: [ProductEditComponent],
             providers: [
                 MockProvider(HttpService),
                 provideRouter([]),
-                {provide: ActivatedRoute, useValue: {params: of({product: base64})}}
+                {provide: ActivatedRoute, useValue: {params: of({product: urlAppend})}}
             ]
         })
             .compileComponents();
@@ -41,10 +45,10 @@ describe('ProductEditComponent', () => {
         expect(component).toBeTruthy();
 
         expect(component.product?.id).toBe(1);
-        expect(component.product?.name).toBe('product-name');
+        expect(component.product?.name).toBe('product-name%&/+=');
         expect(component.product?.price).toEqual(Big('123.45'));
 
-        expect(component.changeNameForm.controls.name.value).toBe('product-name');
+        expect(component.changeNameForm.controls.name.value).toBe('product-name%&/+=');
         expect(component.changePriceForm.controls.price.value).toBe('123.45');
     });
 

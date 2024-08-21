@@ -60,14 +60,18 @@ describe('ProductsComponent', () => {
         routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
         component.products = [
-            {id: 1, name: "product-1", price: Big('123.45')},
-            {id: 2, name: "product-2", price: Big('678.90')}
+            {id: 1, name: "product-1%&/+=", price: Big('123.45')},
+            {id: 2, name: "product-2%&/+=", price: Big('678.90')}
         ] as GetProductsResponse[];
 
-        const base64 = window.btoa(JSON.stringify({id: 1, name: "product-1", price: Big('123.45')}));
+        const urlAppend = encodeURIComponent(window.btoa(JSON.stringify({
+            id: 1,
+            name: "product-1%&/+=",
+            price: Big('123.45')
+        })));
 
         component.onClick(0);
 
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.products_edit + '/' + base64]);
+        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.products_edit + '/' + urlAppend]);
     });
 });

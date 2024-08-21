@@ -60,19 +60,19 @@ describe('PurchasesComponent', () => {
         routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
         component.purchases = [
-            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')},
-            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')}
+            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1%&/+=", productPrice: Big('123.45')},
+            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2%&/+=", productPrice: Big('543.21')}
         ] as GetPurchasesResponse[];
 
-        const base64 = window.btoa(JSON.stringify({
+        const urlAppend = encodeURIComponent(window.btoa(JSON.stringify({
             purchaseId: 1,
             purchaseTimestamp: 123,
-            productName: "product-1",
+            productName: "product-1%&/+=",
             productPrice: Big('123.45')
-        }));
+        })));
 
         component.onClick(0);
 
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases_delete + '/' + base64]);
+        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases_delete + '/' + urlAppend]);
     });
 });

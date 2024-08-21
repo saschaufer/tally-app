@@ -35,8 +35,8 @@ export class ProductEditComponent {
 
     ngOnInit(): void {
         this.activatedRoute.params.subscribe(params => {
-            const base64 = params['product'];
-            const json = window.atob(base64);
+            const urlAppend = params['product'];
+            const json = window.atob(decodeURIComponent(urlAppend));
             let product = JSON.parse(json) as GetProductsResponse;
             this.product = {
                 id: product.id,

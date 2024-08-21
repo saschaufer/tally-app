@@ -43,9 +43,9 @@ export class PurchasesComponent {
 
     onClick(i: number) {
         let purchase = this.purchases![i];
-        const base64 = window.btoa(JSON.stringify(purchase));
+        const urlAppend = encodeURIComponent(window.btoa(JSON.stringify(purchase)));
         this.zone.run(() =>
-            this.router.navigate(['/' + routeName.purchases_delete + '/' + base64]).then()
+            this.router.navigate(['/' + routeName.purchases_delete + '/' + urlAppend]).then()
         ).then();
     }
 }

@@ -43,9 +43,9 @@ export class ProductsComponent {
 
     onClick(i: number) {
         let product = this.products![i];
-        const base64 = window.btoa(JSON.stringify(product));
+        const urlAppend = encodeURIComponent(window.btoa(JSON.stringify(product)));
         this.zone.run(() =>
-            this.router.navigate(['/' + routeName.products_edit + '/' + base64]).then()
+            this.router.navigate(['/' + routeName.products_edit + '/' + urlAppend]).then()
         ).then();
     }
 }
