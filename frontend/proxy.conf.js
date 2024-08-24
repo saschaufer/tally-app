@@ -6,7 +6,7 @@ module.exports = [
         changeOrigin: true
     },*/
     {
-        context: ['/login', '/register', '/settings/**', '/products/**', '/purchases/**'],
+        context: ['/login', '/register', '/settings/**', '/payments/**', '/products/**', '/purchases/**', '/account-balance'],
         target: 'http://192.168.0.218:8000',
         secure: false,
         changeOrigin: true

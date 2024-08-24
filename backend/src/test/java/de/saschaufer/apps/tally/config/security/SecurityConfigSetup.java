@@ -3,10 +3,7 @@ package de.saschaufer.apps.tally.config.security;
 import de.saschaufer.apps.tally.controller.Handler;
 import de.saschaufer.apps.tally.controller.Router;
 import de.saschaufer.apps.tally.persistence.dto.User;
-import de.saschaufer.apps.tally.services.EmailService;
-import de.saschaufer.apps.tally.services.ProductService;
-import de.saschaufer.apps.tally.services.PurchaseService;
-import de.saschaufer.apps.tally.services.UserDetailsService;
+import de.saschaufer.apps.tally.services.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
@@ -66,6 +63,9 @@ public abstract class SecurityConfigSetup {
 
     @MockBean
     protected EmailService emailService;
+
+    @MockBean
+    protected PaymentService paymentService;
 
     protected WebTestClient webClient;
 

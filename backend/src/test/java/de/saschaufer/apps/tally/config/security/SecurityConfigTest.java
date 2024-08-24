@@ -661,4 +661,212 @@ class SecurityConfigTest extends SecurityConfigSetup {
 
         verify(handler, times(0)).postDeletePurchase(any(ServerRequest.class));
     }
+
+    @Test
+    void postCreatePayment_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postCreatePayment(any(ServerRequest.class));
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postCreatePayment(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreatePayment_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(NONE, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postCreatePayment(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreatePayment_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postCreatePayment(any(ServerRequest.class));
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postCreatePayment(any(ServerRequest.class));
+    }
+
+    @Test
+    void postCreatePayment_negative_JwtUserWrongRole() {
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(NONE))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postCreatePayment(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadPayments_positive_Password() {
+
+        doReturn(ok().build()).when(handler).getReadPayments(any(ServerRequest.class));
+
+        webClient.get().uri("/payments")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadPayments(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadPayments_negative_PasswordUserWrongRole() {
+
+        webClient.get().uri("/payments")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(NONE, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadPayments(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadPayments_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).getReadPayments(any(ServerRequest.class));
+
+        webClient.get().uri("/payments")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadPayments(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadPayments_negative_JwtUserWrongRole() {
+
+        webClient.get().uri("/payments")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(NONE))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadPayments(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeletePayment_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postDeletePayment(any(ServerRequest.class));
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postDeletePayment(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeletePayment_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(NONE, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postDeletePayment(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeletePayment_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postDeletePayment(any(ServerRequest.class));
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postDeletePayment(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeletePayment_negative_JwtUserWrongRole() {
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(NONE))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postDeletePayment(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadAccountBalance_positive_Password() {
+
+        doReturn(ok().build()).when(handler).getReadAccountBalance(any(ServerRequest.class));
+
+        webClient.get().uri("/account-balance")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadAccountBalance(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadAccountBalance_negative_PasswordUserWrongRole() {
+
+        webClient.get().uri("/account-balance")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(NONE, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadAccountBalance(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadAccountBalance_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).getReadAccountBalance(any(ServerRequest.class));
+
+        webClient.get().uri("/account-balance")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadAccountBalance(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadAccountBalance_negative_JwtUserWrongRole() {
+
+        webClient.get().uri("/account-balance")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(NONE))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadAccountBalance(any(ServerRequest.class));
+    }
 }

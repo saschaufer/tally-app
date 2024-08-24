@@ -2,10 +2,7 @@ package de.saschaufer.apps.tally.controller;
 
 import de.saschaufer.apps.tally.controller.dto.*;
 import de.saschaufer.apps.tally.persistence.dto.User;
-import de.saschaufer.apps.tally.services.EmailService;
-import de.saschaufer.apps.tally.services.ProductService;
-import de.saschaufer.apps.tally.services.PurchaseService;
-import de.saschaufer.apps.tally.services.UserDetailsService;
+import de.saschaufer.apps.tally.services.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.Pair;
@@ -37,6 +34,7 @@ public class Handler {
     private final ProductService productService;
     private final PurchaseService purchaseService;
     private final EmailService emailService;
+    private final PaymentService paymentService;
 
     public Mono<ServerResponse> postLogin(final ServerRequest request) {
 
@@ -257,6 +255,83 @@ public class Handler {
         return purchase.flatMap(p -> purchaseService.deletePurchase(p.purchaseId()))
                 .then(Mono.defer(() -> ok().build()))
                 .doOnError(e -> log.atError().setMessage("Error deleting purchase.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> postCreatePayment(final ServerRequest request) {
+
+        log.atInfo().setMessage("Create payment.").log();
+
+        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                .map(auth -> switch (auth.getPrincipal()) {
+                    case UserDetails u -> u.getUsername();
+                    case Jwt j -> j.getSubject();
+                    default ->
+                            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown authentication method");
+                })
+                .flatMap(userDetailsService::findByUsername)
+                .map(u -> (User) u);
+
+        final Mono<PostCreatePaymentRequest> payment = request.bodyToMono(PostCreatePaymentRequest.class)
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate);
+
+        return user.zipWith(payment).flatMap(pair -> paymentService.createPayment(pair.getT1().getId(), pair.getT2().amount()))
+                .then(Mono.defer(() -> ok().build()))
+                .doOnError(e -> log.atError().setMessage("Error creating payment.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> getReadPayments(final ServerRequest request) {
+
+        log.atInfo().setMessage("Read payments.").log();
+
+        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                .map(auth -> switch (auth.getPrincipal()) {
+                    case UserDetails u -> u.getUsername();
+                    case Jwt j -> j.getSubject();
+                    default ->
+                            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown authentication method");
+                })
+                .flatMap(userDetailsService::findByUsername)
+                .map(u -> (User) u);
+
+        return user.flatMap(u -> paymentService.readPayments(u.getId()))
+                .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+                .doOnError(e -> log.atError().setMessage("Error reading payments.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+
+    }
+
+    public Mono<ServerResponse> postDeletePayment(final ServerRequest request) {
+
+        final Mono<PostDeletePaymentRequest> payment = request.bodyToMono(PostDeletePaymentRequest.class)
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate);
+
+        return payment.flatMap(p -> paymentService.deletePayment(p.paymentId()))
+                .then(Mono.defer(() -> ok().build()))
+                .doOnError(e -> log.atError().setMessage("Error deleting payment.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
+    public Mono<ServerResponse> getReadAccountBalance(final ServerRequest request) {
+
+        log.atInfo().setMessage("Read account balance.").log();
+
+        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                .map(auth -> switch (auth.getPrincipal()) {
+                    case UserDetails u -> u.getUsername();
+                    case Jwt j -> j.getSubject();
+                    default ->
+                            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown authentication method");
+                })
+                .flatMap(userDetailsService::findByUsername)
+                .map(u -> (User) u);
+
+        return user.flatMap(u -> paymentService.readAccountBalance(u.getId()))
+                .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+                .doOnError(e -> log.atError().setMessage("Error reading account balance.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 

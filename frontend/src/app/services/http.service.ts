@@ -2,6 +2,8 @@ import {HttpClient} from "@angular/common/http";
 import {inject, Injectable} from '@angular/core';
 import {Observable} from "rxjs";
 import {AuthService} from "./auth.service";
+import {GetAccountBalanceResponse} from "./models/GetAccountBalanceResponse";
+import {GetPaymentsResponse} from "./models/GetPaymentsResponse";
 import {GetProductsResponse} from "./models/GetProductsResponse";
 import {GetPurchasesResponse} from "./models/GetPurchasesResponse";
 import {LoginResponse} from "./models/LoginResponse";
@@ -127,6 +129,32 @@ export class HttpService {
         };
 
         return this.httpClient.post<void>("/purchases/delete-purchase", body, this.httpOptions());
+    }
+
+    getReadPayments(): Observable<GetPaymentsResponse[]> {
+        return this.httpClient.get<GetPaymentsResponse[]>("/payments", this.httpOptions());
+    }
+
+    postCreatePayment(amount: Big): Observable<void> {
+
+        const body = {
+            amount: amount
+        };
+
+        return this.httpClient.post<void>("/payments/create-payment", body, this.httpOptions());
+    }
+
+    postDeletePayment(paymentId: number): Observable<void> {
+
+        const body = {
+            paymentId: paymentId
+        };
+
+        return this.httpClient.post<void>("/payments/delete-payment", body, this.httpOptions());
+    }
+
+    getReadAccountBalance(): Observable<GetAccountBalanceResponse> {
+        return this.httpClient.get<GetAccountBalanceResponse>("/account-balance", this.httpOptions());
     }
 
     private httpOptions() {

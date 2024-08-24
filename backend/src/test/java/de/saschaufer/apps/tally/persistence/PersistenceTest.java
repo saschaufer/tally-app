@@ -2,6 +2,7 @@ package de.saschaufer.apps.tally.persistence;
 
 import de.saschaufer.apps.tally.config.db.DbConfig;
 import de.saschaufer.apps.tally.config.db.DbProperties;
+import de.saschaufer.apps.tally.controller.dto.GetPaymentsResponse;
 import de.saschaufer.apps.tally.persistence.dto.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,7 @@ import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -712,6 +714,28 @@ class PersistenceTest {
     }
 
     @Test
+    void selectPurchasesSum_positive() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectPurchasesSum(testData.user1.getId())
+                .as(StepVerifier::create)
+                .assertNext(sum -> assertThat(sum, is(testData.productPrice1.getPrice().multiply(BigDecimal.TWO).add(testData.productPrice5.getPrice()))))
+                .verifyComplete();
+    }
+
+    @Test
+    void selectPurchasesSum_positive_NoPayments() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectPurchasesSum(testData.user1.getId() - 1)
+                .as(StepVerifier::create)
+                .assertNext(sum -> assertThat(sum, is(BigDecimal.ZERO)))
+                .verifyComplete();
+    }
+
+    @Test
     void deletePurchase_positive() {
 
         final TestData testData = insertTestData();
@@ -752,12 +776,18 @@ class PersistenceTest {
 
         Mono.just(new Payment(null, userId, new BigDecimal("123.45"), LocalDateTime.of(2024, 2, 20, 14, 59, 2)))
                 .flatMap(persistence::insertPayment)
+                .then(Mono.fromCallable(() -> userId))
+                .flatMap(persistence::selectPayments)
                 .as(StepVerifier::create)
-                .assertNext(payment -> {
-                    assertThat(payment.getId(), notNullValue());
-                    assertThat(payment.getUserId(), is(userId));
-                    assertThat(payment.getAmount(), is(new BigDecimal("123.45")));
-                    assertThat(payment.getTimestamp(), is(LocalDateTime.of(2024, 2, 20, 14, 59, 2)));
+                .assertNext(payments -> {
+
+                    assertThat(payments.size(), is(1));
+
+                    final GetPaymentsResponse payment = payments.getFirst();
+
+                    assertThat(payment.id(), notNullValue());
+                    assertThat(payment.amount(), is(new BigDecimal("123.45")));
+                    assertThat(payment.timestamp(), is(LocalDateTime.of(2024, 2, 20, 14, 59, 2)));
                 })
                 .verifyComplete()
         ;
@@ -776,6 +806,8 @@ class PersistenceTest {
 
         Mono.just(new Payment(null, userId, BigDecimal.ONE, LocalDateTime.now()))
                 .flatMap(persistence::insertPayment)
+                .then(Mono.defer(() -> persistence.selectPayments(userId).map(List::getFirst)))
+                .map(p -> new Payment(p.id(), userId, p.amount(), p.timestamp()))
                 .flatMap(persistence::insertPayment)
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error ->
@@ -838,6 +870,92 @@ class PersistenceTest {
         );
     }
 
+    @Test
+    void selectPayments_positive() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectPayments(testData.user1.getId())
+                .as(StepVerifier::create)
+                .assertNext(list -> {
+
+                    assertThat(list.size(), is(2));
+
+                    assertThat(list.getFirst().id(), is(testData.payment1.getId()));
+                    assertThat(list.getFirst().amount(), is(testData.payment1.getAmount()));
+                    assertThat(list.getFirst().timestamp(), is(testData.payment1.getTimestamp()));
+
+                    assertThat(list.getLast().id(), is(testData.payment2.getId()));
+                    assertThat(list.getLast().amount(), is(testData.payment2.getAmount()));
+                    assertThat(list.getLast().timestamp(), is(testData.payment2.getTimestamp()));
+
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void selectPayments_positive_NoPayments() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectPayments(testData.user1.getId() - 1)
+                .as(StepVerifier::create)
+                .assertNext(list -> assertThat(list.size(), is(0)))
+                .verifyComplete();
+    }
+
+    @Test
+    void selectPaymentsSum_positive() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectPaymentsSum(testData.user1.getId())
+                .as(StepVerifier::create)
+                .assertNext(sum -> assertThat(sum, is(testData.payment1.getAmount().add(testData.payment2.getAmount()))))
+                .verifyComplete();
+    }
+
+    @Test
+    void selectPaymentsSum_positive_NoPayments() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectPaymentsSum(testData.user1.getId() - 1)
+                .as(StepVerifier::create)
+                .assertNext(sum -> assertThat(sum, is(BigDecimal.ZERO)))
+                .verifyComplete();
+    }
+
+    @Test
+    void deletePayment_positive() {
+
+        final TestData testData = insertTestData();
+
+        assertCount(Payment.class, testData.numOfPayments);
+
+        persistence.deletePayment(testData.payment1.getId())
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        assertCount(Payment.class, testData.numOfPayments - 1);
+    }
+
+    @Test
+    void deletePayment_negative_PaymentIdNotExist() {
+
+        final TestData testData = insertTestData();
+
+        assertCount(Payment.class, testData.numOfPayments);
+
+        persistence.deletePayment(testData.payment1.getId() - 1)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("Payment not deleted"))
+                );
+
+        assertCount(Payment.class, testData.numOfPayments);
+    }
+
     void assertCount(Class<?> clazz, final long count) {
         template.count(empty(), clazz)
                 .as(StepVerifier::create)
@@ -879,6 +997,12 @@ class PersistenceTest {
         testData.purchase5 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice1.getId(), LocalDateTime.of(2024, 5, 23, 17, 24, 17))).block();
         testData.purchase6 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice2.getId(), LocalDateTime.of(2024, 5, 23, 12, 36, 24))).block();
 
+        testData.numOfPayments = 3;
+        testData.payment1 = template.insert(new Payment(null, testData.user1.getId(), new BigDecimal("1.87"), LocalDateTime.of(2024, 5, 23, 12, 45, 31))).block();
+        testData.payment2 = template.insert(new Payment(null, testData.user1.getId(), new BigDecimal("5.54"), LocalDateTime.of(2024, 5, 23, 12, 36, 24))).block();
+
+        testData.payment3 = template.insert(new Payment(null, testData.user2.getId(), new BigDecimal("2.45"), LocalDateTime.of(2024, 5, 23, 17, 24, 17))).block();
+
         return testData;
     }
 
@@ -888,6 +1012,7 @@ class PersistenceTest {
         Integer numOfProducts;
         Integer numOfProductPrices;
         Integer numOfPurchases;
+        Integer numOfPayments;
 
         User user1;
         User user2;
@@ -913,5 +1038,11 @@ class PersistenceTest {
         Purchase purchase4;
         Purchase purchase6;
         Purchase purchase5;
+
+        Payment payment1;
+        Payment payment2;
+
+        Payment payment3;
+        Payment payment4;
     }
 }

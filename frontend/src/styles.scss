@@ -85,6 +85,16 @@ app-root {
   @extend .text-green;
 }
 
+.bar {
+  display: flex;
+}
+
+.bar-element {
+  @extend .w-full;
+  display: flex;
+  justify-content: center;
+}
+
 .list {
   list-style-type: none;
   margin: 0;
@@ -219,6 +229,10 @@ hr {
 
 .text-blue {
   color: $custom-blue;
+}
+
+.text-red {
+  color: $custom-red;
 }
 
 .text-b {

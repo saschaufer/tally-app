@@ -1,5 +1,6 @@
 package de.saschaufer.apps.tally.persistence;
 
+import de.saschaufer.apps.tally.controller.dto.GetPaymentsResponse;
 import de.saschaufer.apps.tally.controller.dto.GetPurchasesResponse;
 import de.saschaufer.apps.tally.persistence.dto.*;
 import lombok.RequiredArgsConstructor;
@@ -200,6 +201,26 @@ public class Persistence {
                 }).all().collectList();
     }
 
+    public Mono<BigDecimal> selectPurchasesSum(final Long userId) {
+
+        final String query = """
+                select sum(product_prices.price) as sum
+                from purchases
+                    left join product_prices on product_prices.id = purchases.product_price_id
+                    left join products on products.id = product_prices.product_id
+                where purchases.user_id = :user_id
+                """.toLowerCase();
+
+        return template.getDatabaseClient().sql(query)
+                .bind("user_id", userId)
+                .map((row, rowMetadata) -> {
+                            final BigDecimal sum = row.get("sum", BigDecimal.class);
+                            return sum == null ? BigDecimal.ZERO : sum;
+                        }
+                )
+                .one();
+    }
+
     public Mono<Void> deletePurchase(final Long purchaseId) {
 
         return template
@@ -214,7 +235,44 @@ public class Persistence {
                 });
     }
 
-    public Mono<Payment> insertPayment(final Payment payment) {
-        return Mono.just(payment).flatMap(template::insert);
+    public Mono<Void> insertPayment(final Payment payment) {
+        return Mono.just(payment).flatMap(template::insert).flatMap(p -> Mono.empty());
+    }
+
+    public Mono<List<GetPaymentsResponse>> selectPayments(final Long userId) {
+        return template.select(query(where("user_id").is(userId)), Payment.class)
+                .map(payment -> new GetPaymentsResponse(payment.getId(), payment.getAmount(), payment.getTimestamp()))
+                .collectList();
+    }
+
+    public Mono<BigDecimal> selectPaymentsSum(final Long userId) {
+
+        final String query = """
+                select sum(amount) as sum
+                from payments
+                where user_id = :user_id
+                """.toLowerCase();
+
+        return template.getDatabaseClient().sql(query)
+                .bind("user_id", userId)
+                .map((row, rowMetadata) -> {
+                            final BigDecimal sum = row.get("sum", BigDecimal.class);
+                            return sum == null ? BigDecimal.ZERO : sum;
+                        }
+                )
+                .one();
+    }
+
+    public Mono<Void> deletePayment(final Long paymentId) {
+        return template
+                .delete(Payment.class)
+                .matching(query(where("id").is(paymentId)))
+                .all()
+
+                .flatMap(deleteCount -> switch (deleteCount.intValue()) {
+                    case 0 -> Mono.error(new RuntimeException("Payment not deleted"));
+                    case 1 -> Mono.empty();
+                    default -> Mono.error(new RuntimeException("Too many payments deleted"));
+                });
     }
 }

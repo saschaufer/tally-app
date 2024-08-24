@@ -1,4 +1,4 @@
-import {NgClass, NgForOf, NgIf} from "@angular/common";
+import {DatePipe, NgClass, NgForOf, NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Component, inject, NgZone} from '@angular/core';
 import {Router, RouterLink} from "@angular/router";
@@ -6,21 +6,22 @@ import {Big} from "big.js";
 import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 import {GetAccountBalanceResponse} from "../../services/models/GetAccountBalanceResponse";
-import {GetPurchasesResponse} from "../../services/models/GetPurchasesResponse";
+import {GetPaymentsResponse} from "../../services/models/GetPaymentsResponse";
 
 @Component({
-    selector: 'app-purchases',
+    selector: 'app-payments',
     standalone: true,
     imports: [
         NgForOf,
         NgIf,
         RouterLink,
+        DatePipe,
         NgClass
     ],
-    templateUrl: './purchases.component.html',
+    templateUrl: './payments.component.html',
     styles: ``
 })
-export class PurchasesComponent {
+export class PaymentsComponent {
 
     protected readonly routeName = routeName;
 
@@ -28,17 +29,17 @@ export class PurchasesComponent {
     private router = inject(Router);
     private zone = inject(NgZone);
 
-    purchases: GetPurchasesResponse[] | undefined;
+    payments: GetPaymentsResponse[] | undefined;
     accountBalance: GetAccountBalanceResponse | undefined;
     isNegative = false;
 
     ngOnInit(): void {
 
-        this.httpService.getReadPurchases()
+        this.httpService.getReadPayments()
             .subscribe({
-                next: purchases => {
-                    console.log("Purchases read");
-                    this.purchases = purchases;
+                next: payments => {
+                    console.log("Payments read");
+                    this.payments = payments;
                 },
                 error: (error: HttpErrorResponse) => {
                     console.error(error.status + ' ' + error.statusText + ': ' + error.error);
@@ -59,10 +60,10 @@ export class PurchasesComponent {
     }
 
     onClick(i: number) {
-        let purchase = this.purchases![i];
-        const urlAppend = encodeURIComponent(window.btoa(JSON.stringify(purchase)));
+        let payment = this.payments![i];
+        const urlAppend = encodeURIComponent(window.btoa(JSON.stringify(payment)));
         this.zone.run(() =>
-            this.router.navigate(['/' + routeName.purchases_delete + '/' + urlAppend]).then()
+            this.router.navigate(['/' + routeName.payments_delete + '/' + urlAppend]).then()
         ).then();
     }
 }

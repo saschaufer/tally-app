@@ -1178,4 +1178,291 @@ class RouterTest extends SecurityConfigSetup {
 
         verify(purchaseService, times(1)).deletePurchase(any(Long.class));
     }
+
+    @Test
+    void postCreatePayment_positive_User() {
+
+        doReturn(Mono.empty()).when(paymentService).createPayment(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just(new PostCreatePaymentRequest(new BigDecimal("123.45"))), PostCreatePaymentRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(paymentService, times(1)).createPayment(2L, new BigDecimal("123.45"));
+    }
+
+    @Test
+    void postCreatePayment_positive_Jwt() {
+
+        doReturn(Mono.empty()).when(paymentService).createPayment(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just(new PostCreatePaymentRequest(new BigDecimal("123.45"))), PostCreatePaymentRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(paymentService, times(1)).createPayment(2L, new BigDecimal("123.45"));
+    }
+
+    @Test
+    void postCreatePayment_negative_NoBody() {
+
+        doReturn(Mono.empty()).when(paymentService).createPayment(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(paymentService, times(0)).createPayment(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void postCreatePayment_negative_PaymentWrongType() {
+
+        doReturn(Mono.empty()).when(paymentService).createPayment(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just("Wrong"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+
+        verify(paymentService, times(0)).createPayment(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void postCreatePayment_negative_Validator() {
+
+        doReturn(Mono.empty()).when(paymentService).createPayment(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just(new PostCreatePaymentRequest(null)), PostCreatePaymentRequest.class)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Payment amount is required");
+
+
+        verify(paymentService, times(0)).createPayment(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void postCreatePayment_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(paymentService).createPayment(any(Long.class), any(BigDecimal.class));
+
+        webClient.post().uri("/payments/create-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just(new PostCreatePaymentRequest(new BigDecimal("123.45"))), PostCreatePaymentRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(paymentService, times(1)).createPayment(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void getReadPayments_positive_User() {
+
+        doReturn(Mono.just(List.of(
+                new GetPaymentsResponse(1L, new BigDecimal("123.45"), LocalDateTime.of(2024, 1, 2, 3, 4, 5)),
+                new GetPaymentsResponse(2L, new BigDecimal("678.90"), LocalDateTime.of(2024, 6, 7, 8, 9, 0))
+        ))).when(paymentService).readPayments(any(Long.class));
+
+        webClient.get().uri("/payments")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBodyList(GetPaymentsResponse.class).isEqualTo(List.of(
+                        new GetPaymentsResponse(1L, new BigDecimal("123.45"), LocalDateTime.of(2024, 1, 2, 3, 4, 5)),
+                        new GetPaymentsResponse(2L, new BigDecimal("678.90"), LocalDateTime.of(2024, 6, 7, 8, 9, 0))
+                ));
+
+        verify(paymentService, times(1)).readPayments(2L);
+    }
+
+    @Test
+    void getReadPayments_positive_Jwt() {
+
+        doReturn(Mono.just(List.of(
+                new GetPaymentsResponse(1L, new BigDecimal("123.45"), LocalDateTime.of(2024, 1, 2, 3, 4, 5)),
+                new GetPaymentsResponse(2L, new BigDecimal("678.90"), LocalDateTime.of(2024, 6, 7, 8, 9, 0))
+        ))).when(paymentService).readPayments(any(Long.class));
+
+        webClient.get().uri("/payments")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBodyList(GetPaymentsResponse.class).isEqualTo(List.of(
+                        new GetPaymentsResponse(1L, new BigDecimal("123.45"), LocalDateTime.of(2024, 1, 2, 3, 4, 5)),
+                        new GetPaymentsResponse(2L, new BigDecimal("678.90"), LocalDateTime.of(2024, 6, 7, 8, 9, 0))
+                ));
+
+        verify(paymentService, times(1)).readPayments(2L);
+    }
+
+    @Test
+    void getReadPayments_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(paymentService).readPayments(any(Long.class));
+
+        webClient.get().uri("/payments")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(paymentService, times(1)).readPayments(any(Long.class));
+    }
+
+    @Test
+    void postDeletePayment_positive_User() {
+
+        doReturn(Mono.empty()).when(paymentService).deletePayment(any(Long.class));
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just(new PostDeletePaymentRequest(1L)), PostDeletePaymentRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(paymentService, times(1)).deletePayment(1L);
+    }
+
+    @Test
+    void postDeletePayment_positive_Jwt() {
+
+        doReturn(Mono.empty()).when(paymentService).deletePayment(any(Long.class));
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just(new PostDeletePaymentRequest(1L)), PostDeletePaymentRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(paymentService, times(1)).deletePayment(1L);
+    }
+
+    @Test
+    void postDeletePayment_negative_NoBody() {
+
+        doReturn(Mono.empty()).when(paymentService).deletePayment(any(Long.class));
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(paymentService, times(0)).deletePayment(any(Long.class));
+    }
+
+    @Test
+    void postDeletePayment_negative_PaymentWrongType() {
+
+        doReturn(Mono.empty()).when(paymentService).deletePayment(any(Long.class));
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just("Wrong"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+
+        verify(paymentService, times(0)).deletePayment(any(Long.class));
+    }
+
+    @Test
+    void postDeletePayment_negative_Validator() {
+
+        doReturn(Mono.empty()).when(paymentService).deletePayment(any(Long.class));
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .body(Mono.just(new PostDeletePaymentRequest(null)), PostDeletePaymentRequest.class)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Payment ID is required");
+
+
+        verify(paymentService, times(0)).deletePayment(any(Long.class));
+    }
+
+    @Test
+    void postDeletePayment_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(paymentService).deletePayment(any(Long.class));
+
+        webClient.post().uri("/payments/delete-payment")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .body(Mono.just(new PostDeletePaymentRequest(1L)), PostDeletePaymentRequest.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(paymentService, times(1)).deletePayment(any(Long.class));
+    }
+
+    @Test
+    void getReadAccountBalance_positive_User() {
+
+        doReturn(Mono.just(new GetAccountBalanceResponse(BigDecimal.ONE, BigDecimal.TWO, BigDecimal.TEN))).when(paymentService).readAccountBalance(any(Long.class));
+
+        webClient.get().uri("/account-balance")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(GetAccountBalanceResponse.class).isEqualTo(new GetAccountBalanceResponse(BigDecimal.ONE, BigDecimal.TWO, BigDecimal.TEN));
+
+        verify(paymentService, times(1)).readAccountBalance(2L);
+    }
+
+    @Test
+    void getReadAccountBalance_positive_Jwt() {
+
+        doReturn(Mono.just(new GetAccountBalanceResponse(BigDecimal.ONE, BigDecimal.TWO, BigDecimal.TEN))).when(paymentService).readAccountBalance(any(Long.class));
+
+        webClient.get().uri("/account-balance")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(GetAccountBalanceResponse.class).isEqualTo(new GetAccountBalanceResponse(BigDecimal.ONE, BigDecimal.TWO, BigDecimal.TEN));
+
+        verify(paymentService, times(1)).readAccountBalance(2L);
+    }
+
+    @Test
+    void getReadAccountBalance_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(paymentService).readAccountBalance(any(Long.class));
+
+        webClient.get().uri("/account-balance")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+
+        verify(paymentService, times(1)).readAccountBalance(any(Long.class));
+    }
 }

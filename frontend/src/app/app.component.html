@@ -27,4 +27,12 @@
             Purchases
         </a>
     </li>
+    <li class="navbar-element">
+        <a routerLink="/{{routeName.payments}}"
+           routerLinkActive #rla4="routerLinkActive"
+           class="navbar-link"
+           [ngClass]="rla4.isActive ? 'text-blue border-blue' : 'text-green border-black'">
+            Payments
+        </a>
+    </li>
 </ul>

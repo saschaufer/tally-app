@@ -1,0 +1,16 @@
+<h1>New Payment</h1>
+
+<div class="nav-top">
+    <a routerLink="/{{routeName.payments}}" class="nav-top-link">Back</a>
+</div>
+
+<form [formGroup]="newPaymentForm" (ngSubmit)="onSubmit()">
+
+    <div class="mt-0_5">
+        <label for="amount">Amount</label>
+        <input id="amount" type="text" autocomplete="" formControlName="amount">
+    </div>
+
+    <button type="submit" class="mt-1_25">Save</button>
+
+</form>

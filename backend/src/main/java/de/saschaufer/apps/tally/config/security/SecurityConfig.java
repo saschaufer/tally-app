@@ -77,6 +77,12 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/purchases/create-purchase").hasAnyAuthority(User.Role.USER)
                         .pathMatchers(HttpMethod.POST, "/purchases/delete-purchase").hasAnyAuthority(User.Role.USER)
 
+                        .pathMatchers(HttpMethod.GET, "/payments").hasAnyAuthority(User.Role.USER)
+                        .pathMatchers(HttpMethod.POST, "/payments/create-payment").hasAnyAuthority(User.Role.USER)
+                        .pathMatchers(HttpMethod.POST, "/payments/delete-payment").hasAnyAuthority(User.Role.USER)
+
+                        .pathMatchers(HttpMethod.GET, "/account-balance").hasAnyAuthority(User.Role.USER)
+
                         .anyExchange().authenticated()
                 )
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)

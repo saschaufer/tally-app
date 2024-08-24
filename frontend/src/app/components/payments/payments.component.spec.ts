@@ -6,16 +6,16 @@ import {firstValueFrom, of} from "rxjs";
 import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 import {GetAccountBalanceResponse} from "../../services/models/GetAccountBalanceResponse";
-import {GetPurchasesResponse} from "../../services/models/GetPurchasesResponse";
+import {GetPaymentsResponse} from "../../services/models/GetPaymentsResponse";
 
-import {PurchasesComponent} from './purchases.component';
+import {PaymentsComponent} from './payments.component';
 import Spy = jasmine.Spy;
 import SpyObj = jasmine.SpyObj;
 
-describe('PurchasesComponent', () => {
+describe('PaymentsComponent', () => {
 
-    let component: PurchasesComponent;
-    let fixture: ComponentFixture<PurchasesComponent>;
+    let component: PaymentsComponent;
+    let fixture: ComponentFixture<PaymentsComponent>;
 
     let httpServiceSpy: SpyObj<HttpService>;
 
@@ -23,7 +23,7 @@ describe('PurchasesComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            imports: [PurchasesComponent],
+            imports: [PaymentsComponent],
             providers: [
                 MockProvider(HttpService),
                 provideRouter([])
@@ -31,7 +31,7 @@ describe('PurchasesComponent', () => {
         })
             .compileComponents();
 
-        fixture = TestBed.createComponent(PurchasesComponent);
+        fixture = TestBed.createComponent(PaymentsComponent);
         component = fixture.componentInstance;
 
         httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
@@ -41,10 +41,10 @@ describe('PurchasesComponent', () => {
 
     it('should create (amount total positive)', () => {
 
-        httpServiceSpy.getReadPurchases.and.callFake(() => of([
-            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')},
-            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')}
-        ] as GetPurchasesResponse[]));
+        httpServiceSpy.getReadPayments.and.callFake(() => of([
+            {id: 1, amount: Big('123.45'), timestamp: 123},
+            {id: 2, amount: Big('678.90'), timestamp: 456}
+        ] as GetPaymentsResponse[]));
 
         httpServiceSpy.getReadAccountBalance.and.callFake(() => of({
             amountPayments: Big('12.3'),
@@ -56,10 +56,10 @@ describe('PurchasesComponent', () => {
 
         expect(component).toBeTruthy();
 
-        expect(component.purchases).toEqual([
-            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')},
-            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')}
-        ] as GetPurchasesResponse[]);
+        expect(component.payments).toEqual([
+            {id: 1, amount: Big('123.45'), timestamp: 123},
+            {id: 2, amount: Big('678.90'), timestamp: 456}
+        ] as GetPaymentsResponse[]);
 
         expect(component.accountBalance).toEqual({
             amountPayments: Big('12.3'),
@@ -72,10 +72,10 @@ describe('PurchasesComponent', () => {
 
     it('should create (amount total negative)', () => {
 
-        httpServiceSpy.getReadPurchases.and.callFake(() => of([
-            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')},
-            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')}
-        ] as GetPurchasesResponse[]));
+        httpServiceSpy.getReadPayments.and.callFake(() => of([
+            {id: 1, amount: Big('123.45'), timestamp: 123},
+            {id: 2, amount: Big('678.90'), timestamp: 456}
+        ] as GetPaymentsResponse[]));
 
         httpServiceSpy.getReadAccountBalance.and.callFake(() => of({
             amountPayments: Big('12.3'),
@@ -87,10 +87,10 @@ describe('PurchasesComponent', () => {
 
         expect(component).toBeTruthy();
 
-        expect(component.purchases).toEqual([
-            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')},
-            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')}
-        ] as GetPurchasesResponse[]);
+        expect(component.payments).toEqual([
+            {id: 1, amount: Big('123.45'), timestamp: 123},
+            {id: 2, amount: Big('678.90'), timestamp: 456}
+        ] as GetPaymentsResponse[]);
 
         expect(component.accountBalance).toEqual({
             amountPayments: Big('12.3'),
@@ -101,24 +101,23 @@ describe('PurchasesComponent', () => {
         expect(component.isNegative).toBeTrue();
     });
 
-    it('should navigate to ' + routeName.purchases_delete, () => {
+    it('should navigate to ' + routeName.payments_delete, () => {
 
         routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
-        component.purchases = [
-            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1%&/+=", productPrice: Big('123.45')},
-            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2%&/+=", productPrice: Big('543.21')}
-        ] as GetPurchasesResponse[];
+        component.payments = [
+            {id: 1, amount: Big('123.45'), timestamp: 123},
+            {id: 2, amount: Big('678.90'), timestamp: 456}
+        ] as GetPaymentsResponse[];
 
         const urlAppend = encodeURIComponent(window.btoa(JSON.stringify({
-            purchaseId: 1,
-            purchaseTimestamp: 123,
-            productName: "product-1%&/+=",
-            productPrice: Big('123.45')
+            id: 1,
+            amount: Big('123.45'),
+            timestamp: 123
         })));
 
         component.onClick(0);
 
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases_delete + '/' + urlAppend]);
+        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.payments_delete + '/' + urlAppend]);
     });
 });

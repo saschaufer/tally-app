@@ -31,6 +31,12 @@ public class Router {
                 .POST("/purchases/create-purchase", handler::postCreatePurchase)
                 .POST("/purchases/delete-purchase", handler::postDeletePurchase)
 
+                .GET("/payments", handler::getReadPayments)
+                .POST("/payments/create-payment", handler::postCreatePayment)
+                .POST("/payments/delete-payment", handler::postDeletePayment)
+
+                .GET("/account-balance", handler::getReadAccountBalance)
+
                 .build();
     }
 }

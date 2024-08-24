@@ -1,5 +1,8 @@
 import {Routes} from '@angular/router';
 import {LoginComponent} from "./components/login/login.component";
+import {PaymentDeleteComponent} from "./components/payments/payment-delete/payment-delete.component";
+import {PaymentNewComponent} from "./components/payments/payment-new/payment-new.component";
+import {PaymentsComponent} from "./components/payments/payments.component";
 import {ProductEditComponent} from "./components/products/product-edit/product-edit.component";
 import {ProductNewComponent} from "./components/products/product-new/product-new.component";
 import {ProductsComponent} from "./components/products/products.component";
@@ -16,6 +19,9 @@ import {role} from "./services/auth.service";
 
 export enum routeName {
     login = 'login',
+    payments = 'payments',
+    payments_delete = 'payments/delete',
+    payments_new = 'payments/new',
     products = 'products',
     products_edit = 'products/edit',
     products_new = 'products/new',
@@ -55,6 +61,24 @@ export const routes: Routes = [
         pathMatch: 'full',
         canActivate: [authGuard, roleGuard], data: {expectedRoles: [role.user]},
         component: SettingsComponent
+    },
+    {
+        path: routeName.payments,
+        pathMatch: "full",
+        canActivate: [authGuard, roleGuard], data: {expectedRoles: [role.user]},
+        component: PaymentsComponent
+    },
+    {
+        path: routeName.payments_delete + '/:payment',
+        pathMatch: "full",
+        canActivate: [authGuard, roleGuard], data: {expectedRoles: [role.user]},
+        component: PaymentDeleteComponent
+    },
+    {
+        path: routeName.payments_new,
+        pathMatch: "full",
+        canActivate: [authGuard, roleGuard], data: {expectedRoles: [role.user]},
+        component: PaymentNewComponent
     },
     {
         path: routeName.products,
