@@ -1,15 +1,21 @@
-<h1>Purchase</h1>
+<div class="page-headline">
+    <h1>Purchase</h1>
+</div>
 
-<table aria-hidden="true">
-    <tr>
-        <td class="table-row-left">Product:</td>
-        <td class="table-row-right">{{ product?.name }}</td>
-    </tr>
-    <tr>
-        <td class="table-row-left">Price:</td>
-        <td class="table-row-right">{{ product?.price }}</td>
-    </tr>
+<div class="page-content">
 
-</table>
+    <table aria-hidden="true">
+        <tr>
+            <td class="table-row-left">Product:</td>
+            <td class="table-row-right">{{ product?.name }}</td>
+        </tr>
+        <tr>
+            <td class="table-row-left">Price:</td>
+            <td class="table-row-right">{{ product?.price }}</td>
+        </tr>
 
-<button (click)="onClickPurchase()" class="mt-1_25">Purchase</button>
+    </table>
+
+    <button (click)="onClickPurchase()" class="mt-1_25">Purchase</button>
+
+</div>

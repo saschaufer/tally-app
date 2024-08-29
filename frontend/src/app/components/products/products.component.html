@@ -1,15 +1,22 @@
-<h1>Products</h1>
+<div class="page-headline">
+    <h1>Products</h1>
 
-<div class="nav-top">
-    <a routerLink="/{{routeName.products_new}}" class="nav-top-link">New</a>
+    <div class="nav-top">
+        <a routerLink="/{{routeName.products_new}}" class="nav-top-link">New</a>
+    </div>
 </div>
 
-<ul class="list">
-    <li *ngIf="products === undefined|| products?.length === 0" class="list-item">
-        <p class="text-green text-center">No products</p>
-    </li>
-    <li *ngFor="let product of products; let i = index" (click)="onClick(i)" (keydown)="onClick(i)" class="list-item">
-        <p class="list-item-left">{{ product.name }}</p>
-        <p class="list-item-right">{{ product.price }}</p>
-    </li>
-</ul>
+<div class="page-content">
+
+    <ul class="list scrollable">
+        <li *ngIf="products === undefined|| products?.length === 0" class="list-item">
+            <p class="text-green text-center">No products</p>
+        </li>
+        <li *ngFor="let product of products; let i = index" (click)="onClick(i)" (keydown)="onClick(i)"
+            class="list-item">
+            <p class="list-item-left">{{ product.name }}</p>
+            <p class="list-item-right">{{ product.price }}</p>
+        </li>
+    </ul>
+
+</div>

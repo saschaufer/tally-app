@@ -1,28 +1,35 @@
-<h1>Payments</h1>
+<div class="page-headline">
+    <h1>Payments</h1>
 
-<div class="nav-top">
-    <a routerLink="/{{routeName.payments_new}}" class="nav-top-link">New</a>
+    <div class="nav-top">
+        <a routerLink="/{{routeName.payments_new}}" class="nav-top-link">New</a>
+    </div>
 </div>
 
-<div class="bar">
-    <div class="bar-element text-green">Payments</div>
-    <div class="bar-element text-green">Purchases</div>
-    <div class="bar-element text-green">Total</div>
-</div>
-<div class="bar">
-    <div class="bar-element text-green">{{ accountBalance?.amountPayments }}</div>
-    <div class="bar-element text-green">{{ accountBalance?.amountPurchases }}</div>
-    <div class="bar-element text-green" [ngClass]="{'text-red': isNegative}">{{ accountBalance?.amountTotal }}</div>
-</div>
+<div class="page-content">
 
-<hr>
+    <div class="bar">
+        <div class="bar-element text-green">Payments</div>
+        <div class="bar-element text-green">Purchases</div>
+        <div class="bar-element text-green">Total</div>
+    </div>
+    <div class="bar">
+        <div class="bar-element text-green">{{ accountBalance?.amountPayments }}</div>
+        <div class="bar-element text-green">{{ accountBalance?.amountPurchases }}</div>
+        <div class="bar-element text-green" [ngClass]="{'text-red': isNegative}">{{ accountBalance?.amountTotal }}</div>
+    </div>
 
-<ul class="list">
-    <li *ngIf="payments === undefined|| payments?.length === 0" class="list-item">
-        <p class="text-green text-center">No payments</p>
-    </li>
-    <li *ngFor="let payment of payments; let i = index" (click)="onClick(i)" (keydown)="onClick(i)" class="list-item">
-        <p class="list-item-left">{{ payment.timestamp | date: 'yyyy-MM-dd HH:mm:ss':'UTC' }}</p>
-        <p class="list-item-right">{{ payment.amount }}</p>
-    </li>
-</ul>
+    <hr>
+
+    <ul class="list scrollable">
+        <li *ngIf="payments === undefined|| payments?.length === 0" class="list-item">
+            <p class="text-green text-center">No payments</p>
+        </li>
+        <li *ngFor="let payment of payments; let i = index" (click)="onClick(i)" (keydown)="onClick(i)"
+            class="list-item">
+            <p class="list-item-left">{{ payment.timestamp | date: 'yyyy-MM-dd HH:mm:ss':'UTC' }}</p>
+            <p class="list-item-right">{{ payment.amount }}</p>
+        </li>
+    </ul>
+
+</div>

@@ -1,16 +1,22 @@
-<h1>New Payment</h1>
+<div class="page-headline">
+    <h1>New Payment</h1>
 
-<div class="nav-top">
-    <a routerLink="/{{routeName.payments}}" class="nav-top-link">Back</a>
+    <div class="nav-top">
+        <a routerLink="/{{routeName.payments}}" class="nav-top-link">Back</a>
+    </div>
 </div>
 
-<form [formGroup]="newPaymentForm" (ngSubmit)="onSubmit()">
+<div class="page-content">
 
-    <div class="mt-0_5">
-        <label for="amount">Amount</label>
-        <input id="amount" type="text" autocomplete="" formControlName="amount">
-    </div>
+    <form [formGroup]="newPaymentForm" (ngSubmit)="onSubmit()">
 
-    <button type="submit" class="mt-1_25">Save</button>
+        <div class="mt-0_5">
+            <label for="amount">Amount</label>
+            <input id="amount" type="text" autocomplete="" formControlName="amount">
+        </div>
 
-</form>
+        <button type="submit" class="mt-1_25">Save</button>
+
+    </form>
+
+</div>

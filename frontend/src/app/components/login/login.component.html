@@ -1,20 +1,24 @@
-<form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+<div class="page-content">
 
-    <div class="mt-0_5">
-        <label for="email">Email</label>
-        <label for="email" *ngIf="emailInvalid"> - Invalid email</label>
-        <input id="email" type="text" autocomplete="email" formControlName="email">
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+        <div class="mt-0_5">
+            <label for="email">Email</label>
+            <label for="email" *ngIf="emailInvalid"> - Invalid email</label>
+            <input id="email" type="text" autocomplete="email" formControlName="email">
+        </div>
+
+        <div class="mt-0_5">
+            <label for="password">Password</label>
+            <input id="password" type="password" autocomplete="current-password" formControlName="password">
+        </div>
+
+        <button type="submit" class="mt-1_25">Login</button>
+
+    </form>
+
+    <div class="mt-1_25 text-center">
+        <a routerLink="/{{routeName.register}}" class="text-green">Create Account</a>
     </div>
 
-    <div class="mt-0_5">
-        <label for="password">Password</label>
-        <input id="password" type="password" autocomplete="current-password" formControlName="password">
-    </div>
-
-    <button type="submit" class="mt-1_25">Login</button>
-
-</form>
-
-<div class="mt-1_25 text-center">
-    <a routerLink="/{{routeName.register}}" class="text-green">Create Account</a>
 </div>

@@ -1,9 +1,17 @@
-<app-change-invitation-code *ngIf="isAdmin()"></app-change-invitation-code>
+<div class="page-headline">
+    <h1>Settings</h1>
+</div>
 
-<hr *ngIf="isAdmin()">
+<div class="page-content scrollable">
 
-<app-change-user-details></app-change-user-details>
+    <app-change-invitation-code *ngIf="isAdmin()"></app-change-invitation-code>
 
-<hr>
+    <hr *ngIf="isAdmin()">
 
-<app-login-details></app-login-details>
+    <app-change-user-details></app-change-user-details>
+
+    <hr>
+
+    <app-login-details></app-login-details>
+
+</div>

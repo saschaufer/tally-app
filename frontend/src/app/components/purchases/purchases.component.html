@@ -1,28 +1,36 @@
-<h1>Purchases</h1>
+<div class="page-headline">
+    <h1>Purchases</h1>
 
-<div class="nav-top">
-    <a routerLink="/{{routeName.purchases_new}}" class="nav-top-link">New</a>
+    <div class="nav-top">
+        <a routerLink="/{{routeName.purchases_new}}" class="nav-top-link">New</a>
+    </div>
 </div>
 
-<div class="bar">
-    <div class="bar-element text-green">Payments</div>
-    <div class="bar-element text-green">Purchases</div>
-    <div class="bar-element text-green">Total</div>
-</div>
-<div class="bar">
-    <div class="bar-element text-green">{{ accountBalance?.amountPayments }}</div>
-    <div class="bar-element text-green">{{ accountBalance?.amountPurchases }}</div>
-    <div class="bar-element" [ngClass]="isNegative ? 'text-red' : 'text-green'">{{ accountBalance?.amountTotal }}</div>
-</div>
+<div class="page-content">
 
-<hr>
+    <div class="bar">
+        <div class="bar-element text-green">Payments</div>
+        <div class="bar-element text-green">Purchases</div>
+        <div class="bar-element text-green">Total</div>
+    </div>
+    <div class="bar">
+        <div class="bar-element text-green">{{ accountBalance?.amountPayments }}</div>
+        <div class="bar-element text-green">{{ accountBalance?.amountPurchases }}</div>
+        <div class="bar-element" [ngClass]="isNegative ? 'text-red' : 'text-green'">{{ accountBalance?.amountTotal }}
+        </div>
+    </div>
 
-<ul class="list">
-    <li *ngIf="purchases === undefined|| purchases?.length === 0" class="list-item">
-        <p class="text-green text-center">No purchases</p>
-    </li>
-    <li *ngFor="let purchase of purchases; let i = index" (click)="onClick(i)" (keydown)="onClick(i)" class="list-item">
-        <p class="list-item-left">{{ purchase.productName }}</p>
-        <p class="list-item-right">{{ purchase.productPrice }}</p>
-    </li>
-</ul>
+    <hr>
+
+    <ul class="list scrollable">
+        <li *ngIf="purchases === undefined|| purchases?.length === 0" class="list-item">
+            <p class="text-green text-center">No purchases</p>
+        </li>
+        <li *ngFor="let purchase of purchases; let i = index" (click)="onClick(i)" (keydown)="onClick(i)"
+            class="list-item">
+            <p class="list-item-left">{{ purchase.productName }}</p>
+            <p class="list-item-right">{{ purchase.productPrice }}</p>
+        </li>
+    </ul>
+
+</div>

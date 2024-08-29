@@ -1,19 +1,25 @@
-<h1>Delete Payment</h1>
+<div class="page-headline">
+    <h1>Delete Payment</h1>
 
-<div class="nav-top">
-    <a routerLink="/{{routeName.purchases}}" class="nav-top-link">Back</a>
+    <div class="nav-top">
+        <a routerLink="/{{routeName.payments}}" class="nav-top-link">Back</a>
+    </div>
 </div>
 
-<table aria-hidden="true">
-    <tr>
-        <td class="table-row-left">Timestamp:</td>
-        <td class="table-row-right">{{ payment?.timestamp | date: 'yyyy-MM-dd HH:mm:ss':'UTC' }}</td>
-    </tr>
-    <tr>
-        <td class="table-row-left">Amount:</td>
-        <td class="table-row-right">{{ payment?.amount }}</td>
-    </tr>
+<div class="page-content">
 
-</table>
+    <table aria-hidden="true">
+        <tr>
+            <td class="table-row-left">Timestamp:</td>
+            <td class="table-row-right">{{ payment?.timestamp | date: 'yyyy-MM-dd HH:mm:ss':'UTC' }}</td>
+        </tr>
+        <tr>
+            <td class="table-row-left">Amount:</td>
+            <td class="table-row-right">{{ payment?.amount }}</td>
+        </tr>
 
-<button (click)="onClickDelete()" class="mt-1_25">Delete</button>
+    </table>
+
+    <button (click)="onClickDelete()" class="mt-1_25">Delete</button>
+
+</div>

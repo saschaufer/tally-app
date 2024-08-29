@@ -7,6 +7,7 @@ $custom-red: #802929;
 ::-webkit-scrollbar {
   width: 0;
   background: transparent;
+  display: none;
 }
 
 @font-face {
@@ -18,46 +19,69 @@ body {
   @extend .bg-black;
   margin: 0 !important; /* Remove default margin */
   font-family: "Roboto", sans-serif;
+  width: 100%;
+  height: 100%;
+
+  /* Fix height to screen height */
+  position: fixed;
+  top: 0;
+  bottom: 0;
 }
 
 app-root {
-  @extend .w-full;
+  width: 100%;
+  height: 100%;
+
+  /* Fix height to screen height */
+  position: fixed;
+  top: 0;
+  bottom: 0;
 }
 
 .app-content {
-  @extend .mt-1_25;
-  @extend .border-red;
+  /* Fix height to screen height */
+  position: fixed;
+  top: 0;
+
+  width: 100%;
+  height: calc(100% - 3rem);
+}
+
+.page-headline {
+  width: 100%;
+  height: 3rem;
+  border-bottom: 1px solid $custom-green;
+}
+
+.page-content {
 
   /* Center in the middle of the screen */
-  max-width: 16rem; /* 256px */
+  max-width: 20rem; /* 320px */
   margin-left: auto;
   margin-right: auto;
 
-  /* Scroll if content is higher then its parent */
-  overflow-y: scroll;
-
-  padding-bottom: 3rem;
-  margin-bottom: 1.25rem;
+  height: calc(100% - 4rem);
 
   display: flex;
   flex-direction: column;
-
-  position: relative;
 }
 
 .navbar {
-  @extend .bg-black;
-  @extend .w-full;
+  width: 100%;
+  height: 3rem;
+
   list-style-type: none;
 
+  border-top: 1px solid $custom-green;
+
+  position: fixed;
   margin: 0;
   padding: 0;
   bottom: 0;
-  position: fixed;
+
   display: flex;
   flex-direction: row;
   justify-content: center;
-  border-top: 1px solid $custom-green;
 }
 
 .navbar-element {
@@ -66,7 +90,7 @@ app-root {
 }
 
 .navbar-link {
-  @extend .h-full;
+  height: 100%;
   @extend .text-sm;
   @extend .text-b;
   display: flex;
@@ -76,7 +100,7 @@ app-root {
 
 .nav-top {
   position: absolute;
-  right: 0;
+  right: 2rem;
   top: 0.85rem;
 }
 
@@ -86,22 +110,20 @@ app-root {
 }
 
 .bar {
+  @extend .mt-0_5;
   display: flex;
 }
 
 .bar-element {
-  @extend .w-full;
+  width: 100%;
   display: flex;
   justify-content: center;
 }
 
 .list {
   list-style-type: none;
-  margin: 0;
   padding: 0;
-  border-top: 1px solid $custom-green;
-  height: calc(100vh - 10rem);
-  overflow-y: scroll;
+  margin: 0;
 }
 
 .list-item {
@@ -125,8 +147,13 @@ app-root {
   @extend .text-right;
 }
 
+.scrollable {
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+}
+
 table {
-  @extend .w-full;
+  width: 100%;
 }
 
 .table-row-left {
@@ -155,7 +182,7 @@ label {
 }
 
 input {
-  @extend .w-full;
+  width: 100%;
   @extend .py-0_5;
   @extend .bg-transparent;
   @extend .border-round;
@@ -171,7 +198,7 @@ input:focus {
 }
 
 button {
-  @extend .w-full;
+  width: 100%;
   @extend .mt-0_5;
   @extend .py-0_5;
   @extend .bg-transparent;
@@ -186,6 +213,7 @@ button:active {
 }
 
 hr {
+  width: 100%;
   @extend .mt-1_25;
   @extend .border-green;
 }
@@ -262,14 +290,6 @@ hr {
 .py-0_5 {
   padding-top: 0.5rem; /* 8px */
   padding-bottom: 0.5rem; /* 8px */
-}
-
-.w-full {
-  width: 100%;
-}
-
-.h-full {
-  height: 100%;
 }
 
 .bg-black {
