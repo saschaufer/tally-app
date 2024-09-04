@@ -1,6 +1,6 @@
 <div class="page-content">
 
-    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" *ngIf="!emailSent">
 
         <div class="mt-0_5">
             <label for="email">Email</label>
@@ -27,6 +27,12 @@
         <button type="submit" class="mt-1_25">Create account</button>
 
     </form>
+
+    <div *ngIf="emailSent">
+        <p class="mt-1_25 text-center text-green">An email has been sent
+            to {{ email }}.</p>
+        <p class="mt-1_25 text-center text-green">Click on the link in the email to complete the registration.</p>
+    </div>
 
     <div class="mt-1_25 text-center">
         <a routerLink="/{{routeName.login}}" class="text-green">Login</a>

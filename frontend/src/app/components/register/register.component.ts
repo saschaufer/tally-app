@@ -1,6 +1,6 @@
 import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject, NgZone} from '@angular/core';
+import {Component, inject} from '@angular/core';
 import {
     AbstractControl,
     FormControl,
@@ -10,7 +10,7 @@ import {
     ValidatorFn,
     Validators
 } from "@angular/forms";
-import {Router, RouterLink} from "@angular/router";
+import {RouterLink} from "@angular/router";
 import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 
@@ -30,8 +30,9 @@ export class RegisterComponent {
     protected readonly routeName = routeName;
 
     private httpService = inject(HttpService);
-    private router = inject(Router);
-    private zone = inject(NgZone);
+
+    email = '';
+    emailSent = false;
 
     readonly passwordsMatch: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
 
@@ -71,9 +72,8 @@ export class RegisterComponent {
                 .subscribe({
                     next: () => {
                         console.log("Register successful");
-                        this.zone.run(() =>
-                            this.router.navigate(['/' + routeName.login]).then()
-                        ).then();
+                        this.email = email;
+                        this.emailSent = true;
                     },
                     error: (error: HttpErrorResponse) => {
                         console.error(error.status + ' ' + error.statusText + ': ' + error.error);
