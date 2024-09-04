@@ -28,6 +28,8 @@ export class PurchaseDeleteComponent {
 
     purchase: GetPurchasesResponse | undefined;
 
+    error: HttpErrorResponse | undefined;
+
     ngOnInit(): void {
         this.activatedRoute.params.subscribe(params => {
             const urlAppend = params['purchase'];
@@ -46,14 +48,30 @@ export class PurchaseDeleteComponent {
         this.httpService.postDeletePurchase(this.purchase!.purchaseId)
             .subscribe({
                 next: () => {
-                    console.log("Purchase delete");
-                    this.zone.run(() =>
-                        this.router.navigate(['/' + routeName.purchases]).then()
-                    ).then();
+                    console.info("Purchase delete.");
+                    const dialog = document.getElementById('#purchases.purchaseDelete.successDeletingPurchase')! as HTMLDialogElement;
+                    dialog.addEventListener('click', () => {
+                        dialog.close();
+                        this.zone.run(() =>
+                            this.router.navigate(['/' + routeName.purchases]).then()
+                        ).then();
+                    });
+                    dialog.showModal();
                 },
                 error: (error: HttpErrorResponse) => {
-                    console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                    console.error('Error deleting purchase.');
+                    console.error(error);
+                    this.error = error;
+                    this.openDialog('#purchases.purchaseDelete.errorDeletingPurchase');
                 }
             });
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
     }
 }

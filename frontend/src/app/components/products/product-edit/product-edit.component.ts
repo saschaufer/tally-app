@@ -1,3 +1,5 @@
+import {NgIf} from "@angular/common";
+import {HttpErrorResponse} from "@angular/common/http";
 import {Component, inject} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {ActivatedRoute, RouterLink} from "@angular/router";
@@ -11,7 +13,8 @@ import {GetProductsResponse} from "../../../services/models/GetProductsResponse"
     standalone: true,
     imports: [
         RouterLink,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        NgIf
     ],
     templateUrl: './product-edit.component.html',
     styles: ``
@@ -30,8 +33,22 @@ export class ProductEditComponent {
     });
 
     readonly changePriceForm = new FormGroup({
-        price: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
+        price: new FormControl('', {
+            nonNullable: true,
+            validators: [Validators.required, Validators.pattern("^\\d{1,10}(\\.\\d{1,10})?$")]
+        }),
     });
+
+    formErrorsChangeName = {
+        nameMissing: false
+    };
+
+    formErrorsChangePrice = {
+        priceMissing: false,
+        pricePatternInvalid: false
+    };
+
+    error: HttpErrorResponse | undefined;
 
     ngOnInit(): void {
         this.activatedRoute.params.subscribe(params => {
@@ -50,6 +67,8 @@ export class ProductEditComponent {
 
     onSubmitChangeName() {
 
+        this.formErrorsChangeName = this.getFormValidationErrorsChangeName();
+
         if (this.changeNameForm.valid) {
 
             const name = this.changeNameForm.controls.name.value;
@@ -59,16 +78,22 @@ export class ProductEditComponent {
             this.httpService.postUpdateProduct(this.product!.id, name)
                 .subscribe({
                     next: () => {
-                        console.log("Product name changed");
+                        console.info("Product name changed.");
+                        this.openDialog('#products.productEdit.successChangeName');
                     },
                     error: (error) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error changing product name.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#products.productEdit.errorChangeName');
                     }
                 });
         }
     }
 
     onSubmitChangePrice() {
+
+        this.formErrorsChangePrice = this.getFormValidationErrorsChangePrice();
 
         if (this.changePriceForm.valid) {
 
@@ -79,12 +104,37 @@ export class ProductEditComponent {
             this.httpService.postUpdateProductPrice(this.product!.id, price)
                 .subscribe({
                     next: () => {
-                        console.log("Product price changed");
+                        console.info("Product price changed.");
+                        this.openDialog('#products.productEdit.successChangePrice');
                     },
                     error: (error) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error changing product price.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#products.productEdit.errorChangePrice');
                     }
                 });
         }
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
+    }
+
+    getFormValidationErrorsChangeName() {
+        return {
+            nameMissing: this.changeNameForm.get('name')!.hasError('required')
+        };
+    }
+
+    getFormValidationErrorsChangePrice() {
+        return {
+            priceMissing: this.changePriceForm.get('price')!.hasError('required'),
+            pricePatternInvalid: this.changePriceForm.get('price')!.hasError('pattern')
+        };
     }
 }

@@ -48,7 +48,7 @@ describe('LoginComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it('should navigate to ' + routeName.settings, () => {
+    it('should navigate to ' + routeName.purchases_new, () => {
 
         httpServiceSpy.postLogin.and.callFake(() => of({
             jwt: 'my-jwt',
@@ -67,10 +67,10 @@ describe('LoginComponent', () => {
 
         expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password');
         expect(authServiceSpy.setJwt).toHaveBeenCalledOnceWith('my-jwt', true);
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.settings]);
+        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases_new]);
     });
 
-    it('should not navigate to ' + routeName.settings + ' (email wrong)', () => {
+    it('should not navigate to ' + routeName.purchases_new + ' (email wrong)', () => {
 
         component.loginForm.controls.email.setErrors(['wrong']);
         component.loginForm.controls.password.patchValue('test-password');
@@ -82,7 +82,7 @@ describe('LoginComponent', () => {
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
-    it('should not navigate to ' + routeName.settings + ' (password wrong)', () => {
+    it('should not navigate to ' + routeName.purchases_new + ' (password wrong)', () => {
 
         component.loginForm.controls.email.patchValue('test-username@mail.com');
         component.loginForm.controls.password.setErrors(['wrong']);
@@ -94,7 +94,7 @@ describe('LoginComponent', () => {
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
-    it('should not navigate to ' + routeName.settings + ' (login failed)', () => {
+    it('should not navigate to ' + routeName.purchases_new + ' (login failed)', () => {
 
         httpServiceSpy.postLogin.and.callFake(() =>
             throwError(() => 'Error on login')
@@ -112,7 +112,7 @@ describe('LoginComponent', () => {
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
-    it('should not navigate to ' + routeName.settings + ' (Jwt not set)', () => {
+    it('should not navigate to ' + routeName.purchases_new + ' (Jwt not set)', () => {
 
         httpServiceSpy.postLogin.and.callFake(() => of({
             jwt: 'my-jwt',

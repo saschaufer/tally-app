@@ -5,6 +5,8 @@ import de.saschaufer.apps.tally.persistence.dto.Product;
 import de.saschaufer.apps.tally.persistence.dto.ProductPrice;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 import reactor.util.function.Tuples;
@@ -31,18 +33,57 @@ class ProductServiceTest {
     @Test
     void createProduct_positive() {
 
+        doReturn(Mono.just(false)).when(persistence).existsProduct(any(String.class));
         doReturn(Mono.empty()).when(persistence).insertProductAndPrice(any(String.class), any(BigDecimal.class));
 
         productService.createProduct("test-name", BigDecimal.ONE)
                 .as(StepVerifier::create)
                 .verifyComplete();
 
+        verify(persistence, times(1)).existsProduct("test-name");
         verify(persistence, times(1)).insertProductAndPrice("test-name", BigDecimal.ONE);
     }
 
     @Test
-    void createProduct_negative() {
+    void createProduct_negative_ProductExits() {
 
+        doReturn(Mono.just(true)).when(persistence).existsProduct(any(String.class));
+        doReturn(Mono.empty()).when(persistence).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+
+        productService.createProduct("test-name", BigDecimal.ONE)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(ResponseStatusException.class));
+
+                    final ResponseStatusException e = (ResponseStatusException) error;
+                    assertThat(e.getStatusCode(), is(HttpStatus.UNPROCESSABLE_ENTITY));
+                    assertThat(e.getReason(), containsString("Product already exists"));
+                });
+
+        verify(persistence, times(1)).existsProduct("test-name");
+        verify(persistence, times(0)).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void createProduct_negative_ExistsThrowsException() {
+
+        doReturn(Mono.error(new RuntimeException("Error"))).when(persistence).existsProduct(any(String.class));
+
+        productService.createProduct("test-name", BigDecimal.ONE)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(RuntimeException.class));
+                    assertThat(error.getMessage(), containsString("Error"));
+                });
+
+        verify(persistence, times(1)).existsProduct("test-name");
+        verify(persistence, times(0)).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void createProduct_negative_InsertThrowsException() {
+
+        doReturn(Mono.just(false)).when(persistence).existsProduct(any(String.class));
         doReturn(Mono.error(new RuntimeException("Error"))).when(persistence).insertProductAndPrice(any(String.class), any(BigDecimal.class));
 
         productService.createProduct("test-name", BigDecimal.ONE)
@@ -52,6 +93,7 @@ class ProductServiceTest {
                     assertThat(error.getMessage(), containsString("Error"));
                 });
 
+        verify(persistence, times(1)).existsProduct("test-name");
         verify(persistence, times(1)).insertProductAndPrice("test-name", BigDecimal.ONE);
     }
 

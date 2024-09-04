@@ -20,6 +20,8 @@ export class RegisterConfirmComponent {
     private activatedRoute = inject(ActivatedRoute);
     private httpService = inject(HttpService);
 
+    error: HttpErrorResponse | undefined;
+
     ngOnInit(): void {
         this.activatedRoute.queryParams.subscribe(params => {
 
@@ -33,9 +35,20 @@ export class RegisterConfirmComponent {
                 .subscribe({
                     next: () => console.info("Confirm registration successful"),
                     error: (error: HttpErrorResponse) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error register.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#register.registerConfirm.errorRegisterConfirm');
                     }
                 });
         });
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
     }
 }

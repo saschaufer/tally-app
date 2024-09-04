@@ -1,13 +1,14 @@
+import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Component, inject} from '@angular/core';
 import {
-  AbstractControl,
-  FormControl,
-  FormGroup,
-  ReactiveFormsModule,
-  ValidationErrors,
-  ValidatorFn,
-  Validators
+    AbstractControl,
+    FormControl,
+    FormGroup,
+    ReactiveFormsModule,
+    ValidationErrors,
+    ValidatorFn,
+    Validators
 } from "@angular/forms";
 import {HttpService} from "../../../services/http.service";
 
@@ -15,7 +16,8 @@ import {HttpService} from "../../../services/http.service";
     selector: 'app-change-invitation-code',
     standalone: true,
     imports: [
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        NgIf
     ],
     templateUrl: './change-invitation-code.component.html',
     styles: ``
@@ -39,7 +41,17 @@ export class ChangeInvitationCodeComponent {
         invitationCodeRepeat: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
     }, {validators: this.invitationCodesMatch});
 
+    formErrors = {
+        invitationCodeMissing: false,
+        invitationCodeRepeatMissing: false,
+        invitationCodeUnequal: false
+    };
+
+    error: HttpErrorResponse | undefined;
+
     onSubmit() {
+
+        this.formErrors = this.getFormValidationErrors();
 
         if (this.changeInvitationCodeForm.valid) {
 
@@ -50,12 +62,41 @@ export class ChangeInvitationCodeComponent {
             this.httpService.postChangeInvitationCode(invitationCode)
                 .subscribe({
                     next: () => {
-                        console.log("Invitation code change successful");
+                        console.info('Invitation code change successful.');
+                        this.openDialog('#settings.changeInvitationCode.successChangeInvitationCode');
                     },
                     error: (error: HttpErrorResponse) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error changing invitation code.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#settings.changeInvitationCode.errorChangeInvitationCode');
                     }
                 });
         }
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
+    }
+
+    getFormValidationErrors() {
+
+        let invitationCodeMissing = this.changeInvitationCodeForm.get('invitationCode')!.hasError('required');
+        let invitationCodeRepeatMissing = this.changeInvitationCodeForm.get('invitationCodeRepeat')!.hasError('required');
+        let invitationCodeUnequal = false;
+
+        if (!invitationCodeMissing && !invitationCodeRepeatMissing) {
+            invitationCodeUnequal = (this.changeInvitationCodeForm.errors !== null ? this.changeInvitationCodeForm.errors['invitationCodesMatch'] : false)
+        }
+
+        return {
+            invitationCodeMissing: invitationCodeMissing,
+            invitationCodeRepeatMissing: invitationCodeRepeatMissing,
+            invitationCodeUnequal: invitationCodeUnequal
+        };
     }
 }

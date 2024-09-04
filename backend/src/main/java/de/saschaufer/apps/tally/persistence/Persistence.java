@@ -140,6 +140,10 @@ public class Persistence {
         }).all().collectList();
     }
 
+    public Mono<Boolean> existsProduct(final String name) {
+        return template.exists(query(where("name").is(name)), Product.class);
+    }
+
     public Mono<Void> updateProduct(final Long id, final String newName) {
 
         return template

@@ -33,28 +33,36 @@ export class PaymentsComponent {
     accountBalance: GetAccountBalanceResponse | undefined;
     isNegative = false;
 
+    error: HttpErrorResponse | undefined;
+
     ngOnInit(): void {
 
         this.httpService.getReadPayments()
             .subscribe({
                 next: payments => {
-                    console.log("Payments read");
+                    console.info("Payments read.");
                     this.payments = payments;
                 },
                 error: (error: HttpErrorResponse) => {
-                    console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                    console.error('Error reading payments.');
+                    console.error(error);
+                    this.error = error;
+                    this.openDialog('#payments.errorReadingPayments');
                 }
             });
 
         this.httpService.getReadAccountBalance()
             .subscribe({
                 next: accountBalance => {
-                    console.log("Account balance read");
+                    console.info("Account balance read.");
                     this.accountBalance = accountBalance;
                     this.isNegative = Big(this.accountBalance.amountTotal).lt(Big('0.0'));
                 },
                 error: (error: HttpErrorResponse) => {
-                    console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                    console.error('Error reading account balance.');
+                    console.error(error);
+                    this.error = error;
+                    this.openDialog('#payments.errorReadingAccountBalance');
                 }
             });
     }
@@ -65,5 +73,13 @@ export class PaymentsComponent {
         this.zone.run(() =>
             this.router.navigate(['/' + routeName.payments_delete + '/' + urlAppend]).then()
         ).then();
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
     }
 }

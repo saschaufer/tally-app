@@ -4,14 +4,34 @@
 
     <div class="mt-0_5">
         <label for="password">Password</label>
+
+        <!-- @formatter:off -->
+        <label class="text-red" for="password" *ngIf="formErrors.passwordMissing"> - Missing password</label>
+        <!-- @formatter:on -->
+
         <input id="password" type="password" autocomplete="" formControlName="password">
     </div>
 
     <div class="mt-0_5">
         <label for="password-repeat">Password repeat</label>
+
+        <!-- @formatter:off -->
+        <label class="text-red" for="password-repeat" *ngIf="formErrors.passwordRepeatMissing"> - Missing password</label>
+        <label class="text-red" for="password-repeat" *ngIf="formErrors.passwordUnequal"> - Unequal password</label>
+        <!-- @formatter:on -->
+
         <input id="password-repeat" type="password" autocomplete="" formControlName="passwordRepeat">
     </div>
 
     <button type="submit" class="mt-1_25">Change Password</button>
 
 </form>
+
+<dialog id="#settings.changeUserDetails.successChangePassword">
+    <p class="mt-1_25 text-center text-green">Password successfully changed.</p>
+</dialog>
+<dialog id="#settings.changeUserDetails.errorChangePassword">
+    <p class="mt-1_25 text-center text-green">Error changing password.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+</dialog>

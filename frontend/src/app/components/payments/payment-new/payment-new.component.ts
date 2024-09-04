@@ -1,3 +1,5 @@
+import {NgIf} from "@angular/common";
+import {HttpErrorResponse} from "@angular/common/http";
 import {Component, inject} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {RouterLink} from "@angular/router";
@@ -10,7 +12,8 @@ import {HttpService} from "../../../services/http.service";
     standalone: true,
     imports: [
         ReactiveFormsModule,
-        RouterLink
+        RouterLink,
+        NgIf
     ],
     templateUrl: './payment-new.component.html',
     styles: ``
@@ -22,10 +25,22 @@ export class PaymentNewComponent {
     private httpService = inject(HttpService);
 
     readonly newPaymentForm = new FormGroup({
-        amount: new FormControl('', {nonNullable: true, validators: [Validators.required]})
+        amount: new FormControl('', {
+            nonNullable: true,
+            validators: [Validators.required, Validators.pattern("^\\d{1,10}(\\.\\d{1,10})?$")]
+        })
     });
 
+    formErrors = {
+        amountMissing: false,
+        amountPatternInvalid: false
+    };
+
+    error: HttpErrorResponse | undefined;
+
     onSubmit() {
+
+        this.formErrors = this.getFormValidationErrors();
 
         if (this.newPaymentForm.valid) {
 
@@ -36,12 +51,31 @@ export class PaymentNewComponent {
             this.httpService.postCreatePayment(amount)
                 .subscribe({
                     next: () => {
-                        console.log("Payment created");
+                        console.info('Payment created.');
+                        this.openDialog('#payments.paymentNew.successCreatePayment');
                     },
                     error: (error) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error creating payment.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#settings.changeInvitationCode.errorChangeInvitationCode');
                     }
                 });
+        }
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
+    }
+
+    getFormValidationErrors() {
+        return {
+            amountMissing: this.newPaymentForm.get('amount')!.hasError('required'),
+            amountPatternInvalid: this.newPaymentForm.get('amount')!.hasError('pattern')
         }
     }
 }

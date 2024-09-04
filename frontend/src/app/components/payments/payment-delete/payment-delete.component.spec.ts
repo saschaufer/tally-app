@@ -57,6 +57,8 @@ describe('PaymentDeleteComponent', () => {
 
     it('should delete the payment and navigate to ' + routeName.payments, () => {
 
+        const dialog = document.getElementById('#payments.paymentDelete.successDeletePayment')! as HTMLDialogElement;
+
         httpServiceSpy.postDeletePayment.and.callFake(() => of(undefined));
         routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
@@ -64,10 +66,16 @@ describe('PaymentDeleteComponent', () => {
 
         expect(httpServiceSpy.postDeletePayment).toHaveBeenCalledOnceWith(1);
 
+        expect(routerNavigateSpy).not.toHaveBeenCalled();
+
+        dialog.dispatchEvent(new Event('click'));
+
         expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.payments]);
     })
 
     it('should not navigate to ' + routeName.payments + ' (delete payment failed)', () => {
+
+        const dialog = document.getElementById('#payments.paymentDelete.successDeletePayment')! as HTMLDialogElement;
 
         httpServiceSpy.postDeletePayment.and.callFake(() =>
             throwError(() => 'Error on delete payment')
@@ -76,6 +84,8 @@ describe('PaymentDeleteComponent', () => {
         component.onClickDelete();
 
         expect(httpServiceSpy.postDeletePayment).toHaveBeenCalledOnceWith(1);
+
+        dialog.dispatchEvent(new Event('click'));
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     })

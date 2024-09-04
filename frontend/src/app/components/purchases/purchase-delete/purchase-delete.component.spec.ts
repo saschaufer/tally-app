@@ -59,6 +59,8 @@ describe('PurchaseDeleteComponent', () => {
 
     it('should delete the purchase and navigate to ' + routeName.purchases, () => {
 
+        const dialog = document.getElementById('#purchases.purchaseDelete.successDeletingPurchase')! as HTMLDialogElement;
+
         httpServiceSpy.postDeletePurchase.and.callFake(() => of(undefined));
         routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
@@ -66,10 +68,16 @@ describe('PurchaseDeleteComponent', () => {
 
         expect(httpServiceSpy.postDeletePurchase).toHaveBeenCalledOnceWith(1);
 
+        expect(routerNavigateSpy).not.toHaveBeenCalled();
+
+        dialog.dispatchEvent(new Event('click'));
+
         expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases]);
     })
 
     it('should not navigate to ' + routeName.purchases + ' (delete purchase failed)', () => {
+
+        const dialog = document.getElementById('#purchases.purchaseDelete.successDeletingPurchase')! as HTMLDialogElement;
 
         httpServiceSpy.postDeletePurchase.and.callFake(() =>
             throwError(() => 'Error on delete purchase')
@@ -78,6 +86,8 @@ describe('PurchaseDeleteComponent', () => {
         component.onClickDelete();
 
         expect(httpServiceSpy.postDeletePurchase).toHaveBeenCalledOnceWith(1);
+
+        dialog.dispatchEvent(new Event('click'));
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     })

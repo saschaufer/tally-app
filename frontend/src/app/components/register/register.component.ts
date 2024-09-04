@@ -54,11 +54,20 @@ export class RegisterComponent {
         invitationCode: new FormControl('', {nonNullable: true, validators: [Validators.required]})
     }, {validators: this.passwordsMatch});
 
-    emailInvalid: boolean = false;
+    formErrors = {
+        emailMissing: false,
+        emailInvalid: false,
+        passwordMissing: false,
+        passwordRepeatMissing: false,
+        passwordUnequal: false,
+        invitationCodeMissing: false
+    };
+
+    error: HttpErrorResponse | undefined;
 
     onSubmit() {
 
-        this.emailInvalid = this.registerForm.get('email')!.hasError('pattern');
+        this.formErrors = this.getFormValidationErrors();
 
         if (this.registerForm.valid) {
 
@@ -71,14 +80,48 @@ export class RegisterComponent {
             this.httpService.postRegisterNewUser(email, password, invitationCode)
                 .subscribe({
                     next: () => {
-                        console.log("Register successful");
+                        console.info('Register successful.');
                         this.email = email;
                         this.emailSent = true;
                     },
                     error: (error: HttpErrorResponse) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error register.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#register.errorRegister');
                     }
                 });
         }
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
+    }
+
+    getFormValidationErrors() {
+
+        let emailMissing = this.registerForm.get('email')!.hasError('required');
+        let emailInvalid = this.registerForm.get('email')!.hasError('pattern');
+        let passwordMissing = this.registerForm.get('password')!.hasError('required');
+        let passwordRepeatMissing = this.registerForm.get('passwordRepeat')!.hasError('required');
+        let invitationCodeMissing = this.registerForm.get('invitationCode')!.hasError('required');
+        let passwordUnequal = false;
+
+        if (!passwordMissing && !passwordRepeatMissing) {
+            passwordUnequal = (this.registerForm.errors !== null ? this.registerForm.errors['passwordsMatch'] : false)
+        }
+
+        return {
+            emailMissing: emailMissing,
+            emailInvalid: emailInvalid,
+            passwordMissing: passwordMissing,
+            passwordRepeatMissing: passwordRepeatMissing,
+            invitationCodeMissing: invitationCodeMissing,
+            passwordUnequal: passwordUnequal
+        };
     }
 }

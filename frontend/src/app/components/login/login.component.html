@@ -22,3 +22,13 @@
     </div>
 
 </div>
+
+<dialog id="#login.errorLogin">
+    <p class="mt-1_25 text-center text-green">Error on login.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+</dialog>
+<dialog id="#login.errorLoginCookie">
+    <p class="mt-1_25 text-center text-green">Cookie not set.</p>
+    <p class="mt-1_25 text-center text-green">Probably because it needs to be sent over a secure HTTPS connection.</p>
+</dialog>

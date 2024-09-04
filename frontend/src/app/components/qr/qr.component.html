@@ -19,3 +19,18 @@
     <button (click)="onClickPurchase()" class="mt-1_25">Purchase</button>
 
 </div>
+
+<dialog id="#qr.errorReadingProduct">
+    <p class="mt-1_25 text-center text-green">Error reading product.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+</dialog>
+
+<dialog id="#qr.successCreatingPurchase">
+    <p class="mt-1_25 text-center text-green">Purchase successfully created.</p>
+</dialog>
+<dialog id="#qr.errorCreatingPurchase">
+    <p class="mt-1_25 text-center text-green">Error creating purchase.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+</dialog>

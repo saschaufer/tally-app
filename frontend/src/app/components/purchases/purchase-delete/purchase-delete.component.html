@@ -27,3 +27,12 @@
     <button (click)="onClickDelete()" class="mt-1_25">Delete</button>
 
 </div>
+
+<dialog id="#purchases.purchaseDelete.successDeletingPurchase">
+    <p class="mt-1_25 text-center text-green">Purchase successfully deleted.</p>
+</dialog>
+<dialog id="#purchases.purchaseDelete.errorDeletingPurchase">
+    <p class="mt-1_25 text-center text-green">Error deleting purchase.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+</dialog>

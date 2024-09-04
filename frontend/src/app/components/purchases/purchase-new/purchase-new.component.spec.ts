@@ -73,6 +73,8 @@ describe('PurchaseNewComponent', () => {
 
     it('should create the purchase and navigate to ' + routeName.purchases, () => {
 
+        const dialog = document.getElementById('#purchases.purchaseNew.successCreatingPurchase')! as HTMLDialogElement;
+
         httpServiceSpy.postCreatePurchase.and.callFake(() => of(undefined));
         routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
@@ -82,15 +84,23 @@ describe('PurchaseNewComponent', () => {
 
         expect(httpServiceSpy.postCreatePurchase).toHaveBeenCalledOnceWith(1);
 
+        expect(routerNavigateSpy).not.toHaveBeenCalled();
+
+        dialog.dispatchEvent(new Event('click'));
+
         expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases]);
     });
 
     it('should not create the purchase and not navigate to ' + routeName.purchases + ' (no product selected)', () => {
 
+        const dialog = document.getElementById('#purchases.purchaseNew.successCreatingPurchase')! as HTMLDialogElement;
+
         httpServiceSpy.postCreatePurchase.and.callFake(() => of(undefined));
         routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
 
         component.onSubmit();
+
+        dialog.dispatchEvent(new Event('click'));
 
         expect(httpServiceSpy.postCreatePurchase).not.toHaveBeenCalled();
 
@@ -99,6 +109,8 @@ describe('PurchaseNewComponent', () => {
 
     it('should not navigate to ' + routeName.purchases + ' (create purchase failed)', () => {
 
+        const dialog = document.getElementById('#purchases.purchaseNew.successCreatingPurchase')! as HTMLDialogElement;
+
         httpServiceSpy.postCreatePurchase.and.callFake(() =>
             throwError(() => 'Error on create purchase')
         );
@@ -106,6 +118,8 @@ describe('PurchaseNewComponent', () => {
         component.selectedProduct = {id: 1, name: "product-1", price: Big('123.45')} as GetProductsResponse;
 
         component.onSubmit();
+
+        dialog.dispatchEvent(new Event('click'));
 
         expect(httpServiceSpy.postCreatePurchase).toHaveBeenCalledOnceWith(1);
 

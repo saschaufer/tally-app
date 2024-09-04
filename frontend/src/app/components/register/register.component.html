@@ -4,23 +4,44 @@
 
         <div class="mt-0_5">
             <label for="email">Email</label>
-            <label for="email" *ngIf="emailInvalid"> - Invalid email</label>
+
+            <!-- @formatter:off -->
+            <label class="text-red" for="email" *ngIf="formErrors.emailMissing"> - Missing email</label>
+            <label class="text-red" for="email" *ngIf="formErrors.emailInvalid"> - Invalid email</label>
+            <!-- @formatter:on -->
+
             <input id="email" type="text" autocomplete="email" formControlName="email">
         </div>
 
         <div class="mt-0_5">
             <label for="password">Password</label>
+
+            <!-- @formatter:off -->
+            <label class="text-red" for="password" *ngIf="formErrors.passwordMissing"> - Missing password</label>
+            <!-- @formatter:on -->
+
             <input id="password" type="password" autocomplete="current-password" formControlName="password">
         </div>
 
         <div class="mt-0_5">
             <label for="password-repeat">Password repeat</label>
+
+            <!-- @formatter:off -->
+            <label class="text-red" for="password-repeat" *ngIf="formErrors.passwordRepeatMissing"> - Missing password</label>
+            <label class="text-red" for="password-repeat" *ngIf="formErrors.passwordUnequal"> - Unequal password</label>
+            <!-- @formatter:on -->
+
             <input id="password-repeat" type="password" autocomplete="current-password"
                    formControlName="passwordRepeat">
         </div>
 
         <div class="mt-0_5">
             <label for="invitation-code">Invitation code</label>
+
+            <!-- @formatter:off -->
+            <label class="text-red" for="invitation-code" *ngIf="formErrors.invitationCodeMissing"> - Missing invitation code</label>
+            <!-- @formatter:on -->
+
             <input id="invitation-code" type="password" autocomplete="" formControlName="invitationCode">
         </div>
 
@@ -29,8 +50,7 @@
     </form>
 
     <div *ngIf="emailSent">
-        <p class="mt-1_25 text-center text-green">An email has been sent
-            to {{ email }}.</p>
+        <p class="mt-1_25 text-center text-green">An email has been sent to {{ email }}.</p>
         <p class="mt-1_25 text-center text-green">Click on the link in the email to complete the registration.</p>
     </div>
 
@@ -39,3 +59,9 @@
     </div>
 
 </div>
+
+<dialog id="#register.errorRegister">
+    <p class="mt-1_25 text-center text-green">Error register.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+</dialog>

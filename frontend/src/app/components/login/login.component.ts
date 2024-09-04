@@ -1,4 +1,5 @@
 import {NgIf} from "@angular/common";
+import {HttpErrorResponse} from "@angular/common/http";
 import {Component, inject, NgZone} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {Router, RouterLink} from "@angular/router";
@@ -37,6 +38,8 @@ export class LoginComponent {
 
     emailInvalid: boolean = false;
 
+    error: HttpErrorResponse | undefined;
+
     onSubmit() {
 
         this.emailInvalid = this.loginForm.get('email')!.hasError('pattern');
@@ -52,18 +55,30 @@ export class LoginComponent {
                 .subscribe({
                     next: (loginResponse) => {
                         if (this.authService.setJwt(loginResponse.jwt, loginResponse.secure)) {
-                            console.log("Login successful");
+                            console.info("Login successful.");
                             this.zone.run(() =>
-                                this.router.navigate(['/' + routeName.settings]).then()
+                                this.router.navigate(['/' + routeName.purchases_new]).then()
                             ).then();
                         } else {
                             console.error("Cookie not set. Probably because it needs to be sent over a secure HTTPS connection.");
+                            this.openDialog('#login.errorLoginCookie');
                         }
                     },
                     error: (error) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error on login.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#login.errorLogin');
                     }
                 });
         }
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
     }
 }

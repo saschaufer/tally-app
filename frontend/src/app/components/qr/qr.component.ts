@@ -27,6 +27,8 @@ export class QrComponent {
 
     product: GetProductsResponse | undefined;
 
+    error: HttpErrorResponse | undefined;
+
     ngOnInit(): void {
 
         let productId;
@@ -40,11 +42,14 @@ export class QrComponent {
             this.httpService.postReadProduct(productId)
                 .subscribe({
                     next: (product) => {
-                        console.log("Product read");
+                        console.info("Product read.");
                         this.product = product;
                     },
                     error: (error: HttpErrorResponse) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error reading product.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#qr.errorReadingProduct');
                     }
                 });
         }
@@ -55,17 +60,33 @@ export class QrComponent {
             this.httpService.postCreatePurchase(this.product.id)
                 .subscribe({
                     next: () => {
-                        console.log("Purchase created");
-                        this.zone.run(() =>
-                            this.router.navigate(['/' + routeName.purchases]).then()
-                        ).then();
+                        console.info("Purchase created.");
+                        const dialog = document.getElementById('#qr.successCreatingPurchase')! as HTMLDialogElement;
+                        dialog.addEventListener('click', () => {
+                            dialog.close();
+                            this.zone.run(() =>
+                                this.router.navigate(['/' + routeName.purchases]).then()
+                            ).then();
+                        });
+                        dialog.showModal();
                     },
                     error: (error) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error creating purchase.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#qr.errorCreatingPurchase');
                     }
                 });
 
             this.product = undefined;
         }
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
     }
 }

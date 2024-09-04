@@ -3,7 +3,9 @@ package de.saschaufer.apps.tally.services;
 import de.saschaufer.apps.tally.controller.dto.GetProductsResponse;
 import de.saschaufer.apps.tally.persistence.Persistence;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
@@ -16,7 +18,15 @@ public class ProductService {
     private final Persistence persistence;
 
     public Mono<Void> createProduct(final String name, final BigDecimal price) {
-        return persistence.insertProductAndPrice(name, price);
+
+        return persistence.existsProduct(name)
+                .flatMap(found -> {
+                    if (found.equals(Boolean.TRUE)) {
+                        return Mono.error(new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Product already exists"));
+                    }
+
+                    return persistence.insertProductAndPrice(name, price);
+                });
     }
 
     public Mono<GetProductsResponse> readProduct(final Long productId) {

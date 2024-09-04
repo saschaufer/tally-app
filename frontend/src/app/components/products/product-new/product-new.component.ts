@@ -1,3 +1,5 @@
+import {NgIf} from "@angular/common";
+import {HttpErrorResponse} from "@angular/common/http";
 import {Component, inject} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {RouterLink} from "@angular/router";
@@ -10,7 +12,8 @@ import {HttpService} from "../../../services/http.service";
     standalone: true,
     imports: [
         ReactiveFormsModule,
-        RouterLink
+        RouterLink,
+        NgIf
     ],
     templateUrl: './product-new.component.html',
     styles: ``
@@ -23,10 +26,23 @@ export class ProductNewComponent {
 
     readonly newProductForm = new FormGroup({
         name: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
-        price: new FormControl('', {nonNullable: true, validators: [Validators.required]})
+        price: new FormControl('', {
+            nonNullable: true,
+            validators: [Validators.required, Validators.pattern("^\\d{1,10}(\\.\\d{1,10})?$")]
+        })
     });
 
+    formErrors = {
+        nameMissing: false,
+        priceMissing: false,
+        pricePatternInvalid: false
+    };
+
+    error: HttpErrorResponse | undefined;
+
     onSubmit() {
+
+        this.formErrors = this.getFormValidationErrors();
 
         if (this.newProductForm.valid) {
 
@@ -38,12 +54,32 @@ export class ProductNewComponent {
             this.httpService.postCreateProduct(name, price)
                 .subscribe({
                     next: () => {
-                        console.log("Product created");
+                        console.info("Product created.");
+                        this.openDialog('#products.productNew.successCreateProduct');
                     },
                     error: (error) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                        console.error('Error creating product.');
+                        console.error(error);
+                        this.error = error;
+                        this.openDialog('#products.productNew.errorCreateProduct');
                     }
                 });
+        }
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
+    }
+
+    getFormValidationErrors() {
+        return {
+            nameMissing: this.newProductForm.get('name')!.hasError('required'),
+            priceMissing: this.newProductForm.get('price')!.hasError('required'),
+            pricePatternInvalid: this.newProductForm.get('price')!.hasError('pattern')
         }
     }
 }

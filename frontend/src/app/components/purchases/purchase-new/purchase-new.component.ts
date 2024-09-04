@@ -31,16 +31,21 @@ export class PurchaseNewComponent {
     products: GetProductsResponse[] | undefined;
     selectedProduct: GetProductsResponse | undefined;
 
+    error: HttpErrorResponse | undefined;
+
     ngOnInit(): void {
 
         this.httpService.getReadProducts()
             .subscribe({
                 next: products => {
-                    console.log("Products read");
+                    console.info("Products read.");
                     this.products = products;
                 },
                 error: (error: HttpErrorResponse) => {
-                    console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                    console.error('Error reading products.');
+                    console.error(error);
+                    this.error = error;
+                    this.openDialog('#purchases.purchaseNew.errorReadingProducts');
                 }
             });
     }
@@ -50,21 +55,42 @@ export class PurchaseNewComponent {
     }
 
     onSubmit() {
-        if (this.selectedProduct) {
-            this.httpService.postCreatePurchase(this.selectedProduct.id)
-                .subscribe({
-                    next: () => {
-                        console.log("Purchase created");
+        
+        if (!this.selectedProduct) {
+            console.error('No product selected.');
+            this.openDialog('#purchases.purchaseNew.errorNoProductSelected');
+            return;
+        }
+
+        this.httpService.postCreatePurchase(this.selectedProduct.id)
+            .subscribe({
+                next: () => {
+                    console.info("Purchase created.");
+                    const dialog = document.getElementById('#purchases.purchaseNew.successCreatingPurchase')! as HTMLDialogElement;
+                    dialog.addEventListener('click', () => {
+                        dialog.close();
                         this.zone.run(() =>
                             this.router.navigate(['/' + routeName.purchases]).then()
                         ).then();
-                    },
-                    error: (error) => {
-                        console.error(error.status + ' ' + error.statusText + ': ' + error.error);
-                    }
-                });
+                    });
+                    dialog.showModal();
+                },
+                error: (error) => {
+                    console.error('Error creating purchase.');
+                    console.error(error);
+                    this.error = error;
+                    this.openDialog('#purchases.purchaseNew.errorCreatingPurchase');
+                }
+            });
 
-            this.selectedProduct = undefined;
-        }
+        this.selectedProduct = undefined;
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
     }
 }

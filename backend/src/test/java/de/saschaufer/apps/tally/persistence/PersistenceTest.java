@@ -510,6 +510,30 @@ class PersistenceTest {
     }
 
     @Test
+    void existsProduct_positive_ProductExists() {
+
+        final TestData testData = insertTestData();
+
+        Mono.just(testData.product1.getName())
+                .flatMap(persistence::existsProduct)
+                .as(StepVerifier::create)
+                .assertNext(exists -> assertThat(exists, is(true)))
+                .verifyComplete();
+    }
+
+    @Test
+    void existsProduct_positive_ProductNotExists() {
+
+        final TestData testData = insertTestData();
+
+        Mono.just(testData.product1.getName() + "NOT")
+                .flatMap(persistence::existsProduct)
+                .as(StepVerifier::create)
+                .assertNext(exists -> assertThat(exists, is(false)))
+                .verifyComplete();
+    }
+
+    @Test
     void updateProduct_positive() {
 
         final Long p1Id = Objects.requireNonNull(template.insert(new Product(null, "coffee")).block()).getId();

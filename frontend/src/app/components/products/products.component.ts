@@ -27,16 +27,21 @@ export class ProductsComponent {
 
     products: GetProductsResponse[] | undefined;
 
+    error: HttpErrorResponse | undefined;
+
     ngOnInit(): void {
 
         this.httpService.getReadProducts()
             .subscribe({
                 next: products => {
-                    console.log("Products read");
+                    console.info("Products read.");
                     this.products = products;
                 },
                 error: (error: HttpErrorResponse) => {
-                    console.error(error.status + ' ' + error.statusText + ': ' + error.error);
+                    console.error('Error reading products.');
+                    console.error(error);
+                    this.error = error;
+                    this.openDialog('#products.errorReadingProducts');
                 }
             });
     }
@@ -47,5 +52,13 @@ export class ProductsComponent {
         this.zone.run(() =>
             this.router.navigate(['/' + routeName.products_edit + '/' + urlAppend]).then()
         ).then();
+    }
+
+    openDialog(id: string) {
+        const dialog = document.getElementById(id)! as HTMLDialogElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+        });
+        dialog.showModal();
     }
 }

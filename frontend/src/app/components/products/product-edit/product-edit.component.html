@@ -12,6 +12,11 @@
 
         <div class="mt-0_5">
             <label for="name">Name</label>
+
+            <!-- @formatter:off -->
+            <label class="text-red" for="name" *ngIf="formErrorsChangeName.nameMissing"> - Missing name</label>
+            <!-- @formatter:on -->
+
             <input id="name" type="text" autocomplete="" formControlName="name">
         </div>
 
@@ -25,6 +30,12 @@
 
         <div class="mt-0_5">
             <label for="price">Price</label>
+
+            <!-- @formatter:off -->
+            <label class="text-red" for="price" *ngIf="formErrorsChangePrice.priceMissing"> - Missing price</label>
+            <label class="text-red" for="price" *ngIf="formErrorsChangePrice.pricePatternInvalid"> - Not a valid price</label>
+            <!-- @formatter:on -->
+
             <input id="price" type="text" autocomplete="" formControlName="price">
         </div>
 
@@ -33,3 +44,21 @@
     </form>
 
 </div>
+
+<dialog id="#products.productEdit.successChangeName">
+    <p class="mt-1_25 text-center text-green">Name successfully changed.</p>
+</dialog>
+<dialog id="#products.productEdit.errorChangeName">
+    <p class="mt-1_25 text-center text-green">Error changing name.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+</dialog>
+
+<dialog id="#products.productEdit.successChangePrice">
+    <p class="mt-1_25 text-center text-green">Price successfully changed.</p>
+</dialog>
+<dialog id="#products.productEdit.errorChangePrice">
+    <p class="mt-1_25 text-center text-green">Error changing price.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+</dialog>
