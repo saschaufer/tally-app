@@ -57,8 +57,8 @@ describe('PaymentsComponent', () => {
         expect(component).toBeTruthy();
 
         expect(component.payments).toEqual([
-            {id: 1, amount: Big('123.45'), timestamp: 123},
-            {id: 2, amount: Big('678.90'), timestamp: 456}
+            {id: 2, amount: Big('678.90'), timestamp: 456},
+            {id: 1, amount: Big('123.45'), timestamp: 123}
         ] as GetPaymentsResponse[]);
 
         expect(component.accountBalance).toEqual({
@@ -88,8 +88,8 @@ describe('PaymentsComponent', () => {
         expect(component).toBeTruthy();
 
         expect(component.payments).toEqual([
-            {id: 1, amount: Big('123.45'), timestamp: 123},
-            {id: 2, amount: Big('678.90'), timestamp: 456}
+            {id: 2, amount: Big('678.90'), timestamp: 456},
+            {id: 1, amount: Big('123.45'), timestamp: 123}
         ] as GetPaymentsResponse[]);
 
         expect(component.accountBalance).toEqual({

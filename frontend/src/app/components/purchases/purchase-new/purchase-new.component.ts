@@ -39,6 +39,7 @@ export class PurchaseNewComponent {
             .subscribe({
                 next: products => {
                     console.info("Products read.");
+                    products.sort((a, b) => a.name.localeCompare(b.name));
                     this.products = products;
                 },
                 error: (error: HttpErrorResponse) => {
@@ -55,7 +56,7 @@ export class PurchaseNewComponent {
     }
 
     onSubmit() {
-        
+
         if (!this.selectedProduct) {
             console.error('No product selected.');
             this.openDialog('#purchases.purchaseNew.errorNoProductSelected');

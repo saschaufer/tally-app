@@ -57,8 +57,8 @@ describe('PurchasesComponent', () => {
         expect(component).toBeTruthy();
 
         expect(component.purchases).toEqual([
-            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')},
-            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')}
+            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')},
+            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')}
         ] as GetPurchasesResponse[]);
 
         expect(component.accountBalance).toEqual({
@@ -88,8 +88,8 @@ describe('PurchasesComponent', () => {
         expect(component).toBeTruthy();
 
         expect(component.purchases).toEqual([
-            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')},
-            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')}
+            {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')},
+            {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')}
         ] as GetPurchasesResponse[]);
 
         expect(component.accountBalance).toEqual({

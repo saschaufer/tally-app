@@ -41,8 +41,8 @@ describe('ProductsComponent', () => {
     it('should create', () => {
 
         httpServiceSpy.getReadProducts.and.callFake(() => of([
-            {id: 1, name: "product-1", price: Big('123.45')},
-            {id: 2, name: "product-2", price: Big('678.90')}
+            {id: 1, name: "bb-product-1", price: Big('123.45')},
+            {id: 2, name: "aa-product-2", price: Big('678.90')}
         ] as GetProductsResponse[]));
 
         fixture.detectChanges();
@@ -50,8 +50,8 @@ describe('ProductsComponent', () => {
         expect(component).toBeTruthy();
 
         expect(component.products).toEqual([
-            {id: 1, name: "product-1", price: Big('123.45')},
-            {id: 2, name: "product-2", price: Big('678.90')}
+            {id: 2, name: "aa-product-2", price: Big('678.90')},
+            {id: 1, name: "bb-product-1", price: Big('123.45')}
         ] as GetProductsResponse[]);
     });
 

@@ -35,6 +35,7 @@ export class ProductsComponent {
             .subscribe({
                 next: products => {
                     console.info("Products read.");
+                    products.sort((a, b) => a.name.localeCompare(b.name));
                     this.products = products;
                 },
                 error: (error: HttpErrorResponse) => {

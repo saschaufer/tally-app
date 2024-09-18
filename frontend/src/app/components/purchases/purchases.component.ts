@@ -1,4 +1,4 @@
-import {NgClass, NgForOf, NgIf} from "@angular/common";
+import {DatePipe, NgClass, NgForOf, NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
 import {Component, inject, NgZone} from '@angular/core';
 import {Router, RouterLink} from "@angular/router";
@@ -15,7 +15,8 @@ import {GetPurchasesResponse} from "../../services/models/GetPurchasesResponse";
         NgForOf,
         NgIf,
         RouterLink,
-        NgClass
+        NgClass,
+        DatePipe
     ],
     templateUrl: './purchases.component.html',
     styles: ``
@@ -40,6 +41,7 @@ export class PurchasesComponent {
             .subscribe({
                 next: purchases => {
                     console.info("Purchases read.");
+                    purchases.sort((a, b) => new Date(a.purchaseTimestamp) < new Date(b.purchaseTimestamp) ? 1 : -1);
                     this.purchases = purchases;
                 },
                 error: (error: HttpErrorResponse) => {

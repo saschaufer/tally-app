@@ -41,6 +41,7 @@ export class PaymentsComponent {
             .subscribe({
                 next: payments => {
                     console.info("Payments read.");
+                    payments.sort((a, b) => new Date(a.timestamp) < new Date(b.timestamp) ? 1 : -1);
                     this.payments = payments;
                 },
                 error: (error: HttpErrorResponse) => {
