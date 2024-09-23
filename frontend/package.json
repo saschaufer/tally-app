@@ -3,7 +3,7 @@
   "version": "0.1.0-SNAPSHOT",
   "scripts": {
     "ng": "ng",
-    "start-online": "ng serve --host 192.168.0.218",
+    "start-online": "ng serve --host 192.168.178.100",
     "source-map": "rm -R target/classes/static/ || true && ng build --source-map && node_modules/.bin/source-map-explorer target/classes/static/browser/main*",
     "build": "ng build --configuration development",
     "build-release": "ng build --configuration production --aot",

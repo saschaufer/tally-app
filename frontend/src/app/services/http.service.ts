@@ -22,7 +22,8 @@ export class HttpService {
             headers: {
                 // Prevent Browsers from pop up a login window if response is 401
                 'X-Requested-With': 'XMLHttpRequest',
-                Authorization: 'Basic ' + window.btoa(email + ':' + password)
+                Authorization: 'Basic ' + window.btoa(email + ':' + password),
+                'X-UserId': email
             },
             responseType: 'json' as const
         };
@@ -36,7 +37,8 @@ export class HttpService {
             headers: {
                 // Prevent Browsers from pop up a login window if response is 401
                 'X-Requested-With': 'XMLHttpRequest',
-                Authorization: 'Basic ' + window.btoa('invitation-code:' + invitationCode)
+                Authorization: 'Basic ' + window.btoa('invitation-code:' + invitationCode),
+                'X-UserId': email
             }
         };
 
@@ -50,12 +52,18 @@ export class HttpService {
 
     postRegisterNewUserConfirm(email: string, secret: string): Observable<void> {
 
+        const httpOptions = {
+            headers: {
+                'X-UserId': email
+            }
+        };
+
         const body = {
             email: email,
             registrationSecret: secret
         };
 
-        return this.httpClient.post<void>("/register/confirm", body);
+        return this.httpClient.post<void>("/register/confirm", body, httpOptions);
     }
 
     postChangePassword(password: string): Observable<void> {
@@ -162,7 +170,8 @@ export class HttpService {
 
         return {
             headers: {
-                Authorization: 'Bearer ' + jwt
+                Authorization: 'Bearer ' + jwt,
+                'X-UserId': this.authService.getJwtDetails().email
             }
         };
     }

@@ -59,6 +59,7 @@
         <archive.repository/>
 
         <!-- Dependencies -->
+        <disruptor.version>3.4.4</disruptor.version>
         <hamcrest.version>2.2</hamcrest.version>
         <spring-boot.version>3.2.5</spring-boot.version>
 

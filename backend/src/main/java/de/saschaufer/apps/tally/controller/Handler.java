@@ -5,6 +5,7 @@ import de.saschaufer.apps.tally.persistence.dto.User;
 import de.saschaufer.apps.tally.services.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.data.util.Pair;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -22,6 +23,7 @@ import reactor.core.publisher.Mono;
 import java.util.List;
 import java.util.Objects;
 
+import static de.saschaufer.apps.tally.controller.MDCFilter.KEY_MDC;
 import static org.springframework.web.reactive.function.server.ServerResponse.ok;
 import static org.springframework.web.reactive.function.server.ServerResponse.status;
 
@@ -38,61 +40,75 @@ public class Handler {
 
     public Mono<ServerResponse> postLogin(final ServerRequest request) {
 
-        log.atInfo().setMessage("Login.").log();
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Login.").log())
 
-        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                // Get user
+                .flatMap(ServerRequest::principal)
+                .map(Authentication.class::cast)
                 .map(a -> (User) a.getPrincipal())
                 .flatMap(userDetailsService::checkRegistered)
-                .doOnNext(u -> log.atInfo().setMessage("User '{}' logged in.").addArgument(u.getEmail()).log());
+                .doOnNext(u -> log.atInfo().setMessage("User '{}' logged in.").addArgument(u.getEmail()).log())
+                .map(userDetailsService::createJwtToken)
 
-        final Mono<PostLoginResponse> response = user.map(userDetailsService::createJwtToken);
-
-        return response
+                // Build response
                 .flatMap(res -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(res))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error logging in.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postRegisterNewUser(final ServerRequest request) {
 
-        log.atInfo().setMessage("Register new user.").log();
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Register new user.").log())
 
-        final Mono<User> createdUser = request.bodyToMono(PostRegisterNewUserRequest.class)
+                // Register user
+                .flatMap(r -> r.bodyToMono(PostRegisterNewUserRequest.class))
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate)
                 .flatMap(user -> userDetailsService.createUser(user.email(), user.password(), List.of(User.Role.USER)))
                 .flatMap(user -> {
                     emailService.sendRegistrationEmail(user.getEmail(), user.getRegistrationSecret());
                     return Mono.just(user);
-                });
+                })
 
-        return createdUser
+                // Build response
                 .flatMap(user -> ok().build())
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error creating new user.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postRegisterNewUserConfirm(final ServerRequest request) {
 
-        log.atInfo().setMessage("Confirm register new user.").log();
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Confirm register new user.").log())
 
-        final Mono<Void> userConfirmed = request.bodyToMono(PostRegisterNewUserConfirmRequest.class)
+                // Confirm registration
+                .flatMap(r -> r.bodyToMono(PostRegisterNewUserConfirmRequest.class))
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate)
                 .flatMap(confirmRequest -> userDetailsService.checkRegistrationSecret(confirmRequest.email(), confirmRequest.registrationSecret()))
-                .flatMap(user -> userDetailsService.updateUserRegistrationComplete(user.getEmail()));
+                .flatMap(user -> userDetailsService.updateUserRegistrationComplete(user.getEmail()))
 
-        return userConfirmed
+                // Build response
                 .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error confirming registration of new user.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postChangePassword(final ServerRequest request) {
 
-        log.atInfo().setMessage("Change password.").log();
-
-        final Mono<User> user = request.principal().map(Authentication.class::cast)
+        // Get user
+        final Mono<User> user = setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Change password.").log())
+                .flatMap(ServerRequest::principal)
+                .map(Authentication.class::cast)
                 .map(auth -> switch (auth.getPrincipal()) {
                     case UserDetails u -> u.getUsername();
                     case Jwt j -> j.getSubject();
@@ -102,108 +118,146 @@ public class Handler {
                 .flatMap(userDetailsService::findByUsername)
                 .map(u -> (User) u);
 
+        // Get body
         final Mono<String> newPassword = request.bodyToMono(String.class)
                 .switchIfEmpty(badRequest("Body required"));
 
+        // Change password
         return user.zipWith(newPassword, Pair::of)
                 .flatMap(pair -> userDetailsService.changePassword(pair.getFirst(), pair.getSecond()))
+
+                // Build response
                 .flatMap(u -> ok().build())
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error changing password.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postChangeInvitationCode(final ServerRequest request) {
 
-        log.atInfo().setMessage("Change invitation code.").log();
-
-        final Mono<User> invitationCodeUser = userDetailsService.findByUsername("invitation-code")
+        // Get invitation user
+        final Mono<User> invitationCodeUser = setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Change invitation code.").log())
+                .flatMap(r -> userDetailsService.findByUsername("invitation-code"))
                 .map(u -> (User) u);
 
+        // Get body
         final Mono<String> newInvitationCode = request.bodyToMono(String.class)
                 .switchIfEmpty(badRequest("Body required"));
 
+        // Change invitation code (password of invitation user)
         return invitationCodeUser.zipWith(newInvitationCode, Pair::of)
                 .flatMap(pair -> userDetailsService.changePassword(pair.getFirst(), pair.getSecond()))
+
+                // Build response
                 .flatMap(u -> ok().build())
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error changing invitation code.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postCreateProduct(final ServerRequest request) {
 
-        log.atInfo().setMessage("Create product.").log();
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Create product.").log())
 
-        return request.bodyToMono(PostCreateProductRequest.class)
+                // Create product
+                .flatMap(r -> r.bodyToMono(PostCreateProductRequest.class))
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate)
-
                 .flatMap(r -> productService.createProduct(r.name(), r.price()))
 
+                // Build response
                 .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error creating new product.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postReadProduct(final ServerRequest request) {
 
-        log.atInfo().setMessage("Read product.").log();
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Read product.").log())
 
-        return request.bodyToMono(PostReadProductRequest.class)
+                // Get Product
+                .flatMap(r -> r.bodyToMono(PostReadProductRequest.class))
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate)
-
                 .flatMap(r -> productService.readProduct(r.id()))
 
+                // Build response
                 .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error reading product.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> getReadProducts(final ServerRequest request) {
 
-        log.atInfo().setMessage("Read products.").log();
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Read products.").log())
 
-        return productService.readProducts()
+                // Get products
+                .flatMap(r -> productService.readProducts())
+
+                // Build response
                 .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error reading products.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postUpdateProduct(final ServerRequest request) {
 
-        log.atInfo().setMessage("Update product.").log();
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Update product.").log())
 
-        return request.bodyToMono(PostUpdateProductRequest.class)
+                // Update product
+                .flatMap(r -> r.bodyToMono(PostUpdateProductRequest.class))
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate)
-
                 .flatMap(r -> productService.updateProduct(r.id(), r.name()))
 
+                // Build response
                 .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error updating product.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postUpdateProductPrice(final ServerRequest request) {
 
-        log.atInfo().setMessage("Update product price.").log();
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Update product price.").log())
 
-        return request.bodyToMono(PostUpdateProductPriceRequest.class)
+                // Update product price
+                .flatMap(r -> r.bodyToMono(PostUpdateProductPriceRequest.class))
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate)
-
                 .flatMap(r -> productService.updateProductPrice(r.id(), r.price()))
 
+                // Build response
                 .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error updating product price.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postCreatePurchase(final ServerRequest request) {
 
-        log.atInfo().setMessage("Create purchase.").log();
+        // Get user
+        final Mono<User> user = setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Create purchase.").log())
 
-        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                .flatMap(ServerRequest::principal)
+                .map(Authentication.class::cast)
                 .map(auth -> switch (auth.getPrincipal()) {
                     case UserDetails u -> u.getUsername();
                     case Jwt j -> j.getSubject();
@@ -213,22 +267,31 @@ public class Handler {
                 .flatMap(userDetailsService::findByUsername)
                 .map(u -> (User) u);
 
+        // Get body
         final Mono<PostCreatePurchaseRequest> purchase = request.bodyToMono(PostCreatePurchaseRequest.class)
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate);
 
+        // Create purchase
         return user.zipWith(purchase, Pair::of)
                 .flatMap(pair -> purchaseService.createPurchase(pair.getFirst().getId(), pair.getSecond().productId()))
+
+                // Build response
                 .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error creating new purchase.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> getReadPurchases(final ServerRequest request) {
 
-        log.atInfo().setMessage("Read purchases.").log();
+        // Get user
+        final Mono<User> user = setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Read purchases.").log())
 
-        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                .flatMap(ServerRequest::principal)
+                .map(Authentication.class::cast)
                 .map(auth -> switch (auth.getPrincipal()) {
                     case UserDetails u -> u.getUsername();
                     case Jwt j -> j.getSubject();
@@ -238,31 +301,43 @@ public class Handler {
                 .flatMap(userDetailsService::findByUsername)
                 .map(u -> (User) u);
 
+        // Read purchases
         return user.flatMap(u -> purchaseService.readPurchases(u.getId()))
+
+                // Build response
                 .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error reading purchases.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postDeletePurchase(final ServerRequest request) {
 
-        log.atInfo().setMessage("Delete purchase.").log();
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Delete purchase.").log())
 
-        final Mono<PostDeletePurchaseRequest> purchase = request.bodyToMono(PostDeletePurchaseRequest.class)
+                // Delete prurchase
+                .flatMap(r -> r.bodyToMono(PostDeletePurchaseRequest.class))
                 .switchIfEmpty(badRequest("Body required"))
-                .flatMap(RequestBodyValidator::validate);
+                .flatMap(RequestBodyValidator::validate)
+                .flatMap(p -> purchaseService.deletePurchase(p.purchaseId()))
 
-        return purchase.flatMap(p -> purchaseService.deletePurchase(p.purchaseId()))
+                // Build response
                 .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error deleting purchase.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> postCreatePayment(final ServerRequest request) {
 
-        log.atInfo().setMessage("Create payment.").log();
-
-        final Mono<User> user = request.principal().map(Authentication.class::cast)
+        // Get user
+        final Mono<User> user = setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Create payment.").log())
+                .flatMap(ServerRequest::principal)
+                .map(Authentication.class::cast)
                 .map(auth -> switch (auth.getPrincipal()) {
                     case UserDetails u -> u.getUsername();
                     case Jwt j -> j.getSubject();
@@ -272,21 +347,30 @@ public class Handler {
                 .flatMap(userDetailsService::findByUsername)
                 .map(u -> (User) u);
 
+        // Get body
         final Mono<PostCreatePaymentRequest> payment = request.bodyToMono(PostCreatePaymentRequest.class)
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate);
 
+        // Create payment
         return user.zipWith(payment).flatMap(pair -> paymentService.createPayment(pair.getT1().getId(), pair.getT2().amount()))
+
+                // Build response
                 .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error creating payment.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> getReadPayments(final ServerRequest request) {
 
-        log.atInfo().setMessage("Read payments.").log();
+        // Get user
+        final Mono<User> user = setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Read payments.").log())
 
-        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                .flatMap(ServerRequest::principal)
+                .map(Authentication.class::cast)
                 .map(auth -> switch (auth.getPrincipal()) {
                     case UserDetails u -> u.getUsername();
                     case Jwt j -> j.getSubject();
@@ -296,30 +380,44 @@ public class Handler {
                 .flatMap(userDetailsService::findByUsername)
                 .map(u -> (User) u);
 
+        // Read payments
         return user.flatMap(u -> paymentService.readPayments(u.getId()))
+
+                // Build response
                 .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error reading payments.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
-
     }
 
     public Mono<ServerResponse> postDeletePayment(final ServerRequest request) {
 
-        final Mono<PostDeletePaymentRequest> payment = request.bodyToMono(PostDeletePaymentRequest.class)
-                .switchIfEmpty(badRequest("Body required"))
-                .flatMap(RequestBodyValidator::validate);
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Delete payment.").log())
 
-        return payment.flatMap(p -> paymentService.deletePayment(p.paymentId()))
+                // Delete payment
+                .flatMap(r -> r.bodyToMono(PostDeletePaymentRequest.class))
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(RequestBodyValidator::validate)
+                .flatMap(p -> paymentService.deletePayment(p.paymentId()))
+
+                // Build response
                 .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error deleting payment.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
     }
 
     public Mono<ServerResponse> getReadAccountBalance(final ServerRequest request) {
 
-        log.atInfo().setMessage("Read account balance.").log();
+        // Get user
+        final Mono<User> user = setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Read account balance.").log())
 
-        final Mono<User> user = request.principal().map(Authentication.class::cast)
+                .flatMap(ServerRequest::principal)
+                .map(Authentication.class::cast)
                 .map(auth -> switch (auth.getPrincipal()) {
                     case UserDetails u -> u.getUsername();
                     case Jwt j -> j.getSubject();
@@ -329,10 +427,22 @@ public class Handler {
                 .flatMap(userDetailsService::findByUsername)
                 .map(u -> (User) u);
 
+        // Read account balance
         return user.flatMap(u -> paymentService.readAccountBalance(u.getId()))
+
+                // Build response
                 .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+
+                // Build error response
                 .doOnError(e -> log.atError().setMessage("Error reading account balance.").setCause(e).log())
                 .onErrorResume(this::buildErrorResponse);
+    }
+
+    private Mono<ServerRequest> setMdc(final ServerRequest request) {
+        return Mono.deferContextual(ctx -> {
+            MDC.setContextMap(ctx.get(KEY_MDC));
+            return Mono.just(request);
+        });
     }
 
     private <T> Mono<T> badRequest(final String message) {

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+
+    <Properties>
+        <Property name="APP_NAME">${spring:app.name}</Property>
+        <Property name="APP_VERSION">${spring:app.version}</Property>
+        <Property name="APP_PORT">${spring:server.port}</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="sysout" target="SYSTEM_OUT">
+            <JsonTemplateLayout eventTemplateUri="classpath:logformat.json">
+                <EventTemplateAdditionalField
+                        key="app"
+                        format="JSON"
+                        value='{"name": "${APP_NAME}", "version": "${APP_VERSION}", "hostname": "${hostName}", "port": "${APP_PORT}"}'
+                />
+            </JsonTemplateLayout>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <Root level="off" additivity="false" includeLocation="true">
+            <AppenderRef ref="sysout"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
