@@ -127,6 +127,17 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <excludes>
+                    <exclude>application-default.yml</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+                <includes>
+                    <include>application-default.yml</include>
+                </includes>
+                <targetPath>${project.build.directory}/archive-pack</targetPath>
             </resource>
         </resources>
 

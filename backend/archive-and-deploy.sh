@@ -7,23 +7,25 @@ do
         v) version=${OPTARG};;
         r) repository=${OPTARG};;
         p) passphrase=${OPTARG};;
+        *) # nothing
     esac
 done
 
-dir=target/archive-pack
+dir="tally-$version"
 archive="tally-$version.tar.gz"
 
 echo "Archive artifacts."
 
 # Create target directory
-mkdir -p $dir
+mkdir -p "target/$dir"
 
 # Copy everything for the archive
-cp target/backend*.jar $dir/tally.jar
+cp target/backend*.jar "target/$dir/tally.jar"
+cp "target/archive-pack/application-default.yml" "target/$dir/application.yml"
 
 # Make archive
 echo "---"
-(cd $dir && tar -czvf "../$archive" *)
+(cd target/ && tar -czvf "$archive" "$dir")
 echo "---"
 
 if [ ! -f "target/$archive" ]; then
