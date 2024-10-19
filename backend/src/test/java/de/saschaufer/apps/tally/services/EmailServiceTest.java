@@ -41,4 +41,20 @@ class EmailServiceTest {
         assertThat(argumentCaptorEmail.getValue().getSubject(), is("Tally app registration"));
         assertThat(argumentCaptorEmail.getValue().getText(), containsString("http://url-register/#/register/confirm?e=dG9AbWFpbC5jb20%3D&s=c2VjcmV0"));
     }
+
+    @Test
+    void sendResetPasswordEmail_positive() {
+
+        assertDoesNotThrow(() -> emailService.sendResetPasswordEmail("to@mail.com", "abc123"));
+
+        final ArgumentCaptor<SimpleMailMessage> argumentCaptorEmail = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(emailSenderMock, times(1)).send(argumentCaptorEmail.capture());
+
+        assertThat(argumentCaptorEmail.getValue().getFrom(), is("from@mail.com"));
+        assertThat(argumentCaptorEmail.getValue().getTo(), notNullValue());
+        assertThat(argumentCaptorEmail.getValue().getTo().length, is(1));
+        assertThat(argumentCaptorEmail.getValue().getTo()[0], is("to@mail.com"));
+        assertThat(argumentCaptorEmail.getValue().getSubject(), is("Tally app reset password"));
+        assertThat(argumentCaptorEmail.getValue().getText(), containsString("abc123"));
+    }
 }

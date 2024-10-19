@@ -18,6 +18,7 @@ import {PurchasesComponent} from "./components/purchases/purchases.component";
 import {QrComponent} from "./components/qr/qr.component";
 import {RegisterConfirmComponent} from "./components/register/register-confirm/register-confirm.component";
 import {RegisterComponent} from "./components/register/register.component";
+import {ResetPasswordComponent} from "./components/reset-password/reset-password.component";
 import {LoginDetailsComponent} from "./components/settings/login-details/login-details.component";
 import {SettingsComponent} from "./components/settings/settings.component";
 import {AuthService} from "./services/auth.service";
@@ -49,7 +50,8 @@ describe('AppComponent', () => {
                     {path: routeName.purchases, component: MockComponent(PurchasesComponent)},
                     {path: routeName.purchases_delete, component: MockComponent(PurchaseDeleteComponent)},
                     {path: routeName.purchases_new, component: MockComponent(PurchaseNewComponent)},
-                    {path: routeName.qr, component: MockComponent(QrComponent)}
+                    {path: routeName.qr, component: MockComponent(QrComponent)},
+                    {path: routeName.reset_password, component: MockComponent(ResetPasswordComponent)}
                 ]),
                 provideLocationMocks()
             ]
@@ -158,5 +160,11 @@ describe('AppComponent', () => {
             tick(1);
         });
         expect(component.showNavBar()).toBeTruthy();
+
+        zone.run(() => {
+            routerHarness.navigateByUrl('/' + routeName.reset_password);
+            tick(1);
+        });
+        expect(component.showNavBar()).toBeFalsy();
     }));
 });

@@ -180,6 +180,87 @@ class UserDetailsServiceTest {
     }
 
     @Test
+    void resetPassword_positive() {
+
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
+
+        doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
+        doReturn(Mono.empty()).when(persistence).updateUserPassword(any(Long.class), any(String.class));
+        doReturn("pwd").when(passwordEncoder).encode(any(String.class));
+
+        Mono.just("username@mail.com")
+                .flatMap(userDetailsService::resetPassword)
+                .as(StepVerifier::create)
+                .assertNext(t -> {
+                    assertThat(t.getT1(), is("username@mail.com"));
+                    assertThat(t.getT2(), notNullValue());
+                    assertThat(t.getT2(), not(is("pwd")));
+                })
+                .verifyComplete();
+
+        verify(persistence, times(2)).selectUser("username@mail.com");
+        verify(persistence, times(1)).updateUserPassword(1L, "pwd");
+    }
+
+    @Test
+    void resetPassword_negative_UserNotExists() {
+
+        doReturn(Mono.error(new RuntimeException("User not found"))).when(persistence).selectUser(any(String.class));
+
+        Mono.just("username@mail.com")
+                .flatMap(userDetailsService::resetPassword)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("User not found"))
+                );
+
+        verify(persistence, times(1)).selectUser(any(String.class));
+        verify(persistence, times(0)).updateUserPassword(any(Long.class), any(String.class));
+    }
+
+    @Test
+    void resetPassword_negative_UserNotRegistered() {
+
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false);
+
+        doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
+
+        Mono.just("username@mail.com")
+                .flatMap(userDetailsService::resetPassword)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(ResponseStatusException.class));
+                    assertThat(error.getMessage(), containsString("Registration is not completed"));
+
+                    final ResponseStatusException e = (ResponseStatusException) error;
+                    assertThat(e.getStatusCode(), is(HttpStatus.UNAUTHORIZED));
+                });
+
+        verify(persistence, times(1)).selectUser(any(String.class));
+        verify(persistence, times(0)).updateUserPassword(any(Long.class), any(String.class));
+    }
+
+    @Test
+    void resetPassword_negative_UserNotUpdated() {
+
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
+
+        doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
+        doReturn(Mono.error(new RuntimeException("User not updated"))).when(persistence).updateUserPassword(any(Long.class), any(String.class));
+        doReturn("pwd").when(passwordEncoder).encode(any(String.class));
+
+        Mono.just("username@mail.com")
+                .flatMap(userDetailsService::resetPassword)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("User not updated"))
+                );
+
+        verify(persistence, times(2)).selectUser(any(String.class));
+        verify(persistence, times(1)).updateUserPassword(any(Long.class), any(String.class));
+    }
+
+    @Test
     void changePassword_positive() {
 
         final UserDetails userDetails = new User(1L, "username-1@mail.com", null, null, null, null, null);

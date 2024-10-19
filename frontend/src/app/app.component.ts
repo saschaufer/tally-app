@@ -36,6 +36,7 @@ export class AppComponent {
     showNavBar(): boolean {
         return this.router.url != "/" + routeName.login
             && this.router.url != "/" + routeName.register
+            && this.router.url != "/" + routeName.reset_password
             && !this.router.url.startsWith("/" + routeName.register_confirm);
     }
 

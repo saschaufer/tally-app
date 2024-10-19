@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuples;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -325,6 +326,81 @@ class RouterTest extends SecurityConfigSetup {
         verify(userDetailsService, times(1)).findByUsername(INVITATION);
         verify(userDetailsService, times(1)).checkRegistrationSecret("test-user@mail.com", "registration-secret");
         verify(userDetailsService, times(0)).updateUserRegistrationComplete("test-user@mail.com");
+    }
+
+    @Test
+    void postResetPassword_positive() {
+
+        doReturn(Mono.just(Tuples.of("test-user@mail.com", "12345"))).when(userDetailsService).resetPassword(any(String.class));
+        doNothing().when(emailService).sendResetPasswordEmail(any(String.class), any(String.class));
+
+        webClient.post().uri("/reset-password")
+                .body(Mono.just("test-user@mail.com"), String.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).resetPassword("test-user@mail.com");
+        verify(emailService, times(1)).sendResetPasswordEmail("test-user@mail.com", "12345");
+    }
+
+    @Test
+    void postResetPassword_negative_NoBody() {
+
+        webClient.post().uri("/reset-password")
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(userDetailsService, times(0)).resetPassword(any(String.class));
+        verify(emailService, times(0)).sendResetPasswordEmail(any(String.class), any(String.class));
+    }
+
+    @Test
+    void postResetPassword_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(userDetailsService).resetPassword(any(String.class));
+
+        webClient.post().uri("/reset-password")
+                .body(Mono.just("test-user@mail.com"), String.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).resetPassword("test-user@mail.com");
+        verify(emailService, times(0)).sendResetPasswordEmail(any(String.class), any(String.class));
+    }
+
+    @Test
+    void postResetPassword_negative_ResponseStatusException() {
+
+        doReturn(Mono.error(new ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "Bad"))).when(userDetailsService).resetPassword(any(String.class));
+
+        webClient.post().uri("/reset-password")
+                .body(Mono.just("test-user@mail.com"), String.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.I_AM_A_TEAPOT)
+                .expectBody(String.class).isEqualTo("Bad");
+
+        verify(userDetailsService, times(1)).resetPassword("test-user@mail.com");
+        verify(emailService, times(0)).sendResetPasswordEmail(any(String.class), any(String.class));
+    }
+
+    @Test
+    void postResetPassword_negative_SendResetPasswordEmailException() {
+
+        doReturn(Mono.just(Tuples.of("test-user@mail.com", "12345"))).when(userDetailsService).resetPassword(any(String.class));
+        doThrow(new RuntimeException("Bad")).when(emailService).sendResetPasswordEmail(any(String.class), any(String.class));
+
+        webClient.post().uri("/reset-password")
+                .body(Mono.just("test-user@mail.com"), String.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).resetPassword("test-user@mail.com");
+        verify(emailService, times(1)).sendResetPasswordEmail("test-user@mail.com", "12345");
     }
 
     @Test

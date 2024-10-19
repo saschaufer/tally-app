@@ -24,6 +24,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -38,6 +40,8 @@ import java.util.UUID;
 public class UserDetailsService implements ReactiveUserDetailsService, ReactiveUserDetailsPasswordService {
 
     private static final SecureRandom random = new SecureRandom();
+    private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
 
     private final Persistence persistence;
     private final JwtProperties jwtProperties;
@@ -83,6 +87,24 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                     ((User) u).setPassword(newPassword);
                     return u;
                 }));
+    }
+
+    public Mono<Tuple2<String, String>> resetPassword(final String email) {
+
+        log.atInfo().setMessage("Resetting password for user '{}'.").addArgument(email).log();
+
+        return persistence.selectUser(email)
+                .flatMap(this::checkRegistered)
+                .map(u -> {
+                    final StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < 6; i++) {
+                        sb.append(ALPHABET.charAt(random.nextInt(ALPHABET.length())));
+                    }
+                    return Tuples.of(u, sb.toString());
+                })
+                .flatMap(t -> changePassword(t.getT1(), t.getT2())
+                        .then(Mono.just(Tuples.of(t.getT1().getEmail(), t.getT2())))
+                );
     }
 
     public Mono<UserDetails> changePassword(final User user, final String newPassword) {

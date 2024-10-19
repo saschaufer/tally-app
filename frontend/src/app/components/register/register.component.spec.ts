@@ -2,7 +2,6 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideRouter} from "@angular/router";
 import {MockProvider} from "ng-mocks";
 import {of, throwError} from "rxjs";
-import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 
 import {RegisterComponent} from './register.component';
@@ -76,7 +75,7 @@ describe('RegisterComponent', () => {
         expect(component.emailSent).toBe(false);
     });
 
-    it('should not navigate to ' + routeName.login + ' (password wrong)', () => {
+    it('should not switch to email sent (password wrong)', () => {
 
         component.registerForm.controls.email.patchValue('test-username@mail.com');
         component.registerForm.controls.password.setErrors(['wrong']);
@@ -94,7 +93,7 @@ describe('RegisterComponent', () => {
         expect(component.emailSent).toBe(false);
     });
 
-    it('should not navigate to ' + routeName.login + ' (password-repeat wrong)', () => {
+    it('should not switch to email sent (password-repeat wrong)', () => {
 
         component.registerForm.controls.email.patchValue('test-username@mail.com');
         component.registerForm.controls.password.patchValue('test-password');
@@ -112,7 +111,7 @@ describe('RegisterComponent', () => {
         expect(component.emailSent).toBe(false);
     });
 
-    it('should not navigate to ' + routeName.login + ' (invitation-code wrong)', () => {
+    it('should not switch to email sent (invitation-code wrong)', () => {
 
         component.registerForm.controls.email.patchValue('test-username@mail.com');
         component.registerForm.controls.password.patchValue('test-password');
@@ -130,7 +129,7 @@ describe('RegisterComponent', () => {
         expect(component.emailSent).toBe(false);
     });
 
-    it('should not navigate to ' + routeName.login + ' (password and password-repeat unequal)', () => {
+    it('should not switch to email sent (password and password-repeat unequal)', () => {
 
         component.registerForm.controls.email.patchValue('test-username@mail.com');
         component.registerForm.controls.password.patchValue('test-password');
@@ -148,7 +147,7 @@ describe('RegisterComponent', () => {
         expect(component.emailSent).toBe(false);
     });
 
-    it('should not navigate to ' + routeName.login + ' (register failed)', () => {
+    it('should not switch to email sent (register failed)', () => {
 
         httpServiceSpy.postRegisterNewUser.and.callFake(() =>
             throwError(() => 'Error on register')

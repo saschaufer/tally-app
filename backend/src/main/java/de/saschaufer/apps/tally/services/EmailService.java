@@ -33,13 +33,13 @@ public class EmailService {
 
             sendEmail(emailProperties.from(), email, "Tally app registration", """
                     Hello,
-
+                    
                     click on the link to complete the registration on the Tally app:
-
+                    
                     %s
-
+                    
                     If you don't registered to the app, ignore this email. Since the registration is not completed then, your email address will be deleted from the Tally app system.
-
+                    
                     Kind regards,
                     Tally app
                     """.formatted(url));
@@ -48,6 +48,29 @@ public class EmailService {
         }
 
         log.atInfo().setMessage("Registration email sent.").log();
+    }
+
+    public void sendResetPasswordEmail(final String email, final String password) {
+
+        log.atInfo().setMessage("Send reset password email to '{}'.").addArgument(email).log();
+
+        try {
+
+            sendEmail(emailProperties.from(), email, "Tally app reset password", """
+                    Hello,
+                    
+                    the password for the Tally app has been changed. Log in with the new password and change it.
+                    
+                    New password: %s
+                    
+                    Kind regards,
+                    Tally app
+                    """.formatted(password));
+        } catch (final Exception e) {
+            log.atError().setMessage("Error sending reset password email.").setCause(e).log();
+        }
+
+        log.atInfo().setMessage("Reset password email sent.").log();
     }
 
     private void sendEmail(final String from, final String to, final String subject, final String text) {

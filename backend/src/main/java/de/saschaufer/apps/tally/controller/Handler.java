@@ -102,6 +102,30 @@ public class Handler {
                 .onErrorResume(this::buildErrorResponse);
     }
 
+    public Mono<ServerResponse> postResetPassword(final ServerRequest request) {
+
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Reset password.").log())
+
+                // Reset password
+                .flatMap(r -> r.bodyToMono(String.class))
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(userDetailsService::resetPassword)
+                .flatMap(t -> {
+                    final String email = t.getT1();
+                    final String password = t.getT2();
+                    emailService.sendResetPasswordEmail(email, password);
+                    return Mono.empty();
+                })
+
+                // Build response
+                .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
+                .doOnError(e -> log.atError().setMessage("Error resetting password.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
     public Mono<ServerResponse> postChangePassword(final ServerRequest request) {
 
         // Get user

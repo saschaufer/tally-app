@@ -195,6 +195,19 @@ class SecurityConfigTest extends SecurityConfigSetup {
     }
 
     @Test
+    void postResetPassword_positive() {
+
+        doReturn(ok().build()).when(handler).postResetPassword(any(ServerRequest.class));
+
+        webClient.post().uri("/reset-password")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postResetPassword(any(ServerRequest.class));
+    }
+
+    @Test
     void postChangePassword_positive_Password() {
 
         doReturn(ok().build()).when(handler).postChangePassword(any(ServerRequest.class));

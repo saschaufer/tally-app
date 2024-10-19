@@ -12,6 +12,7 @@ import {PurchasesComponent} from "./components/purchases/purchases.component";
 import {QrComponent} from "./components/qr/qr.component";
 import {RegisterConfirmComponent} from "./components/register/register-confirm/register-confirm.component";
 import {RegisterComponent} from "./components/register/register.component";
+import {ResetPasswordComponent} from "./components/reset-password/reset-password.component";
 import {SettingsComponent} from "./components/settings/settings.component";
 import {authGuard} from "./guards/auth.guard";
 import {roleGuard} from "./guards/role.guard";
@@ -28,10 +29,11 @@ export enum routeName {
     purchases = 'purchases',
     purchases_delete = 'purchases/delete',
     purchases_new = 'purchases/new',
+    qr = 'qr',
     register = 'register',
     register_confirm = 'register/confirm',
-    settings = 'settings',
-    qr = 'qr'
+    reset_password = 'reset-password',
+    settings = 'settings'
 }
 
 export const routes: Routes = [
@@ -45,22 +47,6 @@ export const routes: Routes = [
         pathMatch: 'full',
         canActivate: [authGuard], data: {toLogin: true},
         component: LoginComponent
-    },
-    {
-        path: routeName.register,
-        pathMatch: 'full',
-        component: RegisterComponent
-    },
-    {
-        path: routeName.register_confirm,
-        pathMatch: 'full',
-        component: RegisterConfirmComponent
-    },
-    {
-        path: routeName.settings,
-        pathMatch: 'full',
-        canActivate: [authGuard, roleGuard], data: {expectedRoles: [role.user]},
-        component: SettingsComponent
     },
     {
         path: routeName.payments,
@@ -121,6 +107,27 @@ export const routes: Routes = [
         pathMatch: "full",
         canActivate: [authGuard, roleGuard], data: {expectedRoles: [role.user]},
         component: QrComponent
+    },
+    {
+        path: routeName.register,
+        pathMatch: 'full',
+        component: RegisterComponent
+    },
+    {
+        path: routeName.register_confirm,
+        pathMatch: 'full',
+        component: RegisterConfirmComponent
+    },
+    {
+        path: routeName.reset_password,
+        pathMatch: 'full',
+        component: ResetPasswordComponent
+    },
+    {
+        path: routeName.settings,
+        pathMatch: 'full',
+        canActivate: [authGuard, roleGuard], data: {expectedRoles: [role.user]},
+        component: SettingsComponent
     },
     {
         path: '**',

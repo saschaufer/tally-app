@@ -66,6 +66,17 @@ export class HttpService {
         return this.httpClient.post<void>("/register/confirm", body, httpOptions);
     }
 
+    postResetPassword(email: string): Observable<void> {
+
+        const httpOptions = {
+            headers: {
+                'X-UserId': email
+            }
+        };
+
+        return this.httpClient.post<void>("/reset-password", email, httpOptions);
+    }
+
     postChangePassword(password: string): Observable<void> {
         return this.httpClient.post<void>("/settings/change-password", password, this.httpOptions());
     }
