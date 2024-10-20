@@ -102,6 +102,11 @@ public class Persistence {
                 .flatMap(p -> Mono.empty());
     }
 
+    public Mono<Product> selectProduct(final String name) {
+        return template.selectOne(query(where("name").is(name)), Product.class)
+                .switchIfEmpty(Mono.error(new RuntimeException("Product not found")));
+    }
+
     public Mono<Tuple2<Product, ProductPrice>> selectProduct(final Long productId) {
 
         final String query = """
@@ -156,6 +161,27 @@ public class Persistence {
                     case 1 -> Mono.empty();
                     default -> Mono.error(new RuntimeException("Too many products updated"));
                 });
+    }
+
+    public Mono<Void> deleteProduct(final Long id) {
+
+        return template
+                .update(ProductPrice.class)
+                .matching(query(where("product_id").is(id).and(where("valid_until").isNull())))
+                .apply(update("valid_until", LocalDateTime.now()))
+                .flatMap(updateCount -> switch (updateCount.intValue()) {
+                    case 0 -> Mono.error(new RuntimeException("Product not deleted"));
+                    case 1 -> Mono.empty();
+                    default -> Mono.error(new RuntimeException("Too many products deleted"));
+                });
+    }
+
+    public Mono<ProductPrice> insertProductPrice(final Long productId, final BigDecimal productPrice) {
+        return Mono.just(new ProductPrice(null, productId, productPrice, null)).flatMap(template::insert);
+    }
+
+    public Mono<Boolean> existsProductPrice(final Long productId) {
+        return template.exists(query(where("product_id").is(productId).and(where("valid_until").isNull())), ProductPrice.class);
     }
 
     public Mono<Void> updateProductPrice(final Long productId, final BigDecimal productPrice) {

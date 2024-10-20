@@ -72,6 +72,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/products/read-product").hasAnyAuthority(User.Role.USER)
                         .pathMatchers(HttpMethod.POST, "/products/create-product").hasAnyAuthority(User.Role.ADMIN)
                         .pathMatchers(HttpMethod.POST, "/products/update-product").hasAnyAuthority(User.Role.ADMIN)
+                        .pathMatchers(HttpMethod.POST, "/products/delete-product").hasAnyAuthority(User.Role.ADMIN)
                         .pathMatchers(HttpMethod.POST, "/products/update-price").hasAnyAuthority(User.Role.ADMIN)
 
                         .pathMatchers(HttpMethod.GET, "/purchases").hasAnyAuthority(User.Role.USER)

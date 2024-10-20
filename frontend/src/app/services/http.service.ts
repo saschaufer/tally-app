@@ -118,6 +118,10 @@ export class HttpService {
         return this.httpClient.post<void>("/products/update-product", body, this.httpOptions());
     }
 
+    postDeleteProduct(id: number): Observable<void> {
+        return this.httpClient.post<void>("/products/delete-product", id, this.httpOptions());
+    }
+
     postUpdateProductPrice(id: number, price: Big): Observable<void> {
 
         const body = {

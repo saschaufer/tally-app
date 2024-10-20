@@ -125,4 +125,28 @@ describe('ProductEditComponent', () => {
 
         expect(httpServiceSpy.postUpdateProductPrice).toHaveBeenCalledOnceWith(1, Big('111'));
     });
+
+    it('should delete the product', () => {
+
+        httpServiceSpy.postDeleteProduct.and.callFake(() => of(undefined));
+
+        component.product = {id: 1, name: "product-name", price: Big('123.45')};
+
+        component.onClickDelete();
+
+        expect(httpServiceSpy.postDeleteProduct).toHaveBeenCalledOnceWith(1);
+    });
+
+    it('should not delete the product (delete product failed)', () => {
+
+        httpServiceSpy.postDeleteProduct.and.callFake(() =>
+            throwError(() => 'Error on delete product')
+        );
+
+        component.product = {id: 1, name: "product-name", price: Big('123.45')};
+
+        component.onClickDelete();
+
+        expect(httpServiceSpy.postDeleteProduct).toHaveBeenCalledOnceWith(1);
+    });
 });

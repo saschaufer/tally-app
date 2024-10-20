@@ -21,11 +21,22 @@ public class ProductService {
 
         return persistence.existsProduct(name)
                 .flatMap(found -> {
-                    if (found.equals(Boolean.TRUE)) {
-                        return Mono.error(new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Product already exists"));
+
+                    if (found.equals(Boolean.FALSE)) {
+                        return persistence.insertProductAndPrice(name, price);
                     }
 
-                    return persistence.insertProductAndPrice(name, price);
+                    return persistence.selectProduct(name)
+                            .flatMap(p -> persistence.existsProductPrice(p.getId())
+                                    .flatMap(foundPrice -> {
+
+                                        if (foundPrice.equals(Boolean.FALSE)) {
+                                            return persistence.insertProductPrice(p.getId(), price)
+                                                    .then(Mono.empty());
+                                        }
+
+                                        return Mono.error(new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Product already exists"));
+                                    }));
                 });
     }
 
@@ -59,6 +70,10 @@ public class ProductService {
 
     public Mono<Void> updateProduct(final Long id, final String newName) {
         return persistence.updateProduct(id, newName);
+    }
+
+    public Mono<Void> deleteProduct(final Long id) {
+        return persistence.deleteProduct(id);
     }
 
     public Mono<Void> updateProductPrice(final Long productId, final BigDecimal price) {

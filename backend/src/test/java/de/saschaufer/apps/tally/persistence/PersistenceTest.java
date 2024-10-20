@@ -19,6 +19,7 @@ import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+import reactor.util.function.Tuple2;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -424,7 +425,35 @@ class PersistenceTest {
     }
 
     @Test
-    void selectProduct_positive_ProductExists() {
+    void selectProduct_ByName_positive_ProductExists() {
+
+        final TestData testData = insertTestData();
+
+        Mono.just(testData.product1.getName())
+                .flatMap(persistence::selectProduct)
+                .as(StepVerifier::create)
+                .assertNext(product -> {
+                    assertThat(product.getId(), is(testData.product1.getId()));
+                    assertThat(product.getName(), is(testData.product1.getName()));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void selectProduct_ByName_negative_ProductNotExists() {
+
+        final TestData testData = insertTestData();
+
+        Mono.just(testData.product1.getName() + "Not")
+                .flatMap(persistence::selectProduct)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("Product not found"))
+                );
+    }
+
+    @Test
+    void selectProduct_ById_positive_ProductExists() {
 
         final TestData testData = insertTestData();
 
@@ -441,7 +470,7 @@ class PersistenceTest {
     }
 
     @Test
-    void selectProduct_negative_ProductNotExists() {
+    void selectProduct_ById_negative_ProductNotExists() {
 
         final TestData testData = insertTestData();
 
@@ -565,6 +594,109 @@ class PersistenceTest {
                 .verifyErrorSatisfies(error ->
                         assertThat(error.getMessage(), containsString("Product not updated"))
                 );
+    }
+
+    @Test
+    void deleteProduct_positive() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectProducts()
+                .as(StepVerifier::create)
+                .assertNext(products -> {
+                    assertThat(products.size(), is(testData.numOfProducts));
+                    final List<Tuple2<Product, ProductPrice>> products2 = products.stream().filter(p -> p.getT1().getName().equals(testData.product2.getName())).toList();
+                    assertThat(products2.size(), is(1));
+                    assertThat(products2.getFirst().getT1().getName(), is(testData.product2.getName()));
+                })
+                .verifyComplete();
+
+        persistence.deleteProduct(testData.product2.getId())
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        persistence.selectProducts()
+                .as(StepVerifier::create)
+                .assertNext(products -> {
+                    assertThat(products.size(), is(testData.numOfProducts - 1));
+                    final List<Tuple2<Product, ProductPrice>> products2 = products.stream().filter(p -> p.getT1().getName().equals(testData.product2.getName())).toList();
+                    assertThat(products2.size(), is(0));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void deleteProduct_negative_ProductNotExist() {
+
+        persistence.deleteProduct(1L)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("Product not deleted"))
+                );
+    }
+
+    @Test
+    void insertProductPrice_positive() {
+
+
+        final Product product = template.insert(new Product(null, "coffee")).block();
+
+        assertCount(ProductPrice.class, 0);
+
+        persistence.insertProductPrice(product.getId(), new BigDecimal("123.45"))
+                .as(StepVerifier::create)
+                .assertNext(productPrice -> {
+                    assertThat(productPrice.getId(), notNullValue());
+                    assertThat(productPrice.getProductId(), is(product.getId()));
+                    assertThat(productPrice.getPrice(), is(new BigDecimal("123.45")));
+                    assertThat(productPrice.getValidUntil(), nullValue());
+                })
+                .verifyComplete();
+
+        assertCount(ProductPrice.class, 1);
+    }
+
+    @Test
+    void insertProductPrice_negative_ProductNotExist() {
+
+        assertCount(ProductPrice.class, 0);
+
+        persistence.insertProductPrice(1L, new BigDecimal("123.45"))
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("Referential integrity constraint violation"))
+                );
+
+        assertCount(ProductPrice.class, 0);
+    }
+
+    @Test
+    void existsProductPrice_positive_ProductPriceExists() {
+
+        final TestData testData = insertTestData();
+
+        Mono.just(testData.product1.getId())
+                .flatMap(persistence::existsProductPrice)
+                .as(StepVerifier::create)
+                .assertNext(exists -> assertThat(exists, is(true)))
+                .verifyComplete();
+    }
+
+    @Test
+    void existsProductPrice_negative_ProductPriceNotExists() {
+
+        final TestData testData = insertTestData();
+
+        Mono.just(testData.product1.getId())
+                .flatMap(persistence::deleteProduct)
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        Mono.just(testData.product1.getId())
+                .flatMap(persistence::existsProductPrice)
+                .as(StepVerifier::create)
+                .assertNext(exists -> assertThat(exists, is(false)))
+                .verifyComplete();
     }
 
     @Test

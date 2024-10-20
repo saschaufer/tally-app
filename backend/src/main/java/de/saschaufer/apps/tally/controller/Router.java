@@ -26,6 +26,7 @@ public class Router {
                 .POST("/products/read-product", handler::postReadProduct)
                 .POST("/products/create-product", handler::postCreateProduct)
                 .POST("/products/update-product", handler::postUpdateProduct)
+                .POST("/products/delete-product", handler::postDeleteProduct)
                 .POST("/products/update-price", handler::postUpdateProductPrice)
 
                 .GET("/purchases", handler::getReadPurchases)

@@ -468,6 +468,58 @@ class SecurityConfigTest extends SecurityConfigSetup {
     }
 
     @Test
+    void postDeleteProduct_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postDeleteProduct(any(ServerRequest.class));
+
+        webClient.post().uri("/products/delete-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postDeleteProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeleteProduct_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/products/delete-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postDeleteProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeleteProduct_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postDeleteProduct(any(ServerRequest.class));
+
+        webClient.post().uri("/products/delete-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postDeleteProduct(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeleteProduct_negative_JwtUserWrongRole() {
+
+        webClient.post().uri("/products/delete-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postDeleteProduct(any(ServerRequest.class));
+    }
+
+    @Test
     void postUpdateProductPrice_positive_Password() {
 
         doReturn(ok().build()).when(handler).postUpdateProductPrice(any(ServerRequest.class));

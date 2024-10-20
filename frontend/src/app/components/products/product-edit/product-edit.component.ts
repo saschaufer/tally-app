@@ -117,6 +117,22 @@ export class ProductEditComponent {
         }
     }
 
+    onClickDelete() {
+        this.httpService.postDeleteProduct(this.product!.id)
+            .subscribe({
+                next: () => {
+                    console.info("Product deleted.");
+                    this.openDialog('#products.productEdit.successDelete');
+                },
+                error: (error) => {
+                    console.error('Error deleting product.');
+                    console.error(error);
+                    this.error = error;
+                    this.openDialog('#products.productEdit.errorDelete');
+                }
+            });
+    }
+
     openDialog(id: string) {
         const dialog = document.getElementById(id)! as HTMLDialogElement;
         dialog.addEventListener('click', () => {

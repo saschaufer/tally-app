@@ -256,6 +256,24 @@ public class Handler {
                 .onErrorResume(this::buildErrorResponse);
     }
 
+    public Mono<ServerResponse> postDeleteProduct(final ServerRequest request) {
+
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Delete product.").log())
+
+                // Update product
+                .flatMap(r -> r.bodyToMono(Long.class))
+                .switchIfEmpty(badRequest("Body required"))
+                .flatMap(productService::deleteProduct)
+
+                // Build response
+                .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
+                .doOnError(e -> log.atError().setMessage("Error deleting product.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
     public Mono<ServerResponse> postUpdateProductPrice(final ServerRequest request) {
 
         return setMdc(request)

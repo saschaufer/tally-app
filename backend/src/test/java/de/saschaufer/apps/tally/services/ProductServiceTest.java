@@ -31,7 +31,7 @@ class ProductServiceTest {
     }
 
     @Test
-    void createProduct_positive() {
+    void createProduct_positive_NewProduct() {
 
         doReturn(Mono.just(false)).when(persistence).existsProduct(any(String.class));
         doReturn(Mono.empty()).when(persistence).insertProductAndPrice(any(String.class), any(BigDecimal.class));
@@ -42,13 +42,36 @@ class ProductServiceTest {
 
         verify(persistence, times(1)).existsProduct("test-name");
         verify(persistence, times(1)).insertProductAndPrice("test-name", BigDecimal.ONE);
+        verify(persistence, times(0)).selectProduct(any(String.class));
+        verify(persistence, times(0)).existsProductPrice(any(Long.class));
+        verify(persistence, times(0)).insertProductPrice(any(Long.class), any(BigDecimal.class));
     }
 
     @Test
-    void createProduct_negative_ProductExits() {
+    void createProduct_positive_ProductExists() {
 
         doReturn(Mono.just(true)).when(persistence).existsProduct(any(String.class));
-        doReturn(Mono.empty()).when(persistence).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+        doReturn(Mono.just(new Product(1L, "test-name"))).when(persistence).selectProduct(any(String.class));
+        doReturn(Mono.just(false)).when(persistence).existsProductPrice(any(Long.class));
+        doReturn(Mono.just(new ProductPrice(1L, 1L, BigDecimal.ONE, null))).when(persistence).insertProductPrice(any(Long.class), any(BigDecimal.class));
+
+        productService.createProduct("test-name", BigDecimal.ONE)
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        verify(persistence, times(1)).existsProduct("test-name");
+        verify(persistence, times(0)).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+        verify(persistence, times(1)).selectProduct("test-name");
+        verify(persistence, times(1)).existsProductPrice(1L);
+        verify(persistence, times(1)).insertProductPrice(1L, BigDecimal.ONE);
+    }
+
+    @Test
+    void createProduct_negative_ProductAndPriceExists() {
+
+        doReturn(Mono.just(true)).when(persistence).existsProduct(any(String.class));
+        doReturn(Mono.just(new Product(1L, "test-name"))).when(persistence).selectProduct(any(String.class));
+        doReturn(Mono.just(true)).when(persistence).existsProductPrice(any(Long.class));
 
         productService.createProduct("test-name", BigDecimal.ONE)
                 .as(StepVerifier::create)
@@ -62,39 +85,111 @@ class ProductServiceTest {
 
         verify(persistence, times(1)).existsProduct("test-name");
         verify(persistence, times(0)).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+        verify(persistence, times(1)).selectProduct("test-name");
+        verify(persistence, times(1)).existsProductPrice(1L);
+        verify(persistence, times(0)).insertProductPrice(any(Long.class), any(BigDecimal.class));
     }
 
     @Test
-    void createProduct_negative_ExistsThrowsException() {
+    void createProduct_negative_ExistsProductThrowsException() {
 
-        doReturn(Mono.error(new RuntimeException("Error"))).when(persistence).existsProduct(any(String.class));
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(persistence).existsProduct(any(String.class));
 
         productService.createProduct("test-name", BigDecimal.ONE)
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error -> {
                     assertThat(error, instanceOf(RuntimeException.class));
-                    assertThat(error.getMessage(), containsString("Error"));
+                    assertThat(error.getMessage(), containsString("Bad"));
                 });
 
         verify(persistence, times(1)).existsProduct("test-name");
         verify(persistence, times(0)).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+        verify(persistence, times(0)).selectProduct(any(String.class));
+        verify(persistence, times(0)).existsProductPrice(any(Long.class));
+        verify(persistence, times(0)).insertProductPrice(any(Long.class), any(BigDecimal.class));
     }
 
     @Test
-    void createProduct_negative_InsertThrowsException() {
+    void createProduct_negative_InsertProductAndPriceThrowsException() {
 
         doReturn(Mono.just(false)).when(persistence).existsProduct(any(String.class));
-        doReturn(Mono.error(new RuntimeException("Error"))).when(persistence).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(persistence).insertProductAndPrice(any(String.class), any(BigDecimal.class));
 
         productService.createProduct("test-name", BigDecimal.ONE)
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error -> {
                     assertThat(error, instanceOf(RuntimeException.class));
-                    assertThat(error.getMessage(), containsString("Error"));
+                    assertThat(error.getMessage(), containsString("Bad"));
                 });
 
         verify(persistence, times(1)).existsProduct("test-name");
         verify(persistence, times(1)).insertProductAndPrice("test-name", BigDecimal.ONE);
+        verify(persistence, times(0)).selectProduct(any(String.class));
+        verify(persistence, times(0)).existsProductPrice(any(Long.class));
+        verify(persistence, times(0)).insertProductPrice(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void createProduct_negative_SelectProductThrowsException() {
+
+        doReturn(Mono.just(true)).when(persistence).existsProduct(any(String.class));
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(persistence).selectProduct(any(String.class));
+
+        productService.createProduct("test-name", BigDecimal.ONE)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(RuntimeException.class));
+                    assertThat(error.getMessage(), containsString("Bad"));
+                });
+
+        verify(persistence, times(1)).existsProduct("test-name");
+        verify(persistence, times(0)).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+        verify(persistence, times(1)).selectProduct("test-name");
+        verify(persistence, times(0)).existsProductPrice(any(Long.class));
+        verify(persistence, times(0)).insertProductPrice(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void createProduct_negative_ExistsProductPriceThrowsException() {
+
+        doReturn(Mono.just(true)).when(persistence).existsProduct(any(String.class));
+        doReturn(Mono.just(new Product(1L, "test-name"))).when(persistence).selectProduct(any(String.class));
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(persistence).existsProductPrice(any(Long.class));
+
+        productService.createProduct("test-name", BigDecimal.ONE)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(RuntimeException.class));
+                    assertThat(error.getMessage(), containsString("Bad"));
+                });
+
+        verify(persistence, times(1)).existsProduct("test-name");
+        verify(persistence, times(0)).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+        verify(persistence, times(1)).selectProduct("test-name");
+        verify(persistence, times(1)).existsProductPrice(1L);
+        verify(persistence, times(0)).insertProductPrice(any(Long.class), any(BigDecimal.class));
+    }
+
+    @Test
+    void createProduct_negative_InsertProductPriceThrowsException() {
+
+        doReturn(Mono.just(true)).when(persistence).existsProduct(any(String.class));
+        doReturn(Mono.just(new Product(1L, "test-name"))).when(persistence).selectProduct(any(String.class));
+        doReturn(Mono.just(false)).when(persistence).existsProductPrice(any(Long.class));
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(persistence).insertProductPrice(any(Long.class), any(BigDecimal.class));
+
+        productService.createProduct("test-name", BigDecimal.ONE)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(RuntimeException.class));
+                    assertThat(error.getMessage(), containsString("Bad"));
+                });
+
+        verify(persistence, times(1)).existsProduct("test-name");
+        verify(persistence, times(0)).insertProductAndPrice(any(String.class), any(BigDecimal.class));
+        verify(persistence, times(1)).selectProduct("test-name");
+        verify(persistence, times(1)).existsProductPrice(1L);
+        verify(persistence, times(1)).insertProductPrice(1L, BigDecimal.ONE);
     }
 
     @Test
@@ -221,6 +316,33 @@ class ProductServiceTest {
                 });
 
         verify(persistence, times(1)).updateProduct(1L, "test-new-name");
+    }
+
+    @Test
+    void deleteProduct_positive() {
+
+        doReturn(Mono.empty()).when(persistence).deleteProduct(any(Long.class));
+
+        productService.deleteProduct(1L)
+                .as(StepVerifier::create)
+                .verifyComplete();
+
+        verify(persistence, times(1)).deleteProduct(1L);
+    }
+
+    @Test
+    void deleteProduct_negative() {
+
+        doReturn(Mono.error(new RuntimeException("Error"))).when(persistence).deleteProduct(any(Long.class));
+
+        productService.deleteProduct(1L)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(RuntimeException.class));
+                    assertThat(error.getMessage(), containsString("Error"));
+                });
+
+        verify(persistence, times(1)).deleteProduct(1L);
     }
 
     @Test

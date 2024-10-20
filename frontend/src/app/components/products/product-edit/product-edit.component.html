@@ -43,6 +43,10 @@
 
     </form>
 
+    <hr>
+
+    <button class="mt-1_25" (click)="onClickDelete()">Delete</button>
+
 </div>
 
 <dialog id="#products.productEdit.successChangeName">
@@ -59,6 +63,15 @@
 </dialog>
 <dialog id="#products.productEdit.errorChangePrice">
     <p class="mt-1_25 text-center text-green">Error changing price.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+</dialog>
+
+<dialog id="#products.productEdit.successDelete">
+    <p class="mt-1_25 text-center text-green">Product successfully deleted.</p>
+</dialog>
+<dialog id="#products.productEdit.errorDelete">
+    <p class="mt-1_25 text-center text-green">Error deleting product.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
 </dialog>

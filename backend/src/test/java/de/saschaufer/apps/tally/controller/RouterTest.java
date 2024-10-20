@@ -926,6 +926,66 @@ class RouterTest extends SecurityConfigSetup {
     }
 
     @Test
+    void postDeleteProduct_positive_User() {
+
+        doReturn(Mono.empty()).when(productService).deleteProduct(any(Long.class));
+
+        webClient.post().uri("/products/delete-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(1L), Long.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).deleteProduct(1L);
+    }
+
+    @Test
+    void postDeleteProduct_positive_Jwt() {
+
+        doReturn(Mono.empty()).when(productService).deleteProduct(any(Long.class));
+
+        webClient.post().uri("/products/delete-product")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .body(Mono.just(1L), Long.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).deleteProduct(1L);
+    }
+
+    @Test
+    void postDeleteProduct_negative_NoBody() {
+
+        doReturn(Mono.empty()).when(productService).deleteProduct(any(Long.class));
+
+        webClient.post().uri("/products/delete-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectHeader().contentType(MediaType.TEXT_PLAIN)
+                .expectBody(String.class).isEqualTo("Body required");
+
+        verify(productService, times(0)).deleteProduct(any(Long.class));
+    }
+
+    @Test
+    void postDeleteProduct_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(productService).deleteProduct(any(Long.class));
+
+        webClient.post().uri("/products/delete-product")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .body(Mono.just(1L), Long.class)
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(productService, times(1)).deleteProduct(1L);
+    }
+
+    @Test
     void postUpdateProductPrice_positive_User() {
 
         doReturn(Mono.empty()).when(productService).updateProductPrice(any(Long.class), any(BigDecimal.class));
