@@ -1,5 +1,5 @@
-import {withInterceptors} from "@angular/common/http";
-import {HttpClientTestingModule, HttpTestingController} from "@angular/common/http/testing";
+import {provideHttpClient, withInterceptors} from "@angular/common/http";
+import {HttpTestingController, provideHttpClientTesting} from "@angular/common/http/testing";
 import {TestBed} from "@angular/core/testing";
 import {MockProvider} from "ng-mocks";
 import {httpLoaderInterceptor} from "./http-loader.interceptor";
@@ -16,11 +16,12 @@ describe('HttpLoaderInterceptor', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
+            imports: [],
             providers: [
                 HttpService,
-                withInterceptors([httpLoaderInterceptor]),
-                MockProvider(HttpLoaderService)
+                MockProvider(HttpLoaderService),
+                provideHttpClient(withInterceptors([httpLoaderInterceptor])),
+                provideHttpClientTesting()
             ]
         });
 
