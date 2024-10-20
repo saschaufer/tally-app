@@ -45,6 +45,7 @@ public class EmailService {
                     """.formatted(url));
         } catch (final Exception e) {
             log.atError().setMessage("Error sending registration email.").setCause(e).log();
+            throw e;
         }
 
         log.atInfo().setMessage("Registration email sent.").log();
@@ -68,6 +69,7 @@ public class EmailService {
                     """.formatted(password));
         } catch (final Exception e) {
             log.atError().setMessage("Error sending reset password email.").setCause(e).log();
+            throw e;
         }
 
         log.atInfo().setMessage("Reset password email sent.").log();

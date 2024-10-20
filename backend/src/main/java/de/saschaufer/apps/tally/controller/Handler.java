@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.UnsupportedMediaTypeStatusException;
 import reactor.core.Exceptions;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 import java.util.Objects;
@@ -69,10 +70,10 @@ public class Handler {
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(RequestBodyValidator::validate)
                 .flatMap(user -> userDetailsService.createUser(user.email(), user.password(), List.of(User.Role.USER)))
-                .flatMap(user -> {
+                .flatMap(user -> Mono.fromCallable(() -> {
                     emailService.sendRegistrationEmail(user.getEmail(), user.getRegistrationSecret());
-                    return Mono.just(user);
-                })
+                    return user;
+                }).subscribeOn(Schedulers.boundedElastic()))
 
                 // Build response
                 .flatMap(user -> ok().build())
@@ -111,12 +112,12 @@ public class Handler {
                 .flatMap(r -> r.bodyToMono(String.class))
                 .switchIfEmpty(badRequest("Body required"))
                 .flatMap(userDetailsService::resetPassword)
-                .flatMap(t -> {
+                .flatMap(t -> Mono.fromCallable(() -> {
                     final String email = t.getT1();
                     final String password = t.getT2();
                     emailService.sendResetPasswordEmail(email, password);
-                    return Mono.empty();
-                })
+                    return t;
+                }).subscribeOn(Schedulers.boundedElastic()))
 
                 // Build response
                 .then(Mono.defer(() -> ok().build()))
