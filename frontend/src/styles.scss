@@ -164,15 +164,31 @@ app-root {
   margin: 0;
 }
 
+.list-item-two-rows-top-left {
+  @extend .text-green;
+  @extend .text-left;
+  grid-column: 1;
+  margin: 0;
+}
+
+.list-item-two-rows-top-right {
+  @extend .text-green;
+  @extend .text-right;
+  grid-column: 2;
+  margin: 0;
+}
+
 .list-item-two-rows-bottom-left {
   @extend .text-green;
   @extend .text-left;
+  grid-column: 1;
   margin: 0;
 }
 
 .list-item-two-rows-bottom-right {
   @extend .text-green;
   @extend .text-right;
+  grid-column: 2;
   margin: 0;
 }
 

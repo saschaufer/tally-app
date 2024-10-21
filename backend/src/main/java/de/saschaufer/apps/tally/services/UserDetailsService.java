@@ -3,6 +3,7 @@ package de.saschaufer.apps.tally.services;
 import de.saschaufer.apps.tally.config.admin.AdminProperties;
 import de.saschaufer.apps.tally.config.email.EmailProperties;
 import de.saschaufer.apps.tally.config.security.JwtProperties;
+import de.saschaufer.apps.tally.controller.dto.GetUsersResponse;
 import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import de.saschaufer.apps.tally.management.UserAgent;
 import de.saschaufer.apps.tally.persistence.Persistence;
@@ -27,12 +28,11 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
+import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -58,6 +58,62 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                 .doOnError(err -> log.atError().setMessage("Error finding user.").setCause(err).log())
                 .doOnSuccess(user -> log.atInfo().setMessage("User found.").log())
                 .map(user -> user);
+    }
+
+    public Mono<List<GetUsersResponse>> findAllUsers() {
+
+        return persistence.selectUsers()
+                .flatMap(users -> persistence.selectPaymentsSumAllUsers()
+                        .map(payments -> Tuples.of(users, payments))
+                )
+                .flatMap(tuple -> persistence.selectPurchasesSumAllUsers()
+                        .map(purchases -> Tuples.of(tuple.getT1(), tuple.getT2(), purchases))
+                )
+                .map(tuple -> {
+                    
+                    final List<User> users = tuple.getT1();
+                    final Map<Long, BigDecimal> payments = tuple.getT2();
+                    final Map<Long, BigDecimal> purchases = tuple.getT3();
+
+                    final List<GetUsersResponse> responses = new ArrayList<>();
+
+                    for (final User user : users) {
+
+                        final List<String> roles = new ArrayList<>();
+
+                        if (user.getRoles() != null) {
+                            roles.addAll(Arrays.asList(user.getRoles().split(",")));
+                        }
+
+                        if (adminProperties.emails().contains(user.getEmail())) {
+                            roles.add(User.Role.ADMIN);
+                        }
+
+                        final BigDecimal paymentsTotal = payments.get(user.getId());
+                        final BigDecimal purchasesTotal = purchases.get(user.getId());
+                        final BigDecimal accountBalance = calcTotal(paymentsTotal, purchasesTotal);
+
+                        final GetUsersResponse res = new GetUsersResponse(
+                                user.getEmail(),
+                                user.getRegistrationOn(),
+                                user.getRegistrationComplete(),
+                                roles,
+                                accountBalance
+                        );
+
+                        responses.add(res);
+                    }
+
+                    return responses;
+                });
+    }
+
+    private BigDecimal calcTotal(final BigDecimal paymentsTotal, final BigDecimal purchasesTotal) {
+
+        final BigDecimal payments = paymentsTotal == null ? BigDecimal.ZERO : paymentsTotal;
+        final BigDecimal purchases = purchasesTotal == null ? BigDecimal.ZERO : purchasesTotal;
+
+        return payments.subtract(purchases);
     }
 
     public Mono<User> checkRegistered(final User user) {

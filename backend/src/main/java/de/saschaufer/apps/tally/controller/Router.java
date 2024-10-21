@@ -21,6 +21,7 @@ public class Router {
                 .POST("/reset-password", handler::postResetPassword)
                 .POST("/settings/change-password", handler::postChangePassword)
                 .POST("/settings/change-invitation-code", handler::postChangeInvitationCode)
+                .GET("/users", handler::getReadAllUsers)
 
                 .GET("/products", handler::getReadProducts)
                 .POST("/products/read-product", handler::postReadProduct)

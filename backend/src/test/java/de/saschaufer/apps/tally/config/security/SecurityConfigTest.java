@@ -312,6 +312,58 @@ class SecurityConfigTest extends SecurityConfigSetup {
     }
 
     @Test
+    void getReadAllUsers_positive_Password() {
+
+        doReturn(ok().build()).when(handler).getReadAllUsers(any(ServerRequest.class));
+
+        webClient.get().uri("/users")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadAllUsers(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadAllUsers_negative_PasswordUserWrongRole() {
+
+        webClient.get().uri("/users")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadAllUsers(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadAllUsers_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).getReadAllUsers(any(ServerRequest.class));
+
+        webClient.get().uri("/users")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).getReadAllUsers(any(ServerRequest.class));
+    }
+
+    @Test
+    void getReadAllUsers_negative_JwtUserWrongRole() {
+
+        webClient.get().uri("/users")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).getReadAllUsers(any(ServerRequest.class));
+    }
+
+    @Test
     void getReadProducts_positive_Password() {
 
         doReturn(ok().build()).when(handler).getReadProducts(any(ServerRequest.class));

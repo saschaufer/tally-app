@@ -15,6 +15,7 @@ import reactor.util.function.Tuples;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.springframework.data.relational.core.query.Criteria.where;
@@ -35,6 +36,21 @@ public class Persistence {
     public Mono<User> selectUser(final String email) {
         return template.selectOne(query(where("email").is(email)), User.class)
                 .switchIfEmpty(Mono.error(new RuntimeException("User not found")));
+    }
+
+    public Mono<List<User>> selectUsers() {
+        return template.select(User.class)
+                .all()
+                .map(user -> new User(
+                                user.getId(),
+                                user.getEmail(),
+                                null,
+                                user.getRoles(),
+                                null,
+                                user.getRegistrationOn(), user.getRegistrationComplete()
+                        )
+                )
+                .collectList();
     }
 
     public Mono<Boolean> existsUser(final String email) {
@@ -251,6 +267,26 @@ public class Persistence {
                 .one();
     }
 
+    public Mono<Map<Long, BigDecimal>> selectPurchasesSumAllUsers() {
+
+        final String query = """
+                select user_id, sum(product_prices.price) as sum
+                from purchases
+                    left join product_prices on product_prices.id = purchases.product_price_id
+                    left join products on products.id = product_prices.product_id
+                group by user_id;
+                """.toLowerCase();
+
+        return template.getDatabaseClient().sql(query)
+                .map((row, rowMetadata) -> {
+                            final Long userId = Objects.requireNonNull(row.get("user_id", Integer.class)).longValue();
+                            final BigDecimal sum = row.get("sum", BigDecimal.class);
+                            return Tuples.of(userId, sum == null ? BigDecimal.ZERO : sum);
+                        }
+                )
+                .all().collectMap(Tuple2::getT1, Tuple2::getT2);
+    }
+
     public Mono<Void> deletePurchase(final Long purchaseId) {
 
         return template
@@ -291,6 +327,24 @@ public class Persistence {
                         }
                 )
                 .one();
+    }
+
+    public Mono<Map<Long, BigDecimal>> selectPaymentsSumAllUsers() {
+
+        final String query = """
+                select user_id, sum(amount) as sum
+                from payments
+                group by user_id;
+                """.toLowerCase();
+
+        return template.getDatabaseClient().sql(query)
+                .map((row, rowMetadata) -> {
+                            final Long userId = Objects.requireNonNull(row.get("user_id", Integer.class)).longValue();
+                            final BigDecimal sum = row.get("sum", BigDecimal.class);
+                            return Tuples.of(userId, sum == null ? BigDecimal.ZERO : sum);
+                        }
+                )
+                .all().collectMap(Tuple2::getT1, Tuple2::getT2);
     }
 
     public Mono<Void> deletePayment(final Long paymentId) {

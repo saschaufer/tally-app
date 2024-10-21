@@ -3,6 +3,7 @@ package de.saschaufer.apps.tally.services;
 import de.saschaufer.apps.tally.config.admin.AdminProperties;
 import de.saschaufer.apps.tally.config.email.EmailProperties;
 import de.saschaufer.apps.tally.config.security.JwtProperties;
+import de.saschaufer.apps.tally.controller.dto.GetUsersResponse;
 import de.saschaufer.apps.tally.controller.dto.PostLoginResponse;
 import de.saschaufer.apps.tally.management.UserAgent;
 import de.saschaufer.apps.tally.persistence.Persistence;
@@ -21,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -85,6 +87,115 @@ class UserDetailsServiceTest {
                 });
 
         verify(persistence, times(1)).selectUser(any(String.class));
+    }
+
+    @Test
+    void findAllUsers_positive() {
+
+        doReturn(List.of("2@mail", "5@mail")).when(adminProperties).emails();
+
+        doReturn(Mono.just(List.of(
+                new User(1L, "1@mail", null, "role1,role2", null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 1), true),
+                new User(2L, "2@mail", null, "role3", null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 2), false),
+                new User(3L, "3@mail", null, "role2,role1,role3", null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 3), true),
+                new User(4L, "4@mail", null, null, null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 4), true),
+                new User(5L, "5@mail", null, ",", null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 5), true)
+        ))).when(persistence).selectUsers();
+        doReturn(Mono.just(Map.of(
+                2L, BigDecimal.TEN,
+                1L, BigDecimal.TWO,
+                4L, BigDecimal.ONE
+        ))).when(persistence).selectPaymentsSumAllUsers();
+        doReturn(Mono.just(Map.of(
+                1L, BigDecimal.ZERO,
+                2L, BigDecimal.ONE,
+                5L, BigDecimal.ONE
+        ))).when(persistence).selectPurchasesSumAllUsers();
+
+        userDetailsService.findAllUsers()
+                .as(StepVerifier::create)
+                .assertNext(getUsersResponses -> {
+                    assertThat(getUsersResponses.size(), is(5));
+
+                    assertThat(getUsersResponses.getFirst(), is(new GetUsersResponse("1@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 1), true, List.of("role1", "role2"), BigDecimal.TWO)));
+                    assertThat(getUsersResponses.get(1), is(new GetUsersResponse("2@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 2), false, List.of("role3", "admin"), new BigDecimal("9"))));
+                    assertThat(getUsersResponses.get(2), is(new GetUsersResponse("3@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 3), true, List.of("role2", "role1", "role3"), BigDecimal.ZERO)));
+                    assertThat(getUsersResponses.get(3), is(new GetUsersResponse("4@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 4), true, List.of(), BigDecimal.ONE)));
+                    assertThat(getUsersResponses.getLast(), is(new GetUsersResponse("5@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 5), true, List.of("admin"), new BigDecimal("-1"))));
+                })
+                .verifyComplete();
+
+        verify(persistence, times(1)).selectUsers();
+        verify(persistence, times(1)).selectPaymentsSumAllUsers();
+        verify(persistence, times(1)).selectPurchasesSumAllUsers();
+    }
+
+    @Test
+    void findAllUsers_positive_NoUsers() {
+
+        doReturn(Mono.just(List.of())).when(persistence).selectUsers();
+        doReturn(Mono.just(Map.of(2L, BigDecimal.TEN))).when(persistence).selectPaymentsSumAllUsers();
+        doReturn(Mono.just(Map.of(1L, BigDecimal.ZERO))).when(persistence).selectPurchasesSumAllUsers();
+
+        userDetailsService.findAllUsers()
+                .as(StepVerifier::create)
+                .assertNext(getUsersResponses -> assertThat(getUsersResponses.size(), is(0)))
+                .verifyComplete();
+
+        verify(persistence, times(1)).selectUsers();
+        verify(persistence, times(1)).selectPaymentsSumAllUsers();
+        verify(persistence, times(1)).selectPurchasesSumAllUsers();
+    }
+
+    @Test
+    void findAllUsers_negative_SelectUsersThrowsException() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(persistence).selectUsers();
+
+        userDetailsService.findAllUsers()
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error.getMessage(), containsString("Bad"));
+                });
+
+        verify(persistence, times(1)).selectUsers();
+        verify(persistence, times(0)).selectPaymentsSumAllUsers();
+        verify(persistence, times(0)).selectPurchasesSumAllUsers();
+    }
+
+    @Test
+    void findAllUsers_negative_SelectPaymentsSumAllUsersThrowsException() {
+
+        doReturn(Mono.just(List.of())).when(persistence).selectUsers();
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(persistence).selectPaymentsSumAllUsers();
+
+        userDetailsService.findAllUsers()
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error.getMessage(), containsString("Bad"));
+                });
+
+        verify(persistence, times(1)).selectUsers();
+        verify(persistence, times(1)).selectPaymentsSumAllUsers();
+        verify(persistence, times(0)).selectPurchasesSumAllUsers();
+    }
+
+    @Test
+    void findAllUsers_negative_SelectPurchasesSumAllUsersThrowsException() {
+
+        doReturn(Mono.just(List.of())).when(persistence).selectUsers();
+        doReturn(Mono.just(Map.of())).when(persistence).selectPaymentsSumAllUsers();
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(persistence).selectPurchasesSumAllUsers();
+
+        userDetailsService.findAllUsers()
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error.getMessage(), containsString("Bad"));
+                });
+
+        verify(persistence, times(1)).selectUsers();
+        verify(persistence, times(1)).selectPaymentsSumAllUsers();
+        verify(persistence, times(1)).selectPurchasesSumAllUsers();
     }
 
     @Test

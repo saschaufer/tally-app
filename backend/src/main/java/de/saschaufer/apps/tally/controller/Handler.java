@@ -183,6 +183,22 @@ public class Handler {
                 .onErrorResume(this::buildErrorResponse);
     }
 
+    public Mono<ServerResponse> getReadAllUsers(final ServerRequest request) {
+
+        return setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Read all users.").log())
+
+                // Get users
+                .flatMap(r -> userDetailsService.findAllUsers())
+
+                // Build response
+                .flatMap(response -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(response))
+
+                // Build error response
+                .doOnError(e -> log.atError().setMessage("Error reading all users.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
     public Mono<ServerResponse> postCreateProduct(final ServerRequest request) {
 
         return setMdc(request)

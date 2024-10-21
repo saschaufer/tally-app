@@ -3,35 +3,43 @@
 </div>
 
 <ul *ngIf="showNavBar()" class="navbar">
-    <li class="navbar-element">
-        <a routerLink="/{{routeName.settings}}"
+    <li *ngIf="isAdmin()" class="navbar-element">
+        <a routerLink="/{{routeName.users}}"
            routerLinkActive #rla1="routerLinkActive"
            class="navbar-link"
            [ngClass]="rla1.isActive ? 'text-blue border-blue' : 'text-green border-black'">
+            Users
+        </a>
+    </li>
+    <li class="navbar-element">
+        <a routerLink="/{{routeName.settings}}"
+           routerLinkActive #rla2="routerLinkActive"
+           class="navbar-link"
+           [ngClass]="rla2.isActive ? 'text-blue border-blue' : 'text-green border-black'">
             Settings
         </a>
     </li>
     <li *ngIf="isAdmin()" class="navbar-element">
         <a routerLink="/{{routeName.products}}"
-           routerLinkActive #rla2="routerLinkActive"
+           routerLinkActive #rla3="routerLinkActive"
            class="navbar-link"
-           [ngClass]="rla2.isActive ? 'text-blue border-blue' : 'text-green border-black'">
+           [ngClass]="rla3.isActive ? 'text-blue border-blue' : 'text-green border-black'">
             Products
         </a>
     </li>
     <li class="navbar-element">
         <a routerLink="/{{routeName.purchases}}"
-           routerLinkActive #rla3="routerLinkActive"
+           routerLinkActive #rla4="routerLinkActive"
            class="navbar-link"
-           [ngClass]="rla3.isActive ? 'text-blue border-blue' : 'text-green border-black'">
+           [ngClass]="rla4.isActive ? 'text-blue border-blue' : 'text-green border-black'">
             Purchases
         </a>
     </li>
     <li class="navbar-element">
         <a routerLink="/{{routeName.payments}}"
-           routerLinkActive #rla4="routerLinkActive"
+           routerLinkActive #rla5="routerLinkActive"
            class="navbar-link"
-           [ngClass]="rla4.isActive ? 'text-blue border-blue' : 'text-green border-black'">
+           [ngClass]="rla5.isActive ? 'text-blue border-blue' : 'text-green border-black'">
             Payments
         </a>
     </li>

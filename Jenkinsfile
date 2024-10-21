@@ -35,7 +35,6 @@ pipeline {
         stage('Test') {
             steps {
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
-                    sh 'printenv'
                     sh '''
                        mvn -B clean verify
                     '''

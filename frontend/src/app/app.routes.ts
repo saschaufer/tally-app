@@ -14,6 +14,7 @@ import {RegisterConfirmComponent} from "./components/register/register-confirm/r
 import {RegisterComponent} from "./components/register/register.component";
 import {ResetPasswordComponent} from "./components/reset-password/reset-password.component";
 import {SettingsComponent} from "./components/settings/settings.component";
+import {UsersComponent} from "./components/users/users.component";
 import {authGuard} from "./guards/auth.guard";
 import {roleGuard} from "./guards/role.guard";
 import {role} from "./services/auth.service";
@@ -33,7 +34,8 @@ export enum routeName {
     register = 'register',
     register_confirm = 'register/confirm',
     reset_password = 'reset-password',
-    settings = 'settings'
+    settings = 'settings',
+    users = 'users'
 }
 
 export const routes: Routes = [
@@ -128,6 +130,12 @@ export const routes: Routes = [
         pathMatch: 'full',
         canActivate: [authGuard, roleGuard], data: {expectedRoles: [role.user]},
         component: SettingsComponent
+    },
+    {
+        path: routeName.users,
+        pathMatch: 'full',
+        canActivate: [authGuard, roleGuard], data: {expectedRoles: [role.admin]},
+        component: UsersComponent
     },
     {
         path: '**',

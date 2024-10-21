@@ -6,6 +6,7 @@ import {GetAccountBalanceResponse} from "./models/GetAccountBalanceResponse";
 import {GetPaymentsResponse} from "./models/GetPaymentsResponse";
 import {GetProductsResponse} from "./models/GetProductsResponse";
 import {GetPurchasesResponse} from "./models/GetPurchasesResponse";
+import {GetUsersResponse} from "./models/GetUsersResponse";
 import {LoginResponse} from "./models/LoginResponse";
 
 @Injectable({
@@ -83,6 +84,10 @@ export class HttpService {
 
     postChangeInvitationCode(invitationCode: string): Observable<void> {
         return this.httpClient.post<void>("/settings/change-invitation-code", invitationCode, this.httpOptions());
+    }
+
+    getReadUsers(): Observable<GetUsersResponse[]> {
+        return this.httpClient.get<GetUsersResponse[]>("/users", this.httpOptions());
     }
 
     getReadProducts(): Observable<GetProductsResponse[]> {

@@ -21,6 +21,7 @@ import {RegisterComponent} from "./components/register/register.component";
 import {ResetPasswordComponent} from "./components/reset-password/reset-password.component";
 import {LoginDetailsComponent} from "./components/settings/login-details/login-details.component";
 import {SettingsComponent} from "./components/settings/settings.component";
+import {UsersComponent} from "./components/users/users.component";
 import {AuthService} from "./services/auth.service";
 
 describe('AppComponent', () => {
@@ -51,7 +52,8 @@ describe('AppComponent', () => {
                     {path: routeName.purchases_delete, component: MockComponent(PurchaseDeleteComponent)},
                     {path: routeName.purchases_new, component: MockComponent(PurchaseNewComponent)},
                     {path: routeName.qr, component: MockComponent(QrComponent)},
-                    {path: routeName.reset_password, component: MockComponent(ResetPasswordComponent)}
+                    {path: routeName.reset_password, component: MockComponent(ResetPasswordComponent)},
+                    {path: routeName.users, component: MockComponent(UsersComponent)}
                 ]),
                 provideLocationMocks()
             ]
@@ -166,5 +168,11 @@ describe('AppComponent', () => {
             tick(1);
         });
         expect(component.showNavBar()).toBeFalsy();
+
+        zone.run(() => {
+            routerHarness.navigateByUrl('/' + routeName.users);
+            tick(1);
+        });
+        expect(component.showNavBar()).toBeTruthy();
     }));
 });

@@ -547,7 +547,7 @@ class RouterTest extends SecurityConfigSetup {
     }
 
     @Test
-    void postChangeInvitationCode_positive_NoBody() {
+    void postChangeInvitationCode_negative_NoBody() {
 
         webClient.post().uri("/settings/change-invitation-code")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
@@ -575,6 +575,55 @@ class RouterTest extends SecurityConfigSetup {
         verify(userDetailsService, times(1)).findByUsername(ADMIN);
         verify(userDetailsService, times(1)).findByUsername("invitation-code");
         verify(userDetailsService, times(1)).changePassword(any(User.class), any(String.class));
+    }
+
+    @Test
+    void getReadAllUsers_positive_User() {
+
+        doReturn(Mono.just(List.of(new GetUsersResponse("mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 6), true, List.of("role"), BigDecimal.ONE)))).when(userDetailsService).findAllUsers();
+
+        webClient.get().uri("/users")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBodyList(GetUsersResponse.class).isEqualTo(List.of(
+                        new GetUsersResponse("mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 6), true, List.of("role"), BigDecimal.ONE)
+                ));
+
+        verify(userDetailsService, times(1)).findAllUsers();
+    }
+
+    @Test
+    void getReadAllUsers_positive_Jwt() {
+
+        doReturn(Mono.just(List.of(new GetUsersResponse("mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 6), true, List.of("role"), BigDecimal.ONE)))).when(userDetailsService).findAllUsers();
+
+        webClient.get().uri("/users")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBodyList(GetUsersResponse.class).isEqualTo(List.of(
+                        new GetUsersResponse("mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 6), true, List.of("role"), BigDecimal.ONE)
+                ));
+
+        verify(userDetailsService, times(1)).findAllUsers();
+    }
+
+    @Test
+    void getReadAllUsers_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(userDetailsService).findAllUsers();
+
+        webClient.get().uri("/users")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+
+        verify(userDetailsService, times(1)).findAllUsers();
     }
 
     @Test

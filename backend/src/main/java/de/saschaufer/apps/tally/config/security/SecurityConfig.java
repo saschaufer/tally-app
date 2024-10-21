@@ -67,6 +67,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.POST, "/reset-password").permitAll()
                         .pathMatchers(HttpMethod.POST, "/settings/change-password").hasAnyAuthority(User.Role.USER)
                         .pathMatchers(HttpMethod.POST, "/settings/change-invitation-code").hasAnyAuthority(User.Role.ADMIN)
+                        .pathMatchers(HttpMethod.GET, "/users").hasAnyAuthority(User.Role.ADMIN)
 
                         .pathMatchers(HttpMethod.GET, "/products").hasAnyAuthority(User.Role.USER)
                         .pathMatchers(HttpMethod.POST, "/products/read-product").hasAnyAuthority(User.Role.USER)

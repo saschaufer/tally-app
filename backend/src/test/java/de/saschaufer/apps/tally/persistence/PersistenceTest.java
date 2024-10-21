@@ -187,6 +187,47 @@ class PersistenceTest {
     }
 
     @Test
+    void selectUsers_positive_UsersExist() {
+
+        final TestData testData = insertTestData();
+
+        assertCount(User.class, 2);
+
+        persistence.selectUsers()
+                .as(StepVerifier::create)
+                .assertNext(users -> {
+
+                    assertThat(users.size(), is(testData.numOfUsers));
+
+                    assertThat(users.getFirst().getId(), notNullValue());
+                    assertThat(users.getFirst().getUsername(), is(testData.user1.getEmail()));
+                    assertThat(users.getFirst().getPassword(), nullValue());
+                    assertThat(users.getFirst().getRoles(), is(testData.user1.getRoles()));
+                    assertThat(users.getFirst().getRegistrationSecret(), nullValue());
+                    assertThat(users.getFirst().getRegistrationOn(), is(testData.user1.getRegistrationOn()));
+                    assertThat(users.getFirst().getRegistrationComplete(), is(testData.user1.getRegistrationComplete()));
+
+                    assertThat(users.getLast().getId(), notNullValue());
+                    assertThat(users.getLast().getUsername(), is(testData.user2.getEmail()));
+                    assertThat(users.getLast().getPassword(), nullValue());
+                    assertThat(users.getLast().getRoles(), is(testData.user2.getRoles()));
+                    assertThat(users.getLast().getRegistrationSecret(), nullValue());
+                    assertThat(users.getLast().getRegistrationOn(), is(testData.user2.getRegistrationOn()));
+                    assertThat(users.getLast().getRegistrationComplete(), is(testData.user2.getRegistrationComplete()));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void selectUsers_positive_UsersNotExist() {
+
+        persistence.selectUsers()
+                .as(StepVerifier::create)
+                .assertNext(users -> assertThat(users.size(), is(0)))
+                .verifyComplete();
+    }
+
+    @Test
     void existsUser_positive_UserExists() {
 
         final String username = Objects.requireNonNull(persistence.insertUser(
@@ -892,6 +933,30 @@ class PersistenceTest {
     }
 
     @Test
+    void selectPurchasesSumAllUsers_positive() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectPurchasesSumAllUsers()
+                .as(StepVerifier::create)
+                .assertNext(sums -> {
+                    assertThat(sums.size(), is(testData.numOfUsers));
+                    assertThat(sums.get(testData.user1.getId()), is(testData.productPrice1.getPrice().multiply(BigDecimal.TWO).add(testData.productPrice5.getPrice())));
+                    assertThat(sums.get(testData.user2.getId()), is(testData.productPrice1.getPrice().add(testData.productPrice2.getPrice()).add(testData.productPrice4.getPrice())));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void selectPurchasesSumAllUsers_positive_NoPurchases() {
+
+        persistence.selectPurchasesSumAllUsers()
+                .as(StepVerifier::create)
+                .assertNext(sums -> assertThat(sums.size(), is(0)))
+                .verifyComplete();
+    }
+
+    @Test
     void deletePurchase_positive() {
 
         final TestData testData = insertTestData();
@@ -1079,6 +1144,30 @@ class PersistenceTest {
         persistence.selectPaymentsSum(testData.user1.getId() - 1)
                 .as(StepVerifier::create)
                 .assertNext(sum -> assertThat(sum, is(BigDecimal.ZERO)))
+                .verifyComplete();
+    }
+
+    @Test
+    void selectPaymentsSumAllUsers_positive() {
+
+        final TestData testData = insertTestData();
+
+        persistence.selectPaymentsSumAllUsers()
+                .as(StepVerifier::create)
+                .assertNext(sums -> {
+                    assertThat(sums.size(), is(testData.numOfUsers));
+                    assertThat(sums.get(testData.user1.getId()), is(testData.payment1.getAmount().add(testData.payment2.getAmount())));
+                    assertThat(sums.get(testData.user2.getId()), is(testData.payment3.getAmount()));
+                })
+                .verifyComplete();
+    }
+
+    @Test
+    void selectPaymentsSumAllUsers_positive_NoPayments() {
+
+        persistence.selectPaymentsSumAllUsers()
+                .as(StepVerifier::create)
+                .assertNext(sums -> assertThat(sums.size(), is(0)))
                 .verifyComplete();
     }
 
