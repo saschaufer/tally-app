@@ -61,7 +61,7 @@
         <!-- Dependencies -->
         <disruptor.version>4.0.0</disruptor.version>
         <hamcrest.version>3.0</hamcrest.version>
-        <spring-boot.version>3.3.4</spring-boot.version>
+        <spring-boot.version>3.3.5</spring-boot.version>
 
         <!-- Plugins -->
         <ci-friendly-flatten-maven-plugin.version>1.0.27</ci-friendly-flatten-maven-plugin.version>
