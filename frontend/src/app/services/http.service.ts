@@ -90,6 +90,10 @@ export class HttpService {
         return this.httpClient.get<GetUsersResponse[]>("/users", this.httpOptions());
     }
 
+    postDeleteUser(): Observable<void> {
+        return this.httpClient.post<void>("/delete-user", null, this.httpOptions());
+    }
+
     getReadProducts(): Observable<GetProductsResponse[]> {
         return this.httpClient.get<GetProductsResponse[]>("/products", this.httpOptions());
     }

@@ -199,6 +199,33 @@ public class Handler {
                 .onErrorResume(this::buildErrorResponse);
     }
 
+    public Mono<ServerResponse> postDeleteUser(final ServerRequest request) {
+
+        // Get user
+        final Mono<User> user = setMdc(request)
+                .doOnNext(r -> log.atInfo().setMessage("Delete user.").log())
+                .flatMap(ServerRequest::principal)
+                .map(Authentication.class::cast)
+                .map(auth -> switch (auth.getPrincipal()) {
+                    case UserDetails u -> u.getUsername();
+                    case Jwt j -> j.getSubject();
+                    default ->
+                            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown authentication method");
+                })
+                .flatMap(userDetailsService::findByUsername)
+                .map(u -> (User) u);
+
+        // Delete user
+        return user.flatMap(u -> userDetailsService.deleteUser(u.getId()))
+
+                // Build response
+                .then(Mono.defer(() -> ok().build()))
+
+                // Build error response
+                .doOnError(e -> log.atError().setMessage("Error deleting user.").setCause(e).log())
+                .onErrorResume(this::buildErrorResponse);
+    }
+
     public Mono<ServerResponse> postCreateProduct(final ServerRequest request) {
 
         return setMdc(request)

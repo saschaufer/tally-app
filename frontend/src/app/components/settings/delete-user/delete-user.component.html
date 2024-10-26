@@ -1,0 +1,21 @@
+<h1>Delete account</h1>
+
+<p class="text-green">If you delete your account, all your data will be lost and it cannot be undone.</p>
+<button (click)="onDeleteAccount()" class="mt-1_25 text-red">Delete Account</button>
+
+<dialog id="#settings.deleteUser.confirmationPrompt">
+    <p class="mt-1_25 text-center text-green">Are you sure you want to delete your account?</p>
+    <p class="mt-1_25 text-center text-green">All your data will be lost and it cannot be undone.</p>
+    <button id="#settings.deleteUser.confirmationPrompt.delete" class="mt-1_25 text-red">Delete</button>
+    <button id="#settings.deleteUser.confirmationPrompt.cancel" class="mt-1_25 text-green">Cancel</button>
+</dialog>
+<dialog id="#settings.deleteUser.successDeleteUser">
+    <p class="mt-1_25 text-center text-green">Account successfully deleted.</p>
+    <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
+</dialog>
+<dialog id="#settings.deleteUser.errorDeleteUser">
+    <p class="mt-1_25 text-center text-green">Error deleting account.</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+    <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
+</dialog>

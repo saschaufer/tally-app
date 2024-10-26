@@ -364,6 +364,58 @@ class SecurityConfigTest extends SecurityConfigSetup {
     }
 
     @Test
+    void postDeleteUser_positive_Password() {
+
+        doReturn(ok().build()).when(handler).postDeleteUser(any(ServerRequest.class));
+
+        webClient.post().uri("/delete-user")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postDeleteUser(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeleteUser_negative_PasswordUserWrongRole() {
+
+        webClient.post().uri("/delete-user")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postDeleteUser(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeleteUser_positive_Jwt() {
+
+        doReturn(ok().build()).when(handler).postDeleteUser(any(ServerRequest.class));
+
+        webClient.post().uri("/delete-user")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(handler, times(1)).postDeleteUser(any(ServerRequest.class));
+    }
+
+    @Test
+    void postDeleteUser_negative_JwtUserWrongRole() {
+
+        webClient.post().uri("/delete-user")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(INVITATION))
+                .exchange()
+                .expectStatus().isForbidden()
+                .expectBody().isEmpty();
+
+        verify(handler, times(0)).postDeleteUser(any(ServerRequest.class));
+    }
+
+    @Test
     void getReadProducts_positive_Password() {
 
         doReturn(ok().build()).when(handler).getReadProducts(any(ServerRequest.class));

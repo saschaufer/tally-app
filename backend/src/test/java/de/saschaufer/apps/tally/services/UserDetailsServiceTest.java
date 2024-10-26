@@ -199,6 +199,33 @@ class UserDetailsServiceTest {
     }
 
     @Test
+    void deleteUser_positive() {
+
+        doReturn(Mono.empty()).when(persistence).deleteUser(any(Long.class));
+
+        Mono.just(1L).flatMap(userDetailsService::deleteUser)
+                .as(StepVerifier::create)
+                .expectNext()
+                .verifyComplete();
+
+        verify(persistence, times(1)).deleteUser(1L);
+    }
+
+    @Test
+    void deleteUser_negative_DeleteUserFails() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(persistence).deleteUser(any(Long.class));
+
+        Mono.just(1L).flatMap(userDetailsService::deleteUser)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error.getMessage(), containsString("Bad"));
+                });
+
+        verify(persistence, times(1)).deleteUser(1L);
+    }
+
+    @Test
     void checkRegistered_positive_RegistrationCompleteTrue() {
 
         final User user = new User();

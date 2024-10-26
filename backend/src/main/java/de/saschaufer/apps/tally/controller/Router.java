@@ -22,6 +22,7 @@ public class Router {
                 .POST("/settings/change-password", handler::postChangePassword)
                 .POST("/settings/change-invitation-code", handler::postChangeInvitationCode)
                 .GET("/users", handler::getReadAllUsers)
+                .POST("/delete-user", handler::postDeleteUser)
 
                 .GET("/products", handler::getReadProducts)
                 .POST("/products/read-product", handler::postReadProduct)

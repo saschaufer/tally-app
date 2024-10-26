@@ -70,7 +70,7 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                         .map(purchases -> Tuples.of(tuple.getT1(), tuple.getT2(), purchases))
                 )
                 .map(tuple -> {
-                    
+
                     final List<User> users = tuple.getT1();
                     final Map<Long, BigDecimal> payments = tuple.getT2();
                     final Map<Long, BigDecimal> purchases = tuple.getT3();
@@ -114,6 +114,10 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
         final BigDecimal purchases = purchasesTotal == null ? BigDecimal.ZERO : purchasesTotal;
 
         return payments.subtract(purchases);
+    }
+
+    public Mono<Void> deleteUser(final Long userId) {
+        return persistence.deleteUser(userId);
     }
 
     public Mono<User> checkRegistered(final User user) {

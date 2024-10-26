@@ -3,6 +3,7 @@ import {Component, inject} from '@angular/core';
 import {AuthService} from "../../services/auth.service";
 import {ChangeInvitationCodeComponent} from "./change-invitation-code/change-invitation-code.component";
 import {ChangeUserDetailsComponent} from "./change-user-details/change-user-details.component";
+import {DeleteUserComponent} from "./delete-user/delete-user.component";
 import {LoginDetailsComponent} from "./login-details/login-details.component";
 
 @Component({
@@ -12,7 +13,8 @@ import {LoginDetailsComponent} from "./login-details/login-details.component";
         LoginDetailsComponent,
         ChangeUserDetailsComponent,
         ChangeInvitationCodeComponent,
-        NgIf
+        NgIf,
+        DeleteUserComponent
     ],
     templateUrl: './settings.component.html',
     styles: ``

@@ -622,8 +622,52 @@ class RouterTest extends SecurityConfigSetup {
                 .expectStatus().is5xxServerError()
                 .expectBody().isEmpty();
 
-
         verify(userDetailsService, times(1)).findAllUsers();
+    }
+
+    @Test
+    void postDeleteUser_positive_User() {
+
+        doReturn(Mono.empty()).when(userDetailsService).deleteUser(any(Long.class));
+
+        webClient.post().uri("/delete-user")
+                .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(2)).findByUsername(USER);
+        verify(userDetailsService, times(1)).deleteUser(2L);
+    }
+
+    @Test
+    void postDeleteUser_positive_Jwt() {
+
+        doReturn(Mono.empty()).when(userDetailsService).deleteUser(any(Long.class));
+
+        webClient.post().uri("/delete-user")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).findByUsername(USER);
+        verify(userDetailsService, times(1)).deleteUser(2L);
+    }
+
+    @Test
+    void postDeleteUser_negative_InternalServerError() {
+
+        doReturn(Mono.error(new RuntimeException("Bad"))).when(userDetailsService).deleteUser(any(Long.class));
+
+        webClient.post().uri("/delete-user")
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER))
+                .exchange()
+                .expectStatus().is5xxServerError()
+                .expectBody().isEmpty();
+
+        verify(userDetailsService, times(1)).findByUsername(USER);
+        verify(userDetailsService, times(1)).deleteUser(2L);
     }
 
     @Test

@@ -57,6 +57,23 @@ public class Persistence {
         return template.exists(query(where("email").is(email)), User.class);
     }
 
+    public Mono<Void> deleteUser(final Long userId) {
+
+        final TransactionalOperator trans = TransactionalOperator.create(transactionManager);
+
+        return trans.transactional(Mono.just(userId)
+                        .flatMap(i -> template.delete(query(where("user_id").is(userId)), Purchase.class))
+                        .flatMap(i -> template.delete(query(where("user_id").is(userId)), Payment.class))
+                        .flatMap(i -> template.delete(query(where("id").is(userId)), User.class))
+                        .flatMap(deleteCount -> switch (deleteCount.intValue()) {
+                            case 0 -> Mono.error(new RuntimeException("User not deleted"));
+                            case 1 -> Mono.empty();
+                            default -> Mono.error(new RuntimeException("Too many users deleted"));
+                        })
+                )
+                .flatMap(p -> Mono.empty());
+    }
+
     public Mono<Void> updateUserRegistrationComplete(final String email) {
 
         return template

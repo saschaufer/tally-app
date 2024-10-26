@@ -252,6 +252,60 @@ class PersistenceTest {
     }
 
     @Test
+    void deleteUser_positive_UserExists() {
+
+        final TestData testData = insertTestData();
+
+        assertCount(User.class, testData.numOfUsers);
+        assertCount(Purchase.class, testData.numOfPurchases);
+        assertCount(Payment.class, testData.numOfPayments);
+
+        Mono.just(testData.user2.getId())
+                .flatMap(persistence::deleteUser)
+                .as(StepVerifier::create)
+                .expectNext()
+                .verifyComplete();
+
+        assertCount(User.class, testData.numOfUsers - 1);
+        assertCount(Purchase.class, testData.numOfPurchases - 3);
+        assertCount(Payment.class, testData.numOfPayments - 1);
+
+        persistence.existsUser(testData.user2.getEmail())
+                .as(StepVerifier::create)
+                .assertNext(b -> assertThat(b, is(false)))
+                .verifyComplete();
+    }
+
+    @Test
+    void deleteUser_negative_rollback_DeleteUserFailed() {
+
+        template.getDatabaseClient().sql("set referential_integrity false").then().block();
+
+        Mono.just(1)
+                .flatMap(i -> template.insert(new Purchase(null, 2L, 3L, LocalDateTime.now())))
+                .flatMap(i -> template.insert(new Payment(null, 2L, BigDecimal.ONE, LocalDateTime.now())))
+                .flatMap(i -> template.insert(new User(1L, "1@mail", "pwd", "role", "123", LocalDateTime.now(), true)))
+                .block();
+
+        template.getDatabaseClient().sql("set referential_integrity true").then().block();
+
+        assertCount(Purchase.class, 1);
+        assertCount(Payment.class, 1);
+        assertCount(User.class, 1);
+
+        Mono.just(2L)
+                .flatMap(persistence::deleteUser)
+                .as(StepVerifier::create)
+                .verifyErrorSatisfies(error ->
+                        assertThat(error.getMessage(), containsString("User not deleted"))
+                );
+
+        assertCount(Purchase.class, 1);
+        assertCount(Payment.class, 1);
+        assertCount(User.class, 1);
+    }
+
+    @Test
     void updateUserRegistrationComplete_positive_OneUserUpdated() {
 
         Flux.just(

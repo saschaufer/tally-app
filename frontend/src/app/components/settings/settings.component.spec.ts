@@ -3,6 +3,7 @@ import {MockComponent, MockProvider} from "ng-mocks";
 import {AuthService} from "../../services/auth.service";
 import {ChangeInvitationCodeComponent} from "./change-invitation-code/change-invitation-code.component";
 import {ChangeUserDetailsComponent} from "./change-user-details/change-user-details.component";
+import {DeleteUserComponent} from "./delete-user/delete-user.component";
 import {LoginDetailsComponent} from "./login-details/login-details.component";
 
 import {SettingsComponent} from './settings.component';
@@ -22,7 +23,8 @@ describe('SettingsComponent', () => {
             declarations: [
                 MockComponent(LoginDetailsComponent),
                 MockComponent(ChangeUserDetailsComponent),
-                MockComponent(ChangeInvitationCodeComponent)
+                MockComponent(ChangeInvitationCodeComponent),
+                MockComponent(DeleteUserComponent)
             ]
         })
             .compileComponents();
