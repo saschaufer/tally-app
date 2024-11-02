@@ -100,13 +100,16 @@ describe('AuthService', () => {
 
         const result = authService.getJwtDetails();
 
+        const issuedAt = 1723411235000;
+        const expiresAt = 1723447235000;
         const now = new Date().getTime();
+        const expiredLeft = new Date(0, 0, 0, 0, 0, 0, 0).setUTCMilliseconds(expiresAt - now);
 
         expect(result.email).toBe('user@mail.com');
-        expect(result.issuedAt).toBe(1723411235000);
-        expect(result.expiresAt).toBe(1723447235000);
-        expect(result.expiresLeft).toBeLessThan(result.expiresAt - now + 1);
-        expect(result.expiresLeft).toBeGreaterThan(result.expiresAt - now - 1);
+        expect(result.issuedAt).toBe(issuedAt);
+        expect(result.expiresAt).toBe(expiresAt);
+        expect(result.expiresLeft).toBeLessThan(expiredLeft + 1000);
+        expect(result.expiresLeft).toBeGreaterThan(expiredLeft - 1000);
         expect(result.authorities).toEqual([role.user, role.admin]);
 
         expect(cookieServiceSpy.get).toHaveBeenCalledOnceWith('TALLY_JWT');

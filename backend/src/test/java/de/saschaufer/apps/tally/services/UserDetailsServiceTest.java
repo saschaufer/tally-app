@@ -16,15 +16,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.jose.jws.JwsAlgorithms;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +62,7 @@ class UserDetailsServiceTest {
     @Test
     void findByUsername_positive_UserExists() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), true);
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
 
@@ -95,11 +100,11 @@ class UserDetailsServiceTest {
         doReturn(List.of("2@mail", "5@mail")).when(adminProperties).emails();
 
         doReturn(Mono.just(List.of(
-                new User(1L, "1@mail", null, "role1,role2", null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 1), true),
-                new User(2L, "2@mail", null, "role3", null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 2), false),
-                new User(3L, "3@mail", null, "role2,role1,role3", null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 3), true),
-                new User(4L, "4@mail", null, null, null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 4), true),
-                new User(5L, "5@mail", null, ",", null, LocalDateTime.of(2024, 1, 2, 3, 4, 5, 5), true)
+                new User(1L, "1@mail", null, "role1,role2", null, Instant.parse("2024-01-02T03:04:01Z"), true),
+                new User(2L, "2@mail", null, "role3", null, Instant.parse("2024-01-02T03:04:02Z"), false),
+                new User(3L, "3@mail", null, "role2,role1,role3", null, Instant.parse("2024-01-02T03:04:03Z"), true),
+                new User(4L, "4@mail", null, null, null, Instant.parse("2024-01-02T03:04:04Z"), true),
+                new User(5L, "5@mail", null, ",", null, Instant.parse("2024-01-02T03:04:05Z"), true)
         ))).when(persistence).selectUsers();
         doReturn(Mono.just(Map.of(
                 2L, BigDecimal.TEN,
@@ -117,11 +122,11 @@ class UserDetailsServiceTest {
                 .assertNext(getUsersResponses -> {
                     assertThat(getUsersResponses.size(), is(5));
 
-                    assertThat(getUsersResponses.getFirst(), is(new GetUsersResponse("1@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 1), true, List.of("role1", "role2"), BigDecimal.TWO)));
-                    assertThat(getUsersResponses.get(1), is(new GetUsersResponse("2@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 2), false, List.of("role3", "admin"), new BigDecimal("9"))));
-                    assertThat(getUsersResponses.get(2), is(new GetUsersResponse("3@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 3), true, List.of("role2", "role1", "role3"), BigDecimal.ZERO)));
-                    assertThat(getUsersResponses.get(3), is(new GetUsersResponse("4@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 4), true, List.of(), BigDecimal.ONE)));
-                    assertThat(getUsersResponses.getLast(), is(new GetUsersResponse("5@mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 5), true, List.of("admin"), new BigDecimal("-1"))));
+                    assertThat(getUsersResponses.getFirst(), is(new GetUsersResponse("1@mail", Instant.parse("2024-01-02T03:04:01Z"), true, List.of("role1", "role2"), BigDecimal.TWO)));
+                    assertThat(getUsersResponses.get(1), is(new GetUsersResponse("2@mail", Instant.parse("2024-01-02T03:04:02Z"), false, List.of("role3", "admin"), new BigDecimal("9"))));
+                    assertThat(getUsersResponses.get(2), is(new GetUsersResponse("3@mail", Instant.parse("2024-01-02T03:04:03Z"), true, List.of("role2", "role1", "role3"), BigDecimal.ZERO)));
+                    assertThat(getUsersResponses.get(3), is(new GetUsersResponse("4@mail", Instant.parse("2024-01-02T03:04:04Z"), true, List.of(), BigDecimal.ONE)));
+                    assertThat(getUsersResponses.getLast(), is(new GetUsersResponse("5@mail", Instant.parse("2024-01-02T03:04:05Z"), true, List.of("admin"), new BigDecimal("-1"))));
                 })
                 .verifyComplete();
 
@@ -262,7 +267,7 @@ class UserDetailsServiceTest {
     @Test
     void updatePassword_positive_UserExists() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), true);
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
         doReturn(Mono.empty()).when(persistence).updateUserPassword(any(Long.class), any(String.class));
@@ -283,7 +288,7 @@ class UserDetailsServiceTest {
     @Test
     void updatePassword_negative_UserNotExists() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), true);
 
         doReturn(Mono.error(new RuntimeException("User not found"))).when(persistence).selectUser(any(String.class));
 
@@ -301,7 +306,7 @@ class UserDetailsServiceTest {
     @Test
     void updatePassword_negative_UserNotUpdated() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), true);
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
         doReturn(Mono.error(new RuntimeException("User not updated"))).when(persistence).updateUserPassword(any(Long.class), any(String.class));
@@ -320,7 +325,7 @@ class UserDetailsServiceTest {
     @Test
     void resetPassword_positive() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), true);
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
         doReturn(Mono.empty()).when(persistence).updateUserPassword(any(Long.class), any(String.class));
@@ -359,7 +364,7 @@ class UserDetailsServiceTest {
     @Test
     void resetPassword_negative_UserNotRegistered() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false);
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), false);
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
 
@@ -381,7 +386,7 @@ class UserDetailsServiceTest {
     @Test
     void resetPassword_negative_UserNotUpdated() {
 
-        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true);
+        final UserDetails userDetails = new User(1L, "username@mail.com", "password", "roles", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), true);
 
         doReturn(Mono.just(userDetails)).when(persistence).selectUser(any(String.class));
         doReturn(Mono.error(new RuntimeException("User not updated"))).when(persistence).updateUserPassword(any(Long.class), any(String.class));
@@ -443,41 +448,70 @@ class UserDetailsServiceTest {
     }
 
     @Test
-    void createJwtToken_positive_FromProperties() {
+    void createJwtToken_positive_AdminIssuerAudience() throws URISyntaxException, MalformedURLException {
 
         final User user = new User(1L, "username@mail.com", "password", User.Role.USER, null, null, null);
 
-        doReturn("issuer").when(jwtProperties).issuer();
+        doReturn(List.of("username@mail.com")).when(adminProperties).emails();
+
+        doReturn("https://issuer.com").when(jwtProperties).issuer();
         doReturn("audience").when(jwtProperties).audience();
+        doReturn(Duration.ofHours(1L)).when(jwtProperties).expirationTime();
 
         doReturn(new Jwt("ecoded-jwt", Instant.MIN, Instant.MAX, Map.of("header", "h"), Map.of("claim", "m"))).when(jwtEncoder).encode(any());
 
         final PostLoginResponse response = userDetailsService.createJwtToken(user);
 
-        verify(jwtEncoder, times(1)).encode(any());
+        final ArgumentCaptor<JwtEncoderParameters> captor = ArgumentCaptor.forClass(JwtEncoderParameters.class);
+        verify(jwtEncoder, times(1)).encode(captor.capture());
         verify(adminProperties, times(1)).emails();
 
         assertThat(response.jwt(), is("ecoded-jwt"));
         assertThat(response.secure(), is(jwtProperties.secure()));
+
+        final JwtEncoderParameters parameters = captor.getValue();
+        assertThat(parameters.getJwsHeader().getAlgorithm().getName(), is(JwsAlgorithms.HS256));
+        assertThat(parameters.getClaims().getIssuer(), is(new URI("https://issuer.com").toURL()));
+        assertThat(parameters.getClaims().getAudience(), is(List.of("audience")));
+        assertThat(parameters.getClaims().getIssuedAt(), is(greaterThan(Instant.now().minusSeconds(1))));
+        assertThat(parameters.getClaims().getIssuedAt(), is(lessThan(Instant.now().plusSeconds(10))));
+        assertThat(parameters.getClaims().getExpiresAt(), is(greaterThan(Instant.now().plus(Duration.ofHours(1).minusSeconds(1)))));
+        assertThat(parameters.getClaims().getExpiresAt(), is(lessThan(Instant.now().plus(Duration.ofHours(1).plusSeconds(10)))));
+        assertThat(parameters.getClaims().getSubject(), is("username@mail.com"));
+        assertThat(parameters.getClaims().getClaims().get("authorities"), is(List.of(User.Role.USER, User.Role.ADMIN)));
     }
 
     @Test
-    void createJwtToken_positive_FromUserAgent() {
+    void createJwtToken_positive_NoAdminIssuerAudience() throws URISyntaxException, MalformedURLException {
 
         final User user = new User(1L, "username@mail.com", "password", User.Role.USER, null, null, null);
 
-        doReturn("host").when(userAgent).getHostName();
+        doReturn("https://host.com").when(userAgent).getHostName();
         doReturn("app").when(userAgent).getAppName();
+
+        doReturn(Duration.ofHours(1L)).when(jwtProperties).expirationTime();
 
         doReturn(new Jwt("ecoded-jwt", Instant.MIN, Instant.MAX, Map.of("header", "h"), Map.of("claim", "m"))).when(jwtEncoder).encode(any());
 
         final PostLoginResponse response = userDetailsService.createJwtToken(user);
 
-        verify(jwtEncoder, times(1)).encode(any());
+        final ArgumentCaptor<JwtEncoderParameters> captor = ArgumentCaptor.forClass(JwtEncoderParameters.class);
+        verify(jwtEncoder, times(1)).encode(captor.capture());
         verify(adminProperties, times(1)).emails();
 
         assertThat(response.jwt(), is("ecoded-jwt"));
         assertThat(response.secure(), is(jwtProperties.secure()));
+
+        final JwtEncoderParameters parameters = captor.getValue();
+        assertThat(parameters.getJwsHeader().getAlgorithm().getName(), is(JwsAlgorithms.HS256));
+        assertThat(parameters.getClaims().getIssuer(), is(new URI("https://host.com").toURL()));
+        assertThat(parameters.getClaims().getAudience(), is(List.of("app")));
+        assertThat(parameters.getClaims().getIssuedAt(), is(greaterThan(Instant.now().minusSeconds(1))));
+        assertThat(parameters.getClaims().getIssuedAt(), is(lessThan(Instant.now().plusSeconds(10))));
+        assertThat(parameters.getClaims().getExpiresAt(), is(greaterThan(Instant.now().plus(Duration.ofHours(1).minusSeconds(1)))));
+        assertThat(parameters.getClaims().getExpiresAt(), is(lessThan(Instant.now().plus(Duration.ofHours(1).plusSeconds(10)))));
+        assertThat(parameters.getClaims().getSubject(), is("username@mail.com"));
+        assertThat(parameters.getClaims().getClaims().get("authorities"), is(List.of(User.Role.USER)));
     }
 
     @Test
@@ -517,8 +551,8 @@ class UserDetailsServiceTest {
         assertThat(user.getRoles(), is(String.join(",", List.of("a", "b", "c"))));
         assertThat(Integer.valueOf(user.getRegistrationSecret()), greaterThanOrEqualTo(16234));
         assertThat(Integer.valueOf(user.getRegistrationSecret()), lessThanOrEqualTo(97942));
-        assertThat(user.getRegistrationOn().isAfter(LocalDateTime.now().minusMinutes(1)), is(true));
-        assertThat(user.getRegistrationOn().isBefore(LocalDateTime.now()), is(true));
+        assertThat(user.getRegistrationOn().isAfter(Instant.now().minusSeconds(60)), is(true));
+        assertThat(user.getRegistrationOn().isBefore(Instant.now()), is(true));
         assertThat(user.getRegistrationComplete(), is(false));
     }
 
@@ -615,20 +649,20 @@ class UserDetailsServiceTest {
     @Test
     void deleteUnregisteredUsers_positive() {
 
-        doReturn(Mono.just(2L)).when(persistence).deleteUnregisteredUsers(any(LocalDateTime.class));
+        doReturn(Mono.just(2L)).when(persistence).deleteUnregisteredUsers(any(Instant.class));
 
         userDetailsService.deleteUnregisteredUsers()
                 .as(StepVerifier::create)
                 .assertNext(count -> assertThat(count, is(2L)))
                 .verifyComplete();
 
-        verify(persistence, times(1)).deleteUnregisteredUsers(any(LocalDateTime.class));
+        verify(persistence, times(1)).deleteUnregisteredUsers(any(Instant.class));
 
-        final ArgumentCaptor<LocalDateTime> argumentCaptorExists = ArgumentCaptor.forClass(LocalDateTime.class);
+        final ArgumentCaptor<Instant> argumentCaptorExists = ArgumentCaptor.forClass(Instant.class);
         verify(persistence).deleteUnregisteredUsers(argumentCaptorExists.capture());
 
-        assertThat(argumentCaptorExists.getValue().isAfter(LocalDateTime.now().minusMinutes(1)), is(true));
-        assertThat(argumentCaptorExists.getValue().isBefore(LocalDateTime.now()), is(true));
+        assertThat(argumentCaptorExists.getValue().isAfter(Instant.now().minusSeconds(60)), is(true));
+        assertThat(argumentCaptorExists.getValue().isBefore(Instant.now()), is(true));
     }
 
     @Test

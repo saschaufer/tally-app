@@ -10,7 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -34,7 +34,7 @@ public class User implements UserDetails {
     private String password;
     private String roles;
     private String registrationSecret;
-    private LocalDateTime registrationOn;
+    private Instant registrationOn;
     private Boolean registrationComplete;
 
     @Override

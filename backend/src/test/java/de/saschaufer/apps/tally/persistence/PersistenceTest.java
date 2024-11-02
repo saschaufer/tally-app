@@ -22,7 +22,7 @@ import reactor.test.StepVerifier;
 import reactor.util.function.Tuple2;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -72,7 +72,7 @@ class PersistenceTest {
 
         assertCount(User.class, 0);
 
-        Mono.just(new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false))
+        Mono.just(new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), false))
                 .flatMap(persistence::insertUser)
                 .as(StepVerifier::create)
                 .assertNext(user -> {
@@ -81,7 +81,7 @@ class PersistenceTest {
                     assertThat(user.getPassword(), is("test-password"));
                     assertThat(user.getRoles(), is("test-role"));
                     assertThat(user.getRegistrationSecret(), is("registration-secret"));
-                    assertThat(user.getRegistrationOn(), is(LocalDateTime.of(2024, 5, 19, 23, 54, 1)));
+                    assertThat(user.getRegistrationOn(), is(Instant.parse("2024-05-19T23:54:01Z")));
                     assertThat(user.getRegistrationComplete(), is(false));
                 })
                 .verifyComplete()
@@ -95,7 +95,7 @@ class PersistenceTest {
 
         assertCount(User.class, 0);
 
-        Mono.just(new User(1L, "", "", "", "", LocalDateTime.now(), false))
+        Mono.just(new User(1L, "", "", "", "", Instant.now(), false))
                 .flatMap(persistence::insertUser)
                 .flatMap(persistence::insertUser)
                 .as(StepVerifier::create)
@@ -127,19 +127,19 @@ class PersistenceTest {
     static Stream<Arguments> insertUser_negative_NullNotAllowed() {
         return Stream.of(
                 Arguments.of(
-                        new User(null, null, "", "", "", LocalDateTime.now(), true),
+                        new User(null, null, "", "", "", Instant.now(), true),
                         "NULL not allowed for column \"EMAIL\""
                 ),
                 Arguments.of(
-                        new User(null, "", null, "", "", LocalDateTime.now(), true),
+                        new User(null, "", null, "", "", Instant.now(), true),
                         "NULL not allowed for column \"PASSWORD\""
                 ),
                 Arguments.of(
-                        new User(null, "", "", null, "", LocalDateTime.now(), true),
+                        new User(null, "", "", null, "", Instant.now(), true),
                         "NULL not allowed for column \"ROLES\""
                 ),
                 Arguments.of(
-                        new User(null, "", "", "", null, LocalDateTime.now(), true),
+                        new User(null, "", "", "", null, Instant.now(), true),
                         "NULL not allowed for column \"REGISTRATION_SECRET\""
                 ),
                 Arguments.of(
@@ -147,7 +147,7 @@ class PersistenceTest {
                         "NULL not allowed for column \"REGISTRATION_ON\""
                 ),
                 Arguments.of(
-                        new User(null, "", "", "", "", LocalDateTime.now(), null),
+                        new User(null, "", "", "", "", Instant.now(), null),
                         "NULL not allowed for column \"REGISTRATION_COMPLETE\""
                 )
         );
@@ -157,7 +157,7 @@ class PersistenceTest {
     void selectUser_positive_UserExists() {
 
         final String username = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)
+                new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), true)
         ).block()).getUsername();
 
         Mono.just(username)
@@ -169,7 +169,7 @@ class PersistenceTest {
                     assertThat(user.getPassword(), is("test-password"));
                     assertThat(user.getRoles(), is("test-role"));
                     assertThat(user.getRegistrationSecret(), is("registration-secret"));
-                    assertThat(user.getRegistrationOn(), is(LocalDateTime.of(2024, 5, 19, 23, 54, 1)));
+                    assertThat(user.getRegistrationOn(), is(Instant.parse("2024-05-19T23:54:01Z")));
                     assertThat(user.getRegistrationComplete(), is(true));
                 })
                 .verifyComplete();
@@ -231,7 +231,7 @@ class PersistenceTest {
     void existsUser_positive_UserExists() {
 
         final String username = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)
+                new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), true)
         ).block()).getUsername();
 
         Mono.just(username)
@@ -282,9 +282,9 @@ class PersistenceTest {
         template.getDatabaseClient().sql("set referential_integrity false").then().block();
 
         Mono.just(1)
-                .flatMap(i -> template.insert(new Purchase(null, 2L, 3L, LocalDateTime.now())))
-                .flatMap(i -> template.insert(new Payment(null, 2L, BigDecimal.ONE, LocalDateTime.now())))
-                .flatMap(i -> template.insert(new User(1L, "1@mail", "pwd", "role", "123", LocalDateTime.now(), true)))
+                .flatMap(i -> template.insert(new Purchase(null, 2L, 3L, Instant.now())))
+                .flatMap(i -> template.insert(new Payment(null, 2L, BigDecimal.ONE, Instant.now())))
+                .flatMap(i -> template.insert(new User(1L, "1@mail", "pwd", "role", "123", Instant.now(), true)))
                 .block();
 
         template.getDatabaseClient().sql("set referential_integrity true").then().block();
@@ -309,9 +309,9 @@ class PersistenceTest {
     void updateUserRegistrationComplete_positive_OneUserUpdated() {
 
         Flux.just(
-                        new User(null, "test-1@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false),
-                        new User(null, "test-2@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false),
-                        new User(null, "test-3@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false)
+                        new User(null, "test-1@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), false),
+                        new User(null, "test-2@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), false),
+                        new User(null, "test-3@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), false)
                 )
                 .flatMap(persistence::insertUser)
                 .subscribe();
@@ -345,9 +345,9 @@ class PersistenceTest {
     void updateUserRegistrationComplete_negative_NoUserUpdated() {
 
         Flux.just(
-                        new User(null, "test-1@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false),
-                        new User(null, "test-2@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false),
-                        new User(null, "test-3@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false)
+                        new User(null, "test-1@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), false),
+                        new User(null, "test-2@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), false),
+                        new User(null, "test-3@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), false)
                 )
                 .flatMap(persistence::insertUser)
                 .subscribe();
@@ -382,7 +382,7 @@ class PersistenceTest {
     void updateUserPassword_positive_UserExists() {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)
+                new User(null, "test-username@mail.com", "test-password", "test-role", "registration-secret", Instant.parse("2024-05-19T23:54:01Z"), true)
         ).block()).getId();
 
         Mono.just(userId)
@@ -400,7 +400,7 @@ class PersistenceTest {
                     assertThat(user.getPassword(), is("test-password-changed"));
                     assertThat(user.getRoles(), is("test-role"));
                     assertThat(user.getRegistrationSecret(), is("registration-secret"));
-                    assertThat(user.getRegistrationOn(), is(LocalDateTime.of(2024, 5, 19, 23, 54, 1)));
+                    assertThat(user.getRegistrationOn(), is(Instant.parse("2024-05-19T23:54:01Z")));
                     assertThat(user.getRegistrationComplete(), is(true));
                 })
                 .verifyComplete();
@@ -426,7 +426,7 @@ class PersistenceTest {
         assertCount(User.class, 2);
 
         Mono.just(1L)
-                .flatMap(id -> persistence.deleteUnregisteredUsers(LocalDateTime.of(2024, 5, 20, 0, 0, 0)))
+                .flatMap(id -> persistence.deleteUnregisteredUsers(Instant.parse("2024-05-20T00:00:00Z")))
                 .as(StepVerifier::create)
                 .expectNext().expectNext(0L)
                 .verifyComplete();
@@ -440,15 +440,15 @@ class PersistenceTest {
         insertTestData();
 
         Mono.just(1L)
-                .flatMap(n -> persistence.insertUser(new User(null, "a", "", "", "", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false)))
-                .flatMap(n -> persistence.insertUser(new User(null, "b", "", "", "", LocalDateTime.of(2024, 5, 19, 23, 54, 1), false)))
-                .flatMap(n -> persistence.insertUser(new User(null, "c", "", "", "", LocalDateTime.of(2024, 5, 21, 0, 0, 0), false)))
+                .flatMap(n -> persistence.insertUser(new User(null, "a", "", "", "", Instant.parse("2024-05-19T23:54:01Z"), false)))
+                .flatMap(n -> persistence.insertUser(new User(null, "b", "", "", "", Instant.parse("2024-05-19T23:54:01Z"), false)))
+                .flatMap(n -> persistence.insertUser(new User(null, "c", "", "", "", Instant.parse("2024-05-21T00:00:00Z"), false)))
                 .block();
 
         assertCount(User.class, 5);
 
         Mono.just(1L)
-                .flatMap(id -> persistence.deleteUnregisteredUsers(LocalDateTime.of(2024, 5, 20, 0, 0, 0)))
+                .flatMap(id -> persistence.deleteUnregisteredUsers(Instant.parse("2024-05-20T00:00:00Z")))
                 .as(StepVerifier::create)
                 .expectNext().expectNext(2L)
                 .verifyComplete();
@@ -594,24 +594,24 @@ class PersistenceTest {
         final Mono<Void> coffee = template.insert(new Product(null, "coffee"))
                 .flatMap(product ->
                         template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.1"), null))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), LocalDateTime.now())))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), Instant.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), Instant.now())))
                 )
                 .flatMap(p -> Mono.empty());
 
         final Mono<Void> tea = template.insert(new Product(null, "tea"))
                 .flatMap(product ->
                         template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.4"), null))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.5"), LocalDateTime.now())))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.6"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.5"), Instant.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.6"), Instant.now())))
                 )
                 .flatMap(p -> Mono.empty());
 
         final Mono<Void> hotChocolate = template.insert(new Product(null, "hot chocolate"))
                 .flatMap(product ->
-                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.7"), LocalDateTime.now()))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.8"), LocalDateTime.now())))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.9"), LocalDateTime.now())))
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.7"), Instant.now()))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.8"), Instant.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.9"), Instant.now())))
                 )
                 .flatMap(p -> Mono.empty());
 
@@ -800,16 +800,16 @@ class PersistenceTest {
         final Long p1Id = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
                 .flatMap(product ->
                         template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.1"), null))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), LocalDateTime.now())))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), Instant.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), Instant.now())))
                                 .then(Mono.just(product))
                 ).block()).getId();
 
         template.insert(new Product(null, "tea"))
                 .flatMap(product ->
                         template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.4"), null))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.5"), LocalDateTime.now())))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.6"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.5"), Instant.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.6"), Instant.now())))
                                 .then(Mono.just(product))
                 ).block();
 
@@ -840,17 +840,17 @@ class PersistenceTest {
 
         final Long p1Id = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
                 .flatMap(product ->
-                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.1"), LocalDateTime.now()))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), LocalDateTime.now())))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), LocalDateTime.now())))
+                        template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.1"), Instant.now()))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), Instant.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), Instant.now())))
                                 .then(Mono.just(product))
                 ).block()).getId();
 
         template.insert(new Product(null, "tea"))
                 .flatMap(product ->
                         template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.4"), null))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.5"), LocalDateTime.now())))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.6"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.5"), Instant.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.6"), Instant.now())))
                                 .then(Mono.just(product))
                 ).block();
 
@@ -882,8 +882,8 @@ class PersistenceTest {
         final Long p1Id = Objects.requireNonNull(template.insert(new Product(null, "coffee"))
                 .flatMap(product ->
                         template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.1"), null))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), LocalDateTime.now())))
-                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), LocalDateTime.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.2"), Instant.now())))
+                                .then(template.insert(new ProductPrice(null, product.getId(), new BigDecimal("0.3"), Instant.now())))
                                 .then(Mono.just(product))
                 ).block()).getId();
 
@@ -1044,12 +1044,12 @@ class PersistenceTest {
     void insertPayment_positive() {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "", "", LocalDateTime.now(), true)
+                new User(null, "", "", "", "", Instant.now(), true)
         ).block()).getId();
 
         assertCount(Payment.class, 0);
 
-        Mono.just(new Payment(null, userId, new BigDecimal("123.45"), LocalDateTime.of(2024, 2, 20, 14, 59, 2)))
+        Mono.just(new Payment(null, userId, new BigDecimal("123.45"), Instant.parse("2024-02-20T14:59:02Z")))
                 .flatMap(persistence::insertPayment)
                 .then(Mono.fromCallable(() -> userId))
                 .flatMap(persistence::selectPayments)
@@ -1062,7 +1062,7 @@ class PersistenceTest {
 
                     assertThat(payment.id(), notNullValue());
                     assertThat(payment.amount(), is(new BigDecimal("123.45")));
-                    assertThat(payment.timestamp(), is(LocalDateTime.of(2024, 2, 20, 14, 59, 2)));
+                    assertThat(payment.timestamp(), is(Instant.parse("2024-02-20T14:59:02Z")));
                 })
                 .verifyComplete()
         ;
@@ -1074,12 +1074,12 @@ class PersistenceTest {
     void insertPayment_negative_DuplicatePrimaryKey() {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "", "", LocalDateTime.now(), true)
+                new User(null, "", "", "", "", Instant.now(), true)
         ).block()).getId();
 
         assertCount(Payment.class, 0);
 
-        Mono.just(new Payment(null, userId, BigDecimal.ONE, LocalDateTime.now()))
+        Mono.just(new Payment(null, userId, BigDecimal.ONE, Instant.now()))
                 .flatMap(persistence::insertPayment)
                 .then(Mono.defer(() -> persistence.selectPayments(userId).map(List::getFirst)))
                 .map(p -> new Payment(p.id(), userId, p.amount(), p.timestamp()))
@@ -1098,7 +1098,7 @@ class PersistenceTest {
 
         assertCount(Payment.class, 0);
 
-        Mono.just(new Payment(null, null, BigDecimal.ONE, LocalDateTime.now()))
+        Mono.just(new Payment(null, null, BigDecimal.ONE, Instant.now()))
                 .flatMap(persistence::insertPayment)
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error ->
@@ -1114,7 +1114,7 @@ class PersistenceTest {
     void insertPayment_negative_NullNotAllowed(final Payment payment, final String errorMessage) {
 
         final Long userId = Objects.requireNonNull(persistence.insertUser(
-                new User(null, "", "", "", "", LocalDateTime.now(), true)
+                new User(null, "", "", "", "", Instant.now(), true)
         ).block()).getId();
 
         payment.setUserId(userId);
@@ -1135,7 +1135,7 @@ class PersistenceTest {
     static Stream<Arguments> insertPayment_negative_NullNotAllowed() {
         return Stream.of(
                 Arguments.of(
-                        new Payment(null, null, null, LocalDateTime.now()),
+                        new Payment(null, null, null, Instant.now()),
                         "NULL not allowed for column \"AMOUNT\""
                 ),
                 Arguments.of(
@@ -1268,8 +1268,8 @@ class PersistenceTest {
         final TestData testData = new TestData();
 
         testData.numOfUsers = 2;
-        testData.user1 = template.insert(new User(null, "Alice@mail.com", "password", "roles", "11111", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)).block();
-        testData.user2 = template.insert(new User(null, "Bob@mail.com", "password", "roles", "22222", LocalDateTime.of(2024, 5, 19, 23, 54, 1), true)).block();
+        testData.user1 = template.insert(new User(null, "Alice@mail.com", "password", "roles", "11111", Instant.parse("2024-05-19T23:54:01Z"), true)).block();
+        testData.user2 = template.insert(new User(null, "Bob@mail.com", "password", "roles", "22222", Instant.parse("2024-05-19T23:54:01Z"), true)).block();
 
         testData.numOfProducts = 2;
         testData.product1 = template.insert(new Product(null, "Coffee")).block();
@@ -1278,29 +1278,29 @@ class PersistenceTest {
 
         testData.numOfProductPrices = 7;
         testData.productPrice1 = template.insert(new ProductPrice(null, testData.product1.getId(), new BigDecimal("0.30"), null)).block();
-        testData.productPrice2 = template.insert(new ProductPrice(null, testData.product1.getId(), new BigDecimal("0.20"), LocalDateTime.of(2024, 5, 19, 23, 54, 1))).block();
-        testData.productPrice3 = template.insert(new ProductPrice(null, testData.product1.getId(), new BigDecimal("0.10"), LocalDateTime.of(2024, 5, 20, 10, 23, 45))).block();
+        testData.productPrice2 = template.insert(new ProductPrice(null, testData.product1.getId(), new BigDecimal("0.20"), Instant.parse("2024-05-19T23:54:01Z"))).block();
+        testData.productPrice3 = template.insert(new ProductPrice(null, testData.product1.getId(), new BigDecimal("0.10"), Instant.parse("2024-05-20T10:23:45Z"))).block();
 
         testData.productPrice4 = template.insert(new ProductPrice(null, testData.product2.getId(), new BigDecimal("0.50"), null)).block();
-        testData.productPrice5 = template.insert(new ProductPrice(null, testData.product2.getId(), new BigDecimal("0.45"), LocalDateTime.of(2024, 5, 19, 13, 41, 53))).block();
-        testData.productPrice6 = template.insert(new ProductPrice(null, testData.product2.getId(), new BigDecimal("0.40"), LocalDateTime.of(2024, 5, 20, 21, 32, 24))).block();
+        testData.productPrice5 = template.insert(new ProductPrice(null, testData.product2.getId(), new BigDecimal("0.45"), Instant.parse("2024-05-19T13:41:53Z"))).block();
+        testData.productPrice6 = template.insert(new ProductPrice(null, testData.product2.getId(), new BigDecimal("0.40"), Instant.parse("2024-05-20T21:32:24Z"))).block();
 
-        testData.productPrice7 = template.insert(new ProductPrice(null, testData.product3.getId(), new BigDecimal("0.60"), LocalDateTime.of(2024, 5, 20, 15, 10, 56))).block();
+        testData.productPrice7 = template.insert(new ProductPrice(null, testData.product3.getId(), new BigDecimal("0.60"), Instant.parse("2024-05-20T15:10:56Z"))).block();
 
         testData.numOfPurchases = 6;
-        testData.purchase1 = template.insert(new Purchase(null, testData.user1.getId(), testData.productPrice1.getId(), LocalDateTime.of(2024, 5, 23, 12, 45, 31))).block();
-        testData.purchase2 = template.insert(new Purchase(null, testData.user1.getId(), testData.productPrice5.getId(), LocalDateTime.of(2024, 5, 23, 16, 32, 53))).block();
-        testData.purchase3 = template.insert(new Purchase(null, testData.user1.getId(), testData.productPrice1.getId(), LocalDateTime.of(2024, 5, 23, 21, 51, 13))).block();
+        testData.purchase1 = template.insert(new Purchase(null, testData.user1.getId(), testData.productPrice1.getId(), Instant.parse("2024-05-23T12:45:31Z"))).block();
+        testData.purchase2 = template.insert(new Purchase(null, testData.user1.getId(), testData.productPrice5.getId(), Instant.parse("2024-05-23T16:32:53Z"))).block();
+        testData.purchase3 = template.insert(new Purchase(null, testData.user1.getId(), testData.productPrice1.getId(), Instant.parse("2024-05-23T21:51:13Z"))).block();
 
-        testData.purchase4 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice4.getId(), LocalDateTime.of(2024, 5, 23, 18, 13, 53))).block();
-        testData.purchase5 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice1.getId(), LocalDateTime.of(2024, 5, 23, 17, 24, 17))).block();
-        testData.purchase6 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice2.getId(), LocalDateTime.of(2024, 5, 23, 12, 36, 24))).block();
+        testData.purchase4 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice4.getId(), Instant.parse("2024-05-23T18:13:53Z"))).block();
+        testData.purchase5 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice1.getId(), Instant.parse("2024-05-23T17:24:17Z"))).block();
+        testData.purchase6 = template.insert(new Purchase(null, testData.user2.getId(), testData.productPrice2.getId(), Instant.parse("2024-05-23T12:36:24Z"))).block();
 
         testData.numOfPayments = 3;
-        testData.payment1 = template.insert(new Payment(null, testData.user1.getId(), new BigDecimal("1.87"), LocalDateTime.of(2024, 5, 23, 12, 45, 31))).block();
-        testData.payment2 = template.insert(new Payment(null, testData.user1.getId(), new BigDecimal("5.54"), LocalDateTime.of(2024, 5, 23, 12, 36, 24))).block();
+        testData.payment1 = template.insert(new Payment(null, testData.user1.getId(), new BigDecimal("1.87"), Instant.parse("2024-05-23T12:45:31Z"))).block();
+        testData.payment2 = template.insert(new Payment(null, testData.user1.getId(), new BigDecimal("5.54"), Instant.parse("2024-05-23T12:36:24Z"))).block();
 
-        testData.payment3 = template.insert(new Payment(null, testData.user2.getId(), new BigDecimal("2.45"), LocalDateTime.of(2024, 5, 23, 17, 24, 17))).block();
+        testData.payment3 = template.insert(new Payment(null, testData.user2.getId(), new BigDecimal("2.45"), Instant.parse("2024-05-23T17:24:17Z"))).block();
 
         return testData;
     }

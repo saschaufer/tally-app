@@ -40,47 +40,47 @@ public class DbConfig {
     public ConnectionFactoryInitializer initializer(final ConnectionFactory connectionFactory) {
 
         final Resource sql = new ByteArrayResource("""
-
+                
                 create table if not exists users (
                     id serial primary key,
                     email varchar not null unique,
                     password varchar not null,
                     roles varchar not null,
                     registration_secret varchar not null,
-                    registration_on timestamp not null,
+                    registration_on timestamp with time zone not null,
                     registration_complete boolean not null
                 );
-
+                
                 create table if not exists products (
                     id serial primary key,
                     name varchar not null unique
                 );
-
+                
                 create table if not exists product_prices (
                     id serial primary key,
                     product_id integer not null,
                     price decimal(12,2) not null,
-                    valid_until timestamp,
+                    valid_until timestamp with time zone,
                     constraint fk_product_prices_products
                         foreign key (product_id) references products(id)
                 );
-
+                
                 create table if not exists purchases (
                     id serial primary key,
                     user_id integer not null,
                     product_price_id integer not null,
-                    timestamp timestamp not null,
+                    timestamp timestamp with time zone not null,
                     constraint fk_purchases_users
                         foreign key (user_id) references users(id),
                     constraint fk_purchases_product_prices
                         foreign key (product_price_id) references product_prices(id)
                 );
-
+                
                 create table if not exists payments (
                     id serial primary key,
                     user_id integer not null,
                     amount decimal(12,2) not null,
-                    timestamp timestamp not null,
+                    timestamp timestamp with time zone not null,
                     constraint fk_payments_users
                         foreign key (user_id) references users(id)
                 );

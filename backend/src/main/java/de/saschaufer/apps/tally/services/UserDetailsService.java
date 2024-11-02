@@ -31,7 +31,6 @@ import reactor.util.function.Tuples;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -191,7 +190,7 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                 .issuer(issuer)
                 .audience(List.of(audience))
                 .issuedAt(issuedAt)
-                .expiresAt(issuedAt.plusSeconds(36000L)) // 10h
+                .expiresAt(issuedAt.plus(jwtProperties.expirationTime()))
                 .subject(email)
                 .claim("authorities", authorities)
                 .build();
@@ -210,7 +209,7 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
         user.setPassword(passwordEncoder.encode(password));
         user.setRoles(String.join(",", roles));
         user.setRegistrationSecret(String.valueOf(random.nextInt(97942 - 16234 + 1) + 16234)); // Number between 16234 and 97942.
-        user.setRegistrationOn(LocalDateTime.now());
+        user.setRegistrationOn(Instant.now());
         user.setRegistrationComplete(false);
 
         return persistence.existsUser(email)
@@ -246,7 +245,7 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
     }
 
     public Mono<Long> deleteUnregisteredUsers() {
-        final LocalDateTime deleteRegisteredBefore = LocalDateTime.now().minus(emailProperties.deleteUnregisteredUsersAfter());
+        final Instant deleteRegisteredBefore = Instant.now().minus(emailProperties.deleteUnregisteredUsersAfter());
         return persistence.deleteUnregisteredUsers(deleteRegisteredBefore);
     }
 
@@ -265,7 +264,7 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
                     user.setPassword(passwordEncoder.encode(password));
                     user.setRoles(User.Role.INVITATION);
                     user.setRegistrationSecret("00000");
-                    user.setRegistrationOn(LocalDateTime.now());
+                    user.setRegistrationOn(Instant.now());
                     user.setRegistrationComplete(true);
 
                     return Mono.just(user)

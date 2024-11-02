@@ -7,7 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -19,5 +19,5 @@ public class ProductPrice {
     private Long id;
     private Long productId;
     private BigDecimal price;
-    private LocalDateTime validUntil;
+    private Instant validUntil;
 }

@@ -46,6 +46,9 @@ jwt:
   # If not set, the app name is used
   audience: tally.app
 
+  # Time after which the token expires (10m-24h)
+  expirationTime: 10h
+  
   # The secret key to sign the JWT with
   key: SomeMoreThan30CharactersLongString
 

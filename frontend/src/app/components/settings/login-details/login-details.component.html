@@ -11,15 +11,15 @@
     </tr>
     <tr>
         <td class="table-row-left">Issued at:</td>
-        <td class="table-row-right">{{ jwtDetails.issuedAt | date: 'yyyy-MM-dd HH:mm:ss':'UTC' }}</td>
+        <td class="table-row-right">{{ jwtDetails.issuedAt | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
     </tr>
     <tr>
         <td class="table-row-left">Expires at:</td>
-        <td class="table-row-right">{{ jwtDetails.expiresAt | date: 'yyyy-MM-dd HH:mm:ss':'UTC' }}</td>
+        <td class="table-row-right">{{ jwtDetails.expiresAt | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
     </tr>
     <tr>
         <td class="table-row-left">Logout in:</td>
-        <td class="table-row-right">{{ jwtDetails.expiresLeft | date: 'HH:mm:ss':'UTC' }}</td>
+        <td class="table-row-right">{{ jwtDetails.expiresLeft | date: 'HH:mm:ss' }}</td>
     </tr>
 
 </table>

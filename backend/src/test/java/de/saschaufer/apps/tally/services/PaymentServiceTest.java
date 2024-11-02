@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,8 +47,8 @@ class PaymentServiceTest {
         assertThat(payment.getId(), nullValue());
         assertThat(payment.getUserId(), is(1L));
         assertThat(payment.getAmount(), is(new BigDecimal("123.45")));
-        assertThat(payment.getTimestamp().isAfter(LocalDateTime.now().minusMinutes(1)), is(true));
-        assertThat(payment.getTimestamp().isBefore(LocalDateTime.now()), is(true));
+        assertThat(payment.getTimestamp().isAfter(Instant.now().minusSeconds(60)), is(true));
+        assertThat(payment.getTimestamp().isBefore(Instant.now()), is(true));
     }
 
     @Test
@@ -70,8 +70,8 @@ class PaymentServiceTest {
     void readPayments_positive() {
 
         doReturn(Mono.just(List.of(
-                new GetPaymentsResponse(1L, new BigDecimal("123.45"), LocalDateTime.of(2024, 1, 2, 3, 4, 5)),
-                new GetPaymentsResponse(2L, new BigDecimal("678.90"), LocalDateTime.of(2024, 6, 7, 8, 9, 0))
+                new GetPaymentsResponse(1L, new BigDecimal("123.45"), Instant.parse("2024-01-02T03:04:05Z")),
+                new GetPaymentsResponse(2L, new BigDecimal("678.90"), Instant.parse("2024-06-07T08:09:00Z"))
         ))).when(persistence).selectPayments(any(Long.class));
 
 
@@ -83,11 +83,11 @@ class PaymentServiceTest {
 
                     assertThat(payments.getFirst().id(), is(1L));
                     assertThat(payments.getFirst().amount(), is(new BigDecimal("123.45")));
-                    assertThat(payments.getFirst().timestamp(), is(LocalDateTime.of(2024, 1, 2, 3, 4, 5)));
+                    assertThat(payments.getFirst().timestamp(), is(Instant.parse("2024-01-02T03:04:05Z")));
 
                     assertThat(payments.getLast().id(), is(2L));
                     assertThat(payments.getLast().amount(), is(new BigDecimal("678.90")));
-                    assertThat(payments.getLast().timestamp(), is(LocalDateTime.of(2024, 6, 7, 8, 9, 0)));
+                    assertThat(payments.getLast().timestamp(), is(Instant.parse("2024-06-07T08:09:00Z")));
 
                 })
                 .verifyComplete();

@@ -81,7 +81,7 @@ export class AuthService {
             email: decodedJwt.sub,
             issuedAt: decodedJwt.iat * 1000,
             expiresAt: decodedJwt.exp * 1000,
-            expiresLeft: expire.getTime() - now.getTime(),
+            expiresLeft: new Date(0, 0, 0, 0, 0, 0, 0).setUTCMilliseconds(expire.getTime() - now.getTime()),
             authorities: decodedJwt.authorities
         };
     }

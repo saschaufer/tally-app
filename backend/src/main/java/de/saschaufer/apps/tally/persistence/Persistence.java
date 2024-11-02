@@ -13,7 +13,7 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -108,7 +108,7 @@ public class Persistence {
                 });
     }
 
-    public Mono<Long> deleteUnregisteredUsers(final LocalDateTime registrationBefore) {
+    public Mono<Long> deleteUnregisteredUsers(final Instant registrationBefore) {
 
         return template
                 .delete(User.class)
@@ -201,7 +201,7 @@ public class Persistence {
         return template
                 .update(ProductPrice.class)
                 .matching(query(where("product_id").is(id).and(where("valid_until").isNull())))
-                .apply(update("valid_until", LocalDateTime.now()))
+                .apply(update("valid_until", Instant.now()))
                 .flatMap(updateCount -> switch (updateCount.intValue()) {
                     case 0 -> Mono.error(new RuntimeException("Product not deleted"));
                     case 1 -> Mono.empty();
@@ -224,7 +224,7 @@ public class Persistence {
         return trans.transactional(template
                         .update(ProductPrice.class)
                         .matching(query(where("product_id").is(productId).and(where("valid_until").isNull())))
-                        .apply(update("valid_until", LocalDateTime.now()))
+                        .apply(update("valid_until", Instant.now()))
                         .flatMap(count -> Mono.just(new ProductPrice(null, productId, productPrice, null)))
                         .flatMap(template::insert)
                 )
@@ -236,7 +236,7 @@ public class Persistence {
         return template.selectOne(query(where("product_id").is(productId)
                         .and(where("valid_until").isNull())), ProductPrice.class)
                 .switchIfEmpty(Mono.error(new Exception("Product price not found")))
-                .map(price -> new Purchase(null, userId, price.getId(), LocalDateTime.now()))
+                .map(price -> new Purchase(null, userId, price.getId(), Instant.now()))
                 .flatMap(template::insert)
                 .flatMap(p -> Mono.empty());
     }
@@ -256,7 +256,7 @@ public class Persistence {
                 .bind("user_id", userId)
                 .map((row, rowMetadata) -> {
                     final Long id = Objects.requireNonNull(row.get("id", Integer.class)).longValue();
-                    final LocalDateTime timestamp = row.get("timestamp", LocalDateTime.class);
+                    final Instant timestamp = row.get("timestamp", Instant.class);
                     final String name = row.get("name", String.class);
                     final BigDecimal price = row.get("price", BigDecimal.class);
 

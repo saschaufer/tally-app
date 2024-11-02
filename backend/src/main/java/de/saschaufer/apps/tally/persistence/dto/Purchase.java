@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 @Data
 @NoArgsConstructor
@@ -18,5 +18,5 @@ public class Purchase {
     private Long id;
     private Long userId;
     private Long productPriceId;
-    private LocalDateTime timestamp;
+    private Instant timestamp;
 }

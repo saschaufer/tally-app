@@ -14,7 +14,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 import static de.saschaufer.apps.tally.persistence.dto.User.Role.*;
@@ -580,7 +580,7 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void getReadAllUsers_positive_User() {
 
-        doReturn(Mono.just(List.of(new GetUsersResponse("mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 6), true, List.of("role"), BigDecimal.ONE)))).when(userDetailsService).findAllUsers();
+        doReturn(Mono.just(List.of(new GetUsersResponse("mail", Instant.parse("2024-01-02T03:04:05Z"), true, List.of("role"), BigDecimal.ONE)))).when(userDetailsService).findAllUsers();
 
         webClient.get().uri("/users")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(ADMIN, true))
@@ -588,7 +588,7 @@ class RouterTest extends SecurityConfigSetup {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBodyList(GetUsersResponse.class).isEqualTo(List.of(
-                        new GetUsersResponse("mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 6), true, List.of("role"), BigDecimal.ONE)
+                        new GetUsersResponse("mail", Instant.parse("2024-01-02T03:04:05Z"), true, List.of("role"), BigDecimal.ONE)
                 ));
 
         verify(userDetailsService, times(1)).findAllUsers();
@@ -597,7 +597,7 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void getReadAllUsers_positive_Jwt() {
 
-        doReturn(Mono.just(List.of(new GetUsersResponse("mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 6), true, List.of("role"), BigDecimal.ONE)))).when(userDetailsService).findAllUsers();
+        doReturn(Mono.just(List.of(new GetUsersResponse("mail", Instant.parse("2024-01-02T03:04:05Z"), true, List.of("role"), BigDecimal.ONE)))).when(userDetailsService).findAllUsers();
 
         webClient.get().uri("/users")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(ADMIN))
@@ -605,7 +605,7 @@ class RouterTest extends SecurityConfigSetup {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBodyList(GetUsersResponse.class).isEqualTo(List.of(
-                        new GetUsersResponse("mail", LocalDateTime.of(2024, 1, 2, 3, 4, 5, 6), true, List.of("role"), BigDecimal.ONE)
+                        new GetUsersResponse("mail", Instant.parse("2024-01-02T03:04:05Z"), true, List.of("role"), BigDecimal.ONE)
                 ));
 
         verify(userDetailsService, times(1)).findAllUsers();
@@ -1267,7 +1267,7 @@ class RouterTest extends SecurityConfigSetup {
     void getReadPurchases_positive_User() {
 
         doReturn(Mono.just(List.of(
-                new GetPurchasesResponse(1L, LocalDateTime.of(2024, 5, 1, 12, 54, 12), "product", BigDecimal.ONE)
+                new GetPurchasesResponse(1L, Instant.parse("2024-05-01T12:54:12Z"), "product", BigDecimal.ONE)
         ))).when(purchaseService).readPurchases(any(Long.class));
 
         webClient.get().uri("/purchases")
@@ -1276,7 +1276,7 @@ class RouterTest extends SecurityConfigSetup {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBodyList(GetPurchasesResponse.class).isEqualTo(List.of(
-                        new GetPurchasesResponse(1L, LocalDateTime.of(2024, 5, 1, 12, 54, 12), "product", BigDecimal.ONE)
+                        new GetPurchasesResponse(1L, Instant.parse("2024-05-01T12:54:12Z"), "product", BigDecimal.ONE)
                 ));
 
         verify(purchaseService, times(1)).readPurchases(2L);
@@ -1286,7 +1286,7 @@ class RouterTest extends SecurityConfigSetup {
     void getReadPurchases_positive_Jwt() {
 
         doReturn(Mono.just(List.of(
-                new GetPurchasesResponse(1L, LocalDateTime.of(2024, 5, 1, 12, 54, 12), "product", BigDecimal.ONE)
+                new GetPurchasesResponse(1L, Instant.parse("2024-05-01T12:54:12Z"), "product", BigDecimal.ONE)
         ))).when(purchaseService).readPurchases(any(Long.class));
 
         webClient.get().uri("/purchases")
@@ -1295,7 +1295,7 @@ class RouterTest extends SecurityConfigSetup {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBodyList(GetPurchasesResponse.class).isEqualTo(List.of(
-                        new GetPurchasesResponse(1L, LocalDateTime.of(2024, 5, 1, 12, 54, 12), "product", BigDecimal.ONE)
+                        new GetPurchasesResponse(1L, Instant.parse("2024-05-01T12:54:12Z"), "product", BigDecimal.ONE)
                 ));
 
         verify(purchaseService, times(1)).readPurchases(2L);
@@ -1505,8 +1505,8 @@ class RouterTest extends SecurityConfigSetup {
     void getReadPayments_positive_User() {
 
         doReturn(Mono.just(List.of(
-                new GetPaymentsResponse(1L, new BigDecimal("123.45"), LocalDateTime.of(2024, 1, 2, 3, 4, 5)),
-                new GetPaymentsResponse(2L, new BigDecimal("678.90"), LocalDateTime.of(2024, 6, 7, 8, 9, 0))
+                new GetPaymentsResponse(1L, new BigDecimal("123.45"), Instant.parse("2024-01-02T03:04:05Z")),
+                new GetPaymentsResponse(2L, new BigDecimal("678.90"), Instant.parse("2024-06-07T08:09:00Z"))
         ))).when(paymentService).readPayments(any(Long.class));
 
         webClient.get().uri("/payments")
@@ -1515,8 +1515,8 @@ class RouterTest extends SecurityConfigSetup {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBodyList(GetPaymentsResponse.class).isEqualTo(List.of(
-                        new GetPaymentsResponse(1L, new BigDecimal("123.45"), LocalDateTime.of(2024, 1, 2, 3, 4, 5)),
-                        new GetPaymentsResponse(2L, new BigDecimal("678.90"), LocalDateTime.of(2024, 6, 7, 8, 9, 0))
+                        new GetPaymentsResponse(1L, new BigDecimal("123.45"), Instant.parse("2024-01-02T03:04:05Z")),
+                        new GetPaymentsResponse(2L, new BigDecimal("678.90"), Instant.parse("2024-06-07T08:09:00Z"))
                 ));
 
         verify(paymentService, times(1)).readPayments(2L);
@@ -1526,8 +1526,8 @@ class RouterTest extends SecurityConfigSetup {
     void getReadPayments_positive_Jwt() {
 
         doReturn(Mono.just(List.of(
-                new GetPaymentsResponse(1L, new BigDecimal("123.45"), LocalDateTime.of(2024, 1, 2, 3, 4, 5)),
-                new GetPaymentsResponse(2L, new BigDecimal("678.90"), LocalDateTime.of(2024, 6, 7, 8, 9, 0))
+                new GetPaymentsResponse(1L, new BigDecimal("123.45"), Instant.parse("2024-01-02T03:04:05Z")),
+                new GetPaymentsResponse(2L, new BigDecimal("678.90"), Instant.parse("2024-06-07T08:09:00Z"))
         ))).when(paymentService).readPayments(any(Long.class));
 
         webClient.get().uri("/payments")
@@ -1536,8 +1536,8 @@ class RouterTest extends SecurityConfigSetup {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBodyList(GetPaymentsResponse.class).isEqualTo(List.of(
-                        new GetPaymentsResponse(1L, new BigDecimal("123.45"), LocalDateTime.of(2024, 1, 2, 3, 4, 5)),
-                        new GetPaymentsResponse(2L, new BigDecimal("678.90"), LocalDateTime.of(2024, 6, 7, 8, 9, 0))
+                        new GetPaymentsResponse(1L, new BigDecimal("123.45"), Instant.parse("2024-01-02T03:04:05Z")),
+                        new GetPaymentsResponse(2L, new BigDecimal("678.90"), Instant.parse("2024-06-07T08:09:00Z"))
                 ));
 
         verify(paymentService, times(1)).readPayments(2L);

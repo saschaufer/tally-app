@@ -21,8 +21,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
 
@@ -38,7 +38,7 @@ public abstract class SecurityConfigSetup {
 
         @Bean
         private JwtProperties jwtProperties() {
-            return new JwtProperties("issuer", "audience", "key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true);
+            return new JwtProperties("issuer", "audience", Duration.ofHours(1L), "key-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", true);
         }
     }
 
@@ -86,11 +86,11 @@ public abstract class SecurityConfigSetup {
         final String password = ENCODED_PASSWORD;
         //@formatter:off
         return switch (name) {
-            case NONE -> Mono.just(new User(1L, NONE, password, NONE, null, LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
-            case USER -> Mono.just(new User(2L, USER, password, USER, "registration-secret-user", LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
-            case ADMIN -> Mono.just(new User(3L, ADMIN, password, String.join(",", USER, ADMIN), "registration-secret-admin", LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
-            case INVITATION -> Mono.just(new User(4L, INVITATION, password, INVITATION, null, LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
-            case "invitation-code" -> Mono.just(new User(5L, "invitation-code", password, INVITATION, null, LocalDateTime.of(2024, 1, 1, 1, 1, 1), true));
+            case NONE -> Mono.just(new User(1L, NONE, password, NONE, null, Instant.parse("2024-01-01T01:01:01Z"), true));
+            case USER -> Mono.just(new User(2L, USER, password, USER, "registration-secret-user", Instant.parse("2024-01-01T01:01:01Z"), true));
+            case ADMIN -> Mono.just(new User(3L, ADMIN, password, String.join(",", USER, ADMIN), "registration-secret-admin", Instant.parse("2024-01-01T01:01:01Z"), true));
+            case INVITATION -> Mono.just(new User(4L, INVITATION, password, INVITATION, null, Instant.parse("2024-01-01T01:01:01Z"), true));
+            case "invitation-code" -> Mono.just(new User(5L, "invitation-code", password, INVITATION, null, Instant.parse("2024-01-01T01:01:01Z"), true));
             case null, default -> Mono.error(new BadCredentialsException("Error finding user"));
         };
         //@formatter:on

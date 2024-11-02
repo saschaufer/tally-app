@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 import reactor.util.function.Tuples;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -20,7 +20,7 @@ public class PaymentService {
     private final Persistence persistence;
 
     public Mono<Void> createPayment(final Long userId, final BigDecimal amount) {
-        return persistence.insertPayment(new Payment(null, userId, amount, LocalDateTime.now()));
+        return persistence.insertPayment(new Payment(null, userId, amount, Instant.now()));
     }
 
     public Mono<List<GetPaymentsResponse>> readPayments(final Long userId) {
