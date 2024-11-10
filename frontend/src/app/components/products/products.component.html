@@ -13,9 +13,10 @@
             <p class="text-green text-center">No products</p>
         </li>
         <li *ngFor="let product of products; let i = index" (click)="onClick(i)" (keydown)="onClick(i)"
-            class="list-item">
-            <p class="list-item-left">{{ product.name }}</p>
-            <p class="list-item-right">{{ product.price }}</p>
+            class="list-item-two-rows">
+            <p class="list-item-two-rows-top">{{ product.id }}</p>
+            <p class="list-item-two-rows-bottom-left">{{ product.name }}</p>
+            <p class="list-item-two-rows-bottom-right">{{ product.price }}</p>
         </li>
     </ul>
 
