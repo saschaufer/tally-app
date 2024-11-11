@@ -5,9 +5,11 @@ import de.saschaufer.apps.tally.controller.dto.GetPurchasesResponse;
 import de.saschaufer.apps.tally.persistence.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.ReactiveTransactionManager;
 import org.springframework.transaction.reactive.TransactionalOperator;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -35,21 +37,21 @@ public class Persistence {
 
     public Mono<User> selectUser(final String email) {
         return template.selectOne(query(where("email").is(email)), User.class)
-                .switchIfEmpty(Mono.error(new RuntimeException("User not found")));
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.GONE, "User does not exist")));
     }
 
     public Mono<List<User>> selectUsers() {
         return template.select(User.class)
                 .all()
                 .map(user -> new User(
-                                user.getId(),
-                                user.getEmail(),
-                                null,
-                                user.getRoles(),
-                                null,
-                                user.getRegistrationOn(), user.getRegistrationComplete()
-                        )
-                )
+                        user.getId(),
+                        user.getEmail(),
+                        null,
+                        user.getRoles(),
+                        null,
+                        user.getRegistrationOn(),
+                        user.getRegistrationComplete()
+                ))
                 .collectList();
     }
 

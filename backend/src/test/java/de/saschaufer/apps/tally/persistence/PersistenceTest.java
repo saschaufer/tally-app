@@ -16,6 +16,8 @@ import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -181,9 +183,12 @@ class PersistenceTest {
         Mono.just("username@mail.com")
                 .flatMap(persistence::selectUser)
                 .as(StepVerifier::create)
-                .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("User not found"))
-                );
+                .verifyErrorSatisfies(error -> {
+                    assertThat(error, instanceOf(ResponseStatusException.class));
+                    final ResponseStatusException responseStatusException = (ResponseStatusException) error;
+                    assertThat(responseStatusException.getStatusCode(), is(HttpStatus.GONE));
+                    assertThat(responseStatusException.getMessage(), containsString("User does not exist"));
+                });
     }
 
     @Test

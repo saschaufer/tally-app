@@ -4,8 +4,10 @@ import de.saschaufer.apps.tally.config.email.EmailProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 
@@ -49,9 +51,10 @@ class EmailServiceTest {
 
         doThrow(new RuntimeException("Bad")).when(emailSenderMock).send(any(SimpleMailMessage.class));
 
-        final Exception e = assertThrows(Exception.class, () -> emailService.sendRegistrationEmail("to@mail.com", "secret"));
+        final ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> emailService.sendRegistrationEmail("to@mail.com", "secret"));
 
-        assertThat(e.getMessage(), containsString("Bad"));
+        assertThat(e.getStatusCode(), is(HttpStatus.INTERNAL_SERVER_ERROR));
+        assertThat(e.getMessage(), containsString("Error sending registration email"));
 
         final ArgumentCaptor<SimpleMailMessage> argumentCaptorEmail = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(emailSenderMock, times(1)).send(argumentCaptorEmail.capture());
@@ -85,9 +88,10 @@ class EmailServiceTest {
 
         doThrow(new RuntimeException("Bad")).when(emailSenderMock).send(any(SimpleMailMessage.class));
 
-        final Exception e = assertThrows(Exception.class, () -> emailService.sendResetPasswordEmail("to@mail.com", "abc123"));
+        final ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> emailService.sendResetPasswordEmail("to@mail.com", "abc123"));
 
-        assertThat(e.getMessage(), containsString("Bad"));
+        assertThat(e.getStatusCode(), is(HttpStatus.INTERNAL_SERVER_ERROR));
+        assertThat(e.getMessage(), containsString("Error sending reset password email"));
 
         final ArgumentCaptor<SimpleMailMessage> argumentCaptorEmail = ArgumentCaptor.forClass(SimpleMailMessage.class);
         verify(emailSenderMock, times(1)).send(argumentCaptorEmail.capture());

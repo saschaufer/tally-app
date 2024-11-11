@@ -3,9 +3,11 @@ package de.saschaufer.apps.tally.services;
 import de.saschaufer.apps.tally.config.email.EmailProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -45,7 +47,7 @@ public class EmailService {
                     """.formatted(url));
         } catch (final Exception e) {
             log.atError().setMessage("Error sending registration email.").setCause(e).log();
-            throw e;
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error sending registration email");
         }
 
         log.atInfo().setMessage("Registration email sent.").log();
@@ -69,7 +71,7 @@ public class EmailService {
                     """.formatted(password));
         } catch (final Exception e) {
             log.atError().setMessage("Error sending reset password email.").setCause(e).log();
-            throw e;
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error sending reset password email");
         }
 
         log.atInfo().setMessage("Reset password email sent.").log();
