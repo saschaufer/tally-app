@@ -62,6 +62,10 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
     public Mono<List<GetUsersResponse>> findAllUsers() {
 
         return persistence.selectUsers()
+                .map(users -> users.stream()
+                        .filter(user -> !user.getUsername().equals("invitation-code"))
+                        .toList()
+                )
                 .flatMap(users -> persistence.selectPaymentsSumAllUsers()
                         .map(payments -> Tuples.of(users, payments))
                 )

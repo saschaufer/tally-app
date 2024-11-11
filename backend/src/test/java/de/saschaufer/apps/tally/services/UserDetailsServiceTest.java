@@ -102,19 +102,20 @@ class UserDetailsServiceTest {
         doReturn(Mono.just(List.of(
                 new User(1L, "1@mail", null, "role1,role2", null, Instant.parse("2024-01-02T03:04:01Z"), true),
                 new User(2L, "2@mail", null, "role3", null, Instant.parse("2024-01-02T03:04:02Z"), false),
-                new User(3L, "3@mail", null, "role2,role1,role3", null, Instant.parse("2024-01-02T03:04:03Z"), true),
-                new User(4L, "4@mail", null, null, null, Instant.parse("2024-01-02T03:04:04Z"), true),
-                new User(5L, "5@mail", null, ",", null, Instant.parse("2024-01-02T03:04:05Z"), true)
+                new User(3L, "invitation-code", null, "invitation", null, Instant.parse("2024-01-02T03:04:03Z"), false),
+                new User(4L, "3@mail", null, "role2,role1,role3", null, Instant.parse("2024-01-02T03:04:04Z"), true),
+                new User(5L, "4@mail", null, null, null, Instant.parse("2024-01-02T03:04:05Z"), true),
+                new User(6L, "5@mail", null, ",", null, Instant.parse("2024-01-02T03:04:06Z"), true)
         ))).when(persistence).selectUsers();
         doReturn(Mono.just(Map.of(
                 2L, BigDecimal.TEN,
                 1L, BigDecimal.TWO,
-                4L, BigDecimal.ONE
+                5L, BigDecimal.ONE
         ))).when(persistence).selectPaymentsSumAllUsers();
         doReturn(Mono.just(Map.of(
                 1L, BigDecimal.ZERO,
                 2L, BigDecimal.ONE,
-                5L, BigDecimal.ONE
+                6L, BigDecimal.ONE
         ))).when(persistence).selectPurchasesSumAllUsers();
 
         userDetailsService.findAllUsers()
@@ -124,9 +125,9 @@ class UserDetailsServiceTest {
 
                     assertThat(getUsersResponses.getFirst(), is(new GetUsersResponse("1@mail", Instant.parse("2024-01-02T03:04:01Z"), true, List.of("role1", "role2"), BigDecimal.TWO)));
                     assertThat(getUsersResponses.get(1), is(new GetUsersResponse("2@mail", Instant.parse("2024-01-02T03:04:02Z"), false, List.of("role3", "admin"), new BigDecimal("9"))));
-                    assertThat(getUsersResponses.get(2), is(new GetUsersResponse("3@mail", Instant.parse("2024-01-02T03:04:03Z"), true, List.of("role2", "role1", "role3"), BigDecimal.ZERO)));
-                    assertThat(getUsersResponses.get(3), is(new GetUsersResponse("4@mail", Instant.parse("2024-01-02T03:04:04Z"), true, List.of(), BigDecimal.ONE)));
-                    assertThat(getUsersResponses.getLast(), is(new GetUsersResponse("5@mail", Instant.parse("2024-01-02T03:04:05Z"), true, List.of("admin"), new BigDecimal("-1"))));
+                    assertThat(getUsersResponses.get(2), is(new GetUsersResponse("3@mail", Instant.parse("2024-01-02T03:04:04Z"), true, List.of("role2", "role1", "role3"), BigDecimal.ZERO)));
+                    assertThat(getUsersResponses.get(3), is(new GetUsersResponse("4@mail", Instant.parse("2024-01-02T03:04:05Z"), true, List.of(), BigDecimal.ONE)));
+                    assertThat(getUsersResponses.getLast(), is(new GetUsersResponse("5@mail", Instant.parse("2024-01-02T03:04:06Z"), true, List.of("admin"), new BigDecimal("-1"))));
                 })
                 .verifyComplete();
 
