@@ -19,6 +19,8 @@ import {HttpService} from "../../services/http.service";
 })
 export class ResetPasswordComponent {
 
+    protected readonly routeName = routeName;
+
     private httpService = inject(HttpService);
 
     readonly resetPasswordForm = new FormGroup({
@@ -30,13 +32,17 @@ export class ResetPasswordComponent {
 
     email = '';
     emailSent = false;
-    emailInvalid: boolean = false;
+
+    formErrors = {
+        emailMissing: false,
+        emailInvalid: false
+    };
 
     error: HttpErrorResponse | undefined;
 
     onSubmit() {
 
-        this.emailInvalid = this.resetPasswordForm.get('email')!.hasError('pattern');
+        this.formErrors = this.getFormValidationErrors();
 
         if (this.resetPasswordForm.valid) {
 
@@ -69,5 +75,14 @@ export class ResetPasswordComponent {
         dialog.showModal();
     }
 
-    protected readonly routeName = routeName;
+    getFormValidationErrors() {
+
+        let emailMissing = this.resetPasswordForm.get('email')!.hasError('required');
+        let emailInvalid = this.resetPasswordForm.get('email')!.hasError('pattern');
+
+        return {
+            emailMissing: emailMissing,
+            emailInvalid: emailInvalid
+        };
+    }
 }

@@ -36,13 +36,17 @@ export class LoginComponent {
         password: new FormControl('', {nonNullable: true, validators: [Validators.required]})
     });
 
-    emailInvalid: boolean = false;
+    formErrors = {
+        emailMissing: false,
+        emailInvalid: false,
+        passwordMissing: false
+    };
 
     error: HttpErrorResponse | undefined;
 
     onSubmit() {
 
-        this.emailInvalid = this.loginForm.get('email')!.hasError('pattern');
+        this.formErrors = this.getFormValidationErrors();
 
         if (this.loginForm.valid) {
 
@@ -80,5 +84,18 @@ export class LoginComponent {
             dialog.close();
         });
         dialog.showModal();
+    }
+
+    getFormValidationErrors() {
+
+        let emailMissing = this.loginForm.get('email')!.hasError('required');
+        let emailInvalid = this.loginForm.get('email')!.hasError('pattern');
+        let passwordMissing = this.loginForm.get('password')!.hasError('required');
+
+        return {
+            emailMissing: emailMissing,
+            emailInvalid: emailInvalid,
+            passwordMissing: passwordMissing
+        };
     }
 }
