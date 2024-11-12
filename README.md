@@ -35,7 +35,7 @@ For other systems, the installation steps for Ubuntu can be derived accordingly.
 
 The archive contains an executable Java archive (JAR) and a YAML file with example properties and explanations.
 
-Put both, the JAR and the property file in the directory `/opt/tally-app/`.
+Put both, the JAR and the property file in the directory `/opt/tallyapp/`.
 Change the properties according to the requirements.
 
 Create a user to run Tally App as a specific user.
@@ -45,13 +45,13 @@ useradd --user-group \
         --shell /bin/false \
         --expiredate 9999-12-31 \
         -M \
-        tally-app
+        tallyapp
 ```
 
 To run the app a systemd service is a good choice:
 
 ```bash
-vim /etc/systemd/system/tally-app.service
+vim /etc/systemd/system/tallyapp.service
 ```
 
 ```text
@@ -60,21 +60,21 @@ Description=Tally App.
 Documentation=https://github.com/saschaufer/tally-app
 
 [Service]
-WorkingDirectory=/opt/tally-app
+WorkingDirectory=/opt/tallyapp
 
 ExecStart=/usr/lib/jvm/temurin-21-jre-amd64/bin/java \
           -jar \
-          tally-app.jar \
+          tallyapp.jar \
           --spring.config.additional-location=file:application.yml
 
-User=tally-app
-Group=tally-app
+User=tallyapp
+Group=tallyapp
 
 Type=simple
 
 Restart=no
 
-StandardOutput=append:/var/log/tally-app/application.log
+StandardOutput=append:/var/log/tallyapp/application.log
 StandardError=inherit
 StandardInput=null
 
@@ -83,30 +83,30 @@ WantedBy=multi-user.target
 ```
 
 Logs are written to stdout and caught by the systemd service.
-This service then writes the logs to the file `/var/log/tally-app/application.log`.
+This service then writes the logs to the file `/var/log/tallyapp/application.log`.
 
 To prevent the log file from growing indefinitely the file must be rotated.
 This is done by logrotate utility.
 
 ```
-mkdir /var/log/tally-app
+mkdir /var/log/tallyapp
 ```
 
 ```bash
-vim /etc/logrotate.d/tally-app
+vim /etc/logrotate.d/tallyapp
 ```
 
 ```text
-/var/log/tally-app/*.log {
+/var/log/tallyapp/*.log {
         daily
         rotate 7
         compress
-        create 0640 tally-app adm
+        create 0640 tallyapp adm
         notifempty
         missingok
         sharedscripts
         postrotate
-                systemctl restart tally-app.service
+                systemctl restart tallyapp.service
         endscript
 }
 ```
@@ -114,26 +114,26 @@ vim /etc/logrotate.d/tally-app
 Finally set the permissions for directories and files.
 
 ```bash
-chown root: /etc/systemd/system/tally-app.service
-chmod 644 /etc/systemd/system/tally-app.service
-chown tally-app:adm /var/log/tally-app/
-chmod 644 /var/log/tally-app/
-chown root: /etc/logrotate.d/tally-app
-chmod 644 /etc/logrotate.d/tally-app
-chown root: /opt/tally-app/
-chmod 755 /opt/tally-app/
-chown root: /opt/tally-app/tally-app.jar
-chmod 644 /opt/tally-app/tally-app.jar
-chown root:tally-app /opt/tally-app/application.yml
-chmod 644 /opt/tally-app/application.yml
+chown root: /etc/systemd/system/tallyapp.service
+chmod 644 /etc/systemd/system/tallyapp.service
+chown tallyapp:adm /var/log/tallyapp/
+chmod 644 /var/log/tallyapp/
+chown root: /etc/logrotate.d/tallyapp
+chmod 644 /etc/logrotate.d/tallyapp
+chown root: /opt/tallyapp/
+chmod 755 /opt/tallyapp/
+chown root: /opt/tallyapp/tallyapp.jar
+chmod 644 /opt/tallyapp/tallyapp.jar
+chown root:tallyapp /opt/tallyapp/application.yml
+chmod 644 /opt/tallyapp/application.yml
 ```
 
 Now Tally App can be started.
 
 ```bash
 systemctl daemon-reload
-systemctl enable tally-app.service
-systemctl start tally-app.service
+systemctl enable tallyapp.service
+systemctl start tallyapp.service
 ```
 
 # Usage

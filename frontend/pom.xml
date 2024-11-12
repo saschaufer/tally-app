@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>de.saschaufer.apps</groupId>
-        <artifactId>tally</artifactId>
+        <groupId>de.saschaufer</groupId>
+        <artifactId>tallyapp</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <groupId>de.saschaufer.apps.tally</groupId>
+    <groupId>de.saschaufer.tallyapp</groupId>
     <artifactId>frontend</artifactId>
     <packaging>pom</packaging>
 
