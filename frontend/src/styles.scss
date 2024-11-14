@@ -227,6 +227,7 @@ label {
 }
 
 input {
+  font-family: "Roboto", sans-serif;
   width: 100%;
   @extend .py-0_5;
   @extend .bg-transparent;
@@ -236,6 +237,8 @@ input {
   @extend .text-green;
   outline: none;
   box-sizing: border-box; // Same size as form element
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 input:focus {
@@ -243,6 +246,7 @@ input:focus {
 }
 
 button {
+  font-family: "Roboto", sans-serif;
   width: 100%;
   @extend .mt-0_5;
   @extend .py-0_5;
