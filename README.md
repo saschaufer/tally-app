@@ -1,7 +1,19 @@
+[![Maven](https://img.shields.io/static/v1?label=Maven&message=4.0.0&color=blue)](https://maven.apache.org/)
+[![Java](https://img.shields.io/static/v1?label=Java&message=21&color=red)](https://adoptium.net/de/temurin/releases/?os=linux&arch=any&package=jdk)
+[![TypeScript](https://img.shields.io/static/v1?label=TypeScript&message=5.5.4&color=blue)](https://www.typescriptlang.org/)
+[![Angular](https://img.shields.io/static/v1?label=Angular&message=18&color=purple)](https://angular.dev/)
+[![SpringBoot](https://img.shields.io/static/v1?label=SpringBoot&message=3.3.5&color=green)](https://spring.io/projects/spring-boot)
+<a href="https://www.buymeacoffee.com/saschaufer"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" height="20px"></a>
+
 # <img src="./frontend/src/favicon.ico" width="40" height="40"> Tally App
 
 The purpose of the Tally App is to digitize tally lists for the sale of, for example, beverages.
 This is particularly useful in offices or clubhouses.
+
+Tally App is a Spring Boot web application serving an Angular frontend.
+For users, it is a website served over a local network or the internet.
+The frontend is designed for mobile phones, since the usual use case is to scan a QR code next to a fridge or coffee
+machine.
 
 # System Requirements
 
@@ -151,3 +163,52 @@ The product ID can be found in the product list.
 
 If users pay their debts, they need to balance their account under payments.
 This allows the correct account balance to be displayed.
+
+# Developers
+
+Tally App is a Maven multi-module project consisting of a Spring Boot backend and an Angular frontend.
+To build the project, go into the root directory of the project and run the following Maven command.
+
+```bash
+cd ..../tally-app
+mvn clean verify
+```
+
+To run the project inside an IDE, add the default properties to the program arguments of the run configurations.
+
+```bash
+--spring.config.additional-location=file:tallyapp/src/main/resources/application-default.yml
+```
+
+Start both, the backend and the frontend.
+The frontend can be started via npm.
+
+```bash
+cd ..../tally-app/frontend
+node/npm run start-online
+```
+
+In the Jenkins build pipeline, there are stages to check the dependencies for vulnerabilities and to do a static code
+analysis.
+To check for vulnerabilities, the Maven plugin of the [DependencyCheck](https://github.com/jeremylong/DependencyCheck)
+is used, which looks for vulnerabilities in a self-hosted mirror of the [NIST NVD](https://nvd.nist.gov/).
+For the static code analysis, a plugin for [SonarQube](https://www.sonarsource.com/products/sonarqube/) is used.
+If all stages are completed successfully for the Git branches main and develop, an archive is uploaded
+to [Nexus](https://www.sonatype.com/products/sonatype-nexus-repository).
+For the frontend to build, Node and Npm are required.
+Both are downloaded from Nexus during the build process.
+
+# License
+
+Permission to modify and redistribute is granted under the terms of the Apache 2.0 license.
+See the [LICENSE.txt](LICENSE.txt) ([Apache License 2.0](https://choosealicense.com/licenses/apache-2.0/)) file for the
+full license.
+
+Tally App makes use of several other libraries.
+Please see the Maven POM files and package.json for which libraries are used.
+
+# Buy me a coffee
+
+If you like Tally App and want to give something back, you can
+
+<a href="https://buymeacoffee.com/saschaufer" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
