@@ -132,7 +132,7 @@ chown tallyapp:adm /var/log/tallyapp/
 chmod 644 /var/log/tallyapp/
 chown root: /etc/logrotate.d/tallyapp
 chmod 644 /etc/logrotate.d/tallyapp
-chown root: /opt/tallyapp/
+chown tallyapp: /opt/tallyapp/
 chmod 755 /opt/tallyapp/
 chown root: /opt/tallyapp/tallyapp.jar
 chmod 644 /opt/tallyapp/tallyapp.jar
