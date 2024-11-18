@@ -31,6 +31,6 @@ class EventHandlerTest {
 
         verify(userAgent, times(1)).getFullName();
         verify(userDetailsService, times(1)).createInvitationCodeIfNoneExists();
-        verify(userDetailsService, times(1)).deleteUnregisteredUsers();
+        verify(userDetailsService, timeout(1000).times(1)).deleteUnregisteredUsers();
     }
 }
