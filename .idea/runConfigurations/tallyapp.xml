@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="tallyapp" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <module name="tallyapp" />
+    <option name="PROGRAM_PARAMETERS" value="--spring.config.additional-location=file:tallyapp/src/main/resources/application-default.yml  " />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="de.saschaufer.tallyapp.Application" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
