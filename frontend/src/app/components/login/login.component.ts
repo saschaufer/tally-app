@@ -1,6 +1,5 @@
-import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject, NgZone} from '@angular/core';
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {Router, RouterLink} from "@angular/router";
 import {routeName} from "../../app.routes";
@@ -10,23 +9,20 @@ import {HttpService} from "../../services/http.service";
 
 @Component({
     selector: 'app-login',
-    standalone: true,
-    imports: [
-        ReactiveFormsModule,
-        RouterLink,
-        NgIf
-    ],
+    imports: [ReactiveFormsModule, RouterLink],
     templateUrl: './login.component.html',
     styles: ``
 })
 export class LoginComponent {
 
+    @ViewChild('login.errorLogin', {static: true}) dialogError!: ElementRef<HTMLDialogElement>;
+    @ViewChild('login.errorLoginCookie', {static: true}) dialogErrorCookie!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private authService = inject(AuthService);
-    private httpService = inject(HttpService);
-    private router = inject(Router);
-    private zone = inject(NgZone);
+    private readonly authService = inject(AuthService);
+    private readonly httpService = inject(HttpService);
+    private readonly router = inject(Router);
 
     readonly loginForm = new FormGroup({
         email: new FormControl('', {
@@ -60,26 +56,23 @@ export class LoginComponent {
                     next: (loginResponse) => {
                         if (this.authService.setJwt(loginResponse.jwt, loginResponse.secure)) {
                             console.info("Login successful.");
-                            this.zone.run(() =>
-                                this.router.navigate(['/' + routeName.purchases_new]).then()
-                            ).then();
+                            this.router.navigate(['/' + routeName.purchases_new]).then();
                         } else {
                             console.error("Cookie not set. Probably because it needs to be sent over a secure HTTPS connection.");
-                            this.openDialog('#login.errorLoginCookie');
+                            this.openDialog(this.dialogErrorCookie.nativeElement);
                         }
                     },
                     error: (error) => {
                         console.error('Error on login.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#login.errorLogin');
+                        this.openDialog(this.dialogError.nativeElement);
                     }
                 });
         }
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

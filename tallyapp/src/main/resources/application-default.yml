@@ -28,13 +28,13 @@ database:
   # Remove < and >
 
   # H2 (File)
-  # url: "r2dbc:h2:file:///<./path/tally>"
+  # url: "r2dbc:h2:file:///<./path/tally>?options=CASE_INSENSITIVE_IDENTIFIERS=true"
 
   # H2 (In-Memory)
-  url: r2dbc:h2:mem:///tally?options=DB_CLOSE_DELAY=-1;
+  url: "r2dbc:h2:mem:///tally?options=CASE_INSENSITIVE_IDENTIFIERS=true;DB_CLOSE_DELAY=-1"
 
   # Postgres
-  # url: "r2dbc:postgresql://<user>:<password>@<host>:<port>/<database>?schema=<schema>"
+  # url: "r2dbc:postgresql://<user>:<password>@<host>:<port>/<database>?currentSchema=<schema>"
 
 # JWT
 # ==================================================================
@@ -65,7 +65,7 @@ email:
 
   # The scheme, host and port where the app lives. It is used in the registration email, where
   # users have to click on a link to confirm their registration. Without trailing slash ('/')!
-  registration-url: http://localhost:4200
+  registration-url: http://localhost:${server.port}
 
   # If a user registers but does not confirm the registration over the link in the email,
   # the user will be deleted after the specified time. (10m-24h)

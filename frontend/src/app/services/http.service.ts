@@ -14,8 +14,8 @@ import {LoginResponse} from "./models/LoginResponse";
 })
 export class HttpService {
 
-    private httpClient = inject(HttpClient);
-    private authService = inject(AuthService);
+    private readonly httpClient = inject(HttpClient);
+    private readonly authService = inject(AuthService);
 
     postLogin(email: string, password: string): Observable<LoginResponse> {
 

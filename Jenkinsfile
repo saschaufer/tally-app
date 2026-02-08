@@ -71,7 +71,7 @@ pipeline {
                         env.RELEASE_VERSION = readReleaseVersion() + '-' + env.BUILD_NUMBER
                     }
                     sh '''
-                       mvn -B clean deploy \
+                       mvn -B deploy \
                        -DskipTests \
                        -Dmaven.install.skip=true
                     '''

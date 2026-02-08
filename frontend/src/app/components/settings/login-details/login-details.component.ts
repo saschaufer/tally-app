@@ -1,5 +1,5 @@
 import {DatePipe} from "@angular/common";
-import {Component, inject, NgZone} from '@angular/core';
+import {ChangeDetectorRef, Component, inject} from '@angular/core';
 import {Router} from "@angular/router";
 import {interval, Subscription} from "rxjs";
 import {routeName} from "../../../app.routes";
@@ -7,7 +7,6 @@ import {AuthService} from "../../../services/auth.service";
 
 @Component({
     selector: 'app-login-details',
-    standalone: true,
     imports: [
         DatePipe
     ],
@@ -16,16 +15,19 @@ import {AuthService} from "../../../services/auth.service";
 })
 export class LoginDetailsComponent {
 
-    private authService = inject(AuthService);
-    private router = inject(Router);
-    private zone = inject(NgZone);
+    private readonly authService = inject(AuthService);
+    private readonly router = inject(Router);
+    private readonly cdr = inject(ChangeDetectorRef);
 
     private time!: Subscription;
 
     jwtDetails = this.authService.getJwtDetails();
 
     ngOnInit() {
-        this.time = interval(1000).subscribe(() => this.jwtDetails = this.authService.getJwtDetails());
+        this.time = interval(1000).subscribe(() => {
+            this.jwtDetails = this.authService.getJwtDetails();
+            this.cdr.detectChanges();
+        });
     }
 
     ngOnDestroy() {
@@ -34,8 +36,6 @@ export class LoginDetailsComponent {
 
     onLogout() {
         this.authService.removeJwt();
-        this.zone.run(() =>
-            this.router.navigate(["/" + routeName.login]).then()
-        ).then();
+        this.router.navigate(["/" + routeName.login]).then();
     }
 }

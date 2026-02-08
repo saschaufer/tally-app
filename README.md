@@ -1,8 +1,8 @@
 [![Maven](https://img.shields.io/static/v1?label=Maven&message=4.0.0&color=blue)](https://maven.apache.org/)
 [![Java](https://img.shields.io/static/v1?label=Java&message=21&color=red)](https://adoptium.net/de/temurin/releases/?os=linux&arch=any&package=jdk)
-[![TypeScript](https://img.shields.io/static/v1?label=TypeScript&message=5.5.4&color=blue)](https://www.typescriptlang.org/)
-[![Angular](https://img.shields.io/static/v1?label=Angular&message=18&color=purple)](https://angular.dev/)
-[![SpringBoot](https://img.shields.io/static/v1?label=SpringBoot&message=3.3.5&color=green)](https://spring.io/projects/spring-boot)
+[![TypeScript](https://img.shields.io/static/v1?label=TypeScript&message=5.9.3&color=blue)](https://www.typescriptlang.org/)
+[![Angular](https://img.shields.io/static/v1?label=Angular&message=21&color=purple)](https://angular.dev/)
+[![SpringBoot](https://img.shields.io/static/v1?label=SpringBoot&message=4.0.3&color=green)](https://spring.io/projects/spring-boot)
 <a href="https://www.buymeacoffee.com/saschaufer"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" height="20px"></a>
 
 # <img src="./frontend/src/favicon.ico" width="40" height="40"> Tally App

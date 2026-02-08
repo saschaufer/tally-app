@@ -4,9 +4,11 @@
 
 <div class="page-content scrollable">
 
-    <app-change-invitation-code *ngIf="isAdmin()"></app-change-invitation-code>
+    @if (isAdmin | async) {
+        <app-change-invitation-code></app-change-invitation-code>
 
-    <hr *ngIf="isAdmin()">
+        <hr>
+    }
 
     <app-change-user-details></app-change-user-details>
 

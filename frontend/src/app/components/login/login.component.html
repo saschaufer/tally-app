@@ -5,10 +5,12 @@
         <div class="mt-0_5">
             <label for="email">Email</label>
 
-            <!-- @formatter:off -->
-            <label class="text-red" for="email" *ngIf="formErrors.emailMissing"> - Missing email</label>
-            <label class="text-red" for="email" *ngIf="formErrors.emailInvalid"> - Invalid email</label>
-            <!-- @formatter:on -->
+            @if (formErrors.emailMissing) {
+                <label class="text-red" for="email"> - Missing email</label>
+            }
+            @if (formErrors.emailInvalid) {
+                <label class="text-red" for="email"> - Invalid email</label>
+            }
 
             <input id="email" type="text" autocomplete="email" formControlName="email">
         </div>
@@ -16,9 +18,9 @@
         <div class="mt-0_5">
             <label for="password">Password</label>
 
-            <!-- @formatter:off -->
-            <label class="text-red" for="password" *ngIf="formErrors.passwordMissing"> - Missing password</label>
-            <!-- @formatter:on -->
+            @if (formErrors.passwordMissing) {
+                <label class="text-red" for="password"> - Missing password</label>
+            }
 
             <input id="password" type="password" autocomplete="current-password" formControlName="password">
         </div>
@@ -37,13 +39,13 @@
 
 </div>
 
-<dialog id="#login.errorLogin">
+<dialog #login.errorLogin>
     <p class="mt-1_25 text-center text-green">Error on login.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
-<dialog id="#login.errorLoginCookie">
+<dialog #login.errorLoginCookie>
     <p class="mt-1_25 text-center text-green">Cookie not set.</p>
     <p class="mt-1_25 text-center text-green">Probably because it needs to be sent over a secure HTTPS connection.</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>

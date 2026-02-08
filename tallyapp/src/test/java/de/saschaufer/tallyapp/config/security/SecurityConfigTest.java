@@ -3,13 +3,14 @@ package de.saschaufer.tallyapp.config.security;
 import de.saschaufer.tallyapp.controller.Handler;
 import de.saschaufer.tallyapp.controller.dto.PostLoginResponse;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.reactive.function.server.ServerRequest;
 
 import java.time.Instant;
 
 import static de.saschaufer.tallyapp.persistence.dto.User.Role.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -17,7 +18,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.ok
 
 class SecurityConfigTest extends SecurityConfigSetup {
 
-    @MockBean
+    @MockitoBean
     Handler handler;
 
     @Test
@@ -26,7 +27,10 @@ class SecurityConfigTest extends SecurityConfigSetup {
         webClient.get().uri("/")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class).value(startsWith("<!doctype html>"));
+                .expectBody(String.class)
+                .value(s -> {
+                    assertThat(s, startsWith("<!doctype html>"));
+                });
     }
 
     @Test
@@ -44,7 +48,10 @@ class SecurityConfigTest extends SecurityConfigSetup {
         webClient.get().uri("/script.js")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class).value(startsWith("code"));
+                .expectBody(String.class)
+                .value(s -> {
+                    assertThat(s, startsWith("code"));
+                });
     }
 
     @Test
@@ -53,7 +60,10 @@ class SecurityConfigTest extends SecurityConfigSetup {
         webClient.get().uri("/styles.css")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class).value(startsWith("style"));
+                .expectBody(String.class)
+                .value(s -> {
+                    assertThat(s, startsWith("style"));
+                });
     }
 
     @Test
@@ -62,7 +72,10 @@ class SecurityConfigTest extends SecurityConfigSetup {
         webClient.get().uri("/icon.ico")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class).value(startsWith("icon"));
+                .expectBody(String.class)
+                .value(s -> {
+                    assertThat(s, startsWith("icon"));
+                });
     }
 
     @Test

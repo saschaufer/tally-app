@@ -1,25 +1,27 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideRouter} from "@angular/router";
-import {MockProvider} from "ng-mocks";
 import {of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {HttpService} from "../../services/http.service";
 
 import {RegisterComponent} from './register.component';
-import SpyObj = jasmine.SpyObj;
 
 describe('RegisterComponent', () => {
 
     let component: RegisterComponent;
     let fixture: ComponentFixture<RegisterComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [RegisterComponent],
             providers: [
-                MockProvider(HttpService),
-                provideRouter([])
+                provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock}
             ]
         })
             .compileComponents();
@@ -27,8 +29,6 @@ describe('RegisterComponent', () => {
         fixture = TestBed.createComponent(RegisterComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
-
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
     });
 
     it('should create', () => {
@@ -37,7 +37,7 @@ describe('RegisterComponent', () => {
 
     it('should switch to email sent', () => {
 
-        httpServiceSpy.postRegisterNewUser.and.callFake(() => of(undefined));
+        httpServiceMock.postRegisterNewUser.mockReturnValue(of(undefined));
 
         component.registerForm.setValue({
             email: 'test-username@mail.com',
@@ -51,7 +51,7 @@ describe('RegisterComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postRegisterNewUser).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password', 'test-invitation-code');
+        expect(httpServiceMock.postRegisterNewUser).toHaveBeenCalledExactlyOnceWith('test-username@mail.com', 'test-password', 'test-invitation-code');
 
         expect(component.email).toBe('test-username@mail.com');
         expect(component.emailSent).toBe(true);
@@ -69,7 +69,7 @@ describe('RegisterComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postRegisterNewUser).not.toHaveBeenCalled();
+        expect(httpServiceMock.postRegisterNewUser).not.toHaveBeenCalled();
 
         expect(component.email).toBe('');
         expect(component.emailSent).toBe(false);
@@ -87,7 +87,7 @@ describe('RegisterComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postRegisterNewUser).not.toHaveBeenCalled();
+        expect(httpServiceMock.postRegisterNewUser).not.toHaveBeenCalled();
 
         expect(component.email).toBe('');
         expect(component.emailSent).toBe(false);
@@ -105,7 +105,7 @@ describe('RegisterComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postRegisterNewUser).not.toHaveBeenCalled();
+        expect(httpServiceMock.postRegisterNewUser).not.toHaveBeenCalled();
 
         expect(component.email).toBe('');
         expect(component.emailSent).toBe(false);
@@ -123,7 +123,7 @@ describe('RegisterComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postRegisterNewUser).not.toHaveBeenCalled();
+        expect(httpServiceMock.postRegisterNewUser).not.toHaveBeenCalled();
 
         expect(component.email).toBe('');
         expect(component.emailSent).toBe(false);
@@ -141,7 +141,7 @@ describe('RegisterComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postRegisterNewUser).not.toHaveBeenCalled();
+        expect(httpServiceMock.postRegisterNewUser).not.toHaveBeenCalled();
 
         expect(component.email).toBe('');
         expect(component.emailSent).toBe(false);
@@ -149,7 +149,7 @@ describe('RegisterComponent', () => {
 
     it('should not switch to email sent (register failed)', () => {
 
-        httpServiceSpy.postRegisterNewUser.and.callFake(() =>
+        httpServiceMock.postRegisterNewUser.mockReturnValue(
             throwError(() => 'Error on register')
         );
 
@@ -165,7 +165,7 @@ describe('RegisterComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postRegisterNewUser).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password', 'test-invitation-code');
+        expect(httpServiceMock.postRegisterNewUser).toHaveBeenCalledExactlyOnceWith('test-username@mail.com', 'test-password', 'test-invitation-code');
 
         expect(component.email).toBe('');
         expect(component.emailSent).toBe(false);

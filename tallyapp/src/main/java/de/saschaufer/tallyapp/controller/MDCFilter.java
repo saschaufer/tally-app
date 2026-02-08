@@ -1,9 +1,9 @@
 package de.saschaufer.tallyapp.controller;
 
+import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;

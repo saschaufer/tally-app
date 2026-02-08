@@ -13,9 +13,9 @@
         <div class="mt-0_5">
             <label for="name">Name</label>
 
-            <!-- @formatter:off -->
-            <label class="text-red" for="name" *ngIf="formErrorsChangeName.nameMissing"> - Missing name</label>
-            <!-- @formatter:on -->
+            @if (formErrorsChangeName.nameMissing) {
+                <label class="text-red" for="name"> - Missing name</label>
+            }
 
             <input id="name" type="text" autocomplete="" formControlName="name">
         </div>
@@ -31,10 +31,12 @@
         <div class="mt-0_5">
             <label for="price">Price</label>
 
-            <!-- @formatter:off -->
-            <label class="text-red" for="price" *ngIf="formErrorsChangePrice.priceMissing"> - Missing price</label>
-            <label class="text-red" for="price" *ngIf="formErrorsChangePrice.pricePatternInvalid"> - Not a valid price</label>
-            <!-- @formatter:on -->
+            @if (formErrorsChangePrice.priceMissing) {
+                <label class="text-red" for="price"> - Missing price</label>
+            }
+            @if (formErrorsChangePrice.pricePatternInvalid) {
+                <label class="text-red" for="price"> - Not a valid price</label>
+            }
 
             <input id="price" type="text" autocomplete="" formControlName="price">
         </div>
@@ -49,33 +51,33 @@
 
 </div>
 
-<dialog id="#products.productEdit.successChangeName">
+<dialog #products.productEdit.successChangeName>
     <p class="mt-1_25 text-center text-green">Name successfully changed.</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
-<dialog id="#products.productEdit.errorChangeName">
+<dialog #products.productEdit.errorChangeName>
     <p class="mt-1_25 text-center text-green">Error changing name.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
 
-<dialog id="#products.productEdit.successChangePrice">
+<dialog #products.productEdit.successChangePrice>
     <p class="mt-1_25 text-center text-green">Price successfully changed.</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
-<dialog id="#products.productEdit.errorChangePrice">
+<dialog #products.productEdit.errorChangePrice>
     <p class="mt-1_25 text-center text-green">Error changing price.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
 
-<dialog id="#products.productEdit.successDelete">
+<dialog #products.productEdit.successDelete>
     <p class="mt-1_25 text-center text-green">Product successfully deleted.</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
-<dialog id="#products.productEdit.errorDelete">
+<dialog #products.productEdit.errorDelete>
     <p class="mt-1_25 text-center text-green">Error deleting product.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>

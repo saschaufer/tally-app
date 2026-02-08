@@ -11,8 +11,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.data.r2dbc.DataR2dbcTest;
-import org.springframework.boot.web.reactive.error.DefaultErrorAttributes;
+import org.springframework.boot.data.r2dbc.test.autoconfigure.DataR2dbcTest;
+import org.springframework.boot.webflux.error.DefaultErrorAttributes;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
@@ -44,7 +44,7 @@ class PersistenceTest {
 
         @Bean
         public DbProperties dbProperties() {
-            return new DbProperties("r2dbc:h2:mem:///test?options=DB_CLOSE_DELAY=-1");
+            return new DbProperties("r2dbc:h2:mem:///test?options=CASE_INSENSITIVE_IDENTIFIERS=TRUE;DB_CLOSE_DELAY=-1");
         }
     }
 
@@ -102,7 +102,7 @@ class PersistenceTest {
                 .flatMap(persistence::insertUser)
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("Unique index or primary key violation: \"PRIMARY KEY ON PUBLIC.USERS(ID)"))
+                        assertThat(error.getMessage(), stringContainsInOrder("Unique index or primary key violation:", "PRIMARY KEY ON PUBLIC.USERS(ID)"))
                 )
         ;
 
@@ -502,7 +502,7 @@ class PersistenceTest {
 
     static Stream<Arguments> insertProductAndPrice_negative_rollback() {
         return Stream.of(
-                Arguments.of(null, new BigDecimal("123.45"), "executeMany; bad SQL grammar [INSERT INTO products VALUES (DEFAULT)]"),
+                Arguments.of(null, new BigDecimal("123.45"), "executeMany; bad SQL grammar [INSERT INTO \"products\" VALUES (DEFAULT)]"),
                 Arguments.of("test-name", null, "NULL not allowed for column \"PRICE\"")
         );
     }
@@ -1091,7 +1091,7 @@ class PersistenceTest {
                 .flatMap(persistence::insertPayment)
                 .as(StepVerifier::create)
                 .verifyErrorSatisfies(error ->
-                        assertThat(error.getMessage(), containsString("Unique index or primary key violation: \"PRIMARY KEY ON PUBLIC.PAYMENTS(ID)"))
+                        assertThat(error.getMessage(), stringContainsInOrder("Unique index or primary key violation", "PRIMARY KEY ON PUBLIC.PAYMENTS(ID)"))
                 )
         ;
 

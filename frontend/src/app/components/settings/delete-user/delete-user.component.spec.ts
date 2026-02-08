@@ -1,41 +1,41 @@
 import {HttpErrorResponse} from "@angular/common/http";
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {provideRouter, Router} from "@angular/router";
-import {MockProvider} from "ng-mocks";
+import {NavigationExtras, provideRouter, Router} from "@angular/router";
 import {firstValueFrom, of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 import {routeName} from "../../../app.routes";
 import {HttpService} from "../../../services/http.service";
 
 import {DeleteUserComponent} from './delete-user.component';
-import Spy = jasmine.Spy;
-import SpyObj = jasmine.SpyObj;
 
 describe('DeleteUserComponent', () => {
 
     let component: DeleteUserComponent;
     let fixture: ComponentFixture<DeleteUserComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
-    let routerNavigateSpy: Spy;
+    let routerNavigateSpy: Mock<(commands: readonly any[], extras?: NavigationExtras) => Promise<boolean>>;
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [DeleteUserComponent],
             providers: [
-                MockProvider(HttpService),
                 provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock}
             ]
         })
             .compileComponents();
 
         fixture = TestBed.createComponent(DeleteUserComponent);
         component = fixture.componentInstance;
+
+        routerNavigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate');
+
         fixture.detectChanges();
-
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
-
-        routerNavigateSpy = spyOn(TestBed.inject(Router), 'navigate');
     });
 
     it('should create', () => {
@@ -46,24 +46,24 @@ describe('DeleteUserComponent', () => {
     it('should delete the user and navigate to ' + routeName.login, () => {
 
         const deleteButton = document.getElementById('#settings.deleteUser.confirmationPrompt.delete')! as HTMLButtonElement;
-        const dialog = document.getElementById('#settings.deleteUser.successDeleteUser')! as HTMLDialogElement;
+        const dialog: HTMLDialogElement = component.dialogSuccessDeleteUser.nativeElement;
 
-        httpServiceSpy.postDeleteUser.and.callFake(() => of(undefined));
-        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
+        httpServiceMock.postDeleteUser.mockReturnValue(of(undefined));
+        routerNavigateSpy.mockReturnValue(firstValueFrom(of(true)));
 
         component.onDeleteAccount()
 
-        expect(httpServiceSpy.postDeleteUser).not.toHaveBeenCalled();
+        expect(httpServiceMock.postDeleteUser).not.toHaveBeenCalled();
 
         deleteButton.dispatchEvent(new Event('click'));
 
-        expect(httpServiceSpy.postDeleteUser).toHaveBeenCalledOnceWith();
+        expect(httpServiceMock.postDeleteUser).toHaveBeenCalledExactlyOnceWith();
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
 
         dialog.dispatchEvent(new Event('click'));
 
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.login]);
+        expect(routerNavigateSpy).toHaveBeenCalledExactlyOnceWith(['/' + routeName.login]);
 
         expect(component.error).toBeUndefined();
     })
@@ -76,7 +76,7 @@ describe('DeleteUserComponent', () => {
 
         cancelButton.dispatchEvent(new Event('click'));
 
-        expect(httpServiceSpy.postDeleteUser).not.toHaveBeenCalled();
+        expect(httpServiceMock.postDeleteUser).not.toHaveBeenCalled();
         expect(routerNavigateSpy).not.toHaveBeenCalled();
 
         expect(component.error).toBeUndefined();
@@ -85,19 +85,19 @@ describe('DeleteUserComponent', () => {
     it('should not delete the user (delete user failed)', () => {
 
         const deleteButton = document.getElementById('#settings.deleteUser.confirmationPrompt.delete')! as HTMLButtonElement;
-        const dialog = document.getElementById('#settings.deleteUser.errorDeleteUser')! as HTMLDialogElement;
+        const dialog: HTMLDialogElement = component.dialogErrorDeleteUser.nativeElement;
 
-        httpServiceSpy.postDeleteUser.and.callFake(() =>
+        httpServiceMock.postDeleteUser.mockReturnValue(
             throwError(() => new HttpErrorResponse({error: 'Error on deleting user'}))
         );
 
         component.onDeleteAccount()
 
-        expect(httpServiceSpy.postDeleteUser).not.toHaveBeenCalled();
+        expect(httpServiceMock.postDeleteUser).not.toHaveBeenCalled();
 
         deleteButton.dispatchEvent(new Event('click'));
 
-        expect(httpServiceSpy.postDeleteUser).toHaveBeenCalledOnceWith();
+        expect(httpServiceMock.postDeleteUser).toHaveBeenCalledExactlyOnceWith();
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
 

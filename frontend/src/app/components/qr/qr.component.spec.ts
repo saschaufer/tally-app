@@ -1,32 +1,35 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {ActivatedRoute, provideRouter, Router} from "@angular/router";
+import {ActivatedRoute, NavigationExtras, provideRouter, Router} from "@angular/router";
 import {Big} from "big.js";
-import {MockProvider} from "ng-mocks";
 import {firstValueFrom, of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 import {GetProductsResponse} from "../../services/models/GetProductsResponse";
 
 import {QrComponent} from './qr.component';
-import Spy = jasmine.Spy;
-import SpyObj = jasmine.SpyObj;
 
 describe('QrComponent', () => {
 
     let component: QrComponent;
     let fixture: ComponentFixture<QrComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
     let router: ActivatedRoute;
-    let routerNavigateSpy: Spy;
+    let routerNavigateSpy: Mock<(commands: readonly any[], extras?: NavigationExtras) => Promise<boolean>>;
+    let dialogSuccessCreatingPurchaseSpyShowModal: Mock<() => void>;
+    let dialogSuccessCreatingPurchaseSpyClose: Mock<(returnValue?: string) => void>;
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [QrComponent],
             providers: [
-                MockProvider(HttpService),
                 provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock},
                 {provide: ActivatedRoute, useValue: {params: of({productId: 1})}}
             ]
         })
@@ -35,15 +38,15 @@ describe('QrComponent', () => {
         fixture = TestBed.createComponent(QrComponent);
         component = fixture.componentInstance;
 
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
-
         router = TestBed.inject(ActivatedRoute);
-        routerNavigateSpy = spyOn(TestBed.inject(Router), 'navigate');
+        routerNavigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate');
+        dialogSuccessCreatingPurchaseSpyShowModal = vi.spyOn(component.dialogSuccessCreatingPurchase.nativeElement, 'showModal');
+        dialogSuccessCreatingPurchaseSpyClose = vi.spyOn(component.dialogSuccessCreatingPurchase.nativeElement, 'close');
     });
 
     it('should create and read product', () => {
 
-        httpServiceSpy.postReadProduct.and.callFake(() => of({
+        httpServiceMock.postReadProduct.mockReturnValue(of({
             id: 1,
             name: "product-name",
             price: Big('123.45'),
@@ -57,12 +60,12 @@ describe('QrComponent', () => {
         expect(component.product?.name).toBe('product-name');
         expect(component.product?.price).toEqual(Big('123.45'));
 
-        expect(httpServiceSpy.postReadProduct).toHaveBeenCalledOnceWith(1);
+        expect(httpServiceMock.postReadProduct).toHaveBeenCalledExactlyOnceWith(1);
     });
 
     it('should create and read product (read product failed)', () => {
 
-        httpServiceSpy.postReadProduct.and.callFake(() =>
+        httpServiceMock.postReadProduct.mockReturnValue(
             throwError(() => 'Error on reading product')
         );
 
@@ -70,7 +73,7 @@ describe('QrComponent', () => {
 
         expect(component.product).toBeFalsy();
 
-        expect(httpServiceSpy.postReadProduct).toHaveBeenCalledOnceWith(1);
+        expect(httpServiceMock.postReadProduct).toHaveBeenCalledExactlyOnceWith(1);
     })
 
     it('should create and not read product (no productId)', () => {
@@ -81,7 +84,7 @@ describe('QrComponent', () => {
 
         expect(component.product).toBeFalsy();
 
-        expect(httpServiceSpy.postReadProduct).not.toHaveBeenCalled();
+        expect(httpServiceMock.postReadProduct).not.toHaveBeenCalled();
     })
 
     it('should create and not read product (productId not a number)', () => {
@@ -92,50 +95,55 @@ describe('QrComponent', () => {
 
         expect(component.product).toBeFalsy();
 
-        expect(httpServiceSpy.postReadProduct).not.toHaveBeenCalled();
+        expect(httpServiceMock.postReadProduct).not.toHaveBeenCalled();
     })
 
     it('should create the purchase and navigate to ' + routeName.purchases, () => {
 
-        const dialog = document.getElementById('#qr.successCreatingPurchase')! as HTMLDialogElement;
+        const dialog: HTMLDialogElement = component.dialogSuccessCreatingPurchase.nativeElement;
 
-        httpServiceSpy.postCreatePurchase.and.callFake(() => of(undefined));
-        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
+        httpServiceMock.postCreatePurchase.mockReturnValue(of(undefined));
+        routerNavigateSpy.mockReturnValue(firstValueFrom(of(true)));
 
         component.product = {id: 1, name: "product-name", price: Big('123.45')} as GetProductsResponse;
 
+        expect(dialogSuccessCreatingPurchaseSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyClose).not.toHaveBeenCalled();
+
         component.onClickPurchase();
 
-        expect(httpServiceSpy.postCreatePurchase).toHaveBeenCalledOnceWith(1);
+        expect(httpServiceMock.postCreatePurchase).toHaveBeenCalledExactlyOnceWith(1);
 
-        expect(routerNavigateSpy).not.toHaveBeenCalledOnceWith(['/' + routeName.purchases]);
+        expect(routerNavigateSpy).not.toHaveBeenCalledExactlyOnceWith(['/' + routeName.purchases]);
+
+        expect(dialogSuccessCreatingPurchaseSpyShowModal).toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyClose).not.toHaveBeenCalled();
 
         dialog.dispatchEvent(new Event('click'));
 
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases]);
+        expect(dialogSuccessCreatingPurchaseSpyClose).toHaveBeenCalled();
+
+        expect(routerNavigateSpy).toHaveBeenCalledExactlyOnceWith(['/' + routeName.purchases]);
     });
 
     it('should not create the purchase and not navigate to ' + routeName.purchases + ' (no product selected)', () => {
 
-        const dialog = document.getElementById('#qr.successCreatingPurchase')! as HTMLDialogElement;
-
-        httpServiceSpy.postCreatePurchase.and.callFake(() => of(undefined));
-        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
+        httpServiceMock.postCreatePurchase.mockReturnValue(of(undefined));
+        routerNavigateSpy.mockReturnValue(firstValueFrom(of(true)));
 
         component.onClickPurchase();
 
-        dialog.dispatchEvent(new Event('click'));
-
-        expect(httpServiceSpy.postCreatePurchase).not.toHaveBeenCalled();
+        expect(httpServiceMock.postCreatePurchase).not.toHaveBeenCalled();
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
+
+        expect(dialogSuccessCreatingPurchaseSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyClose).not.toHaveBeenCalled();
     });
 
     it('should not navigate to ' + routeName.purchases + ' (create purchase failed)', () => {
 
-        const dialog = document.getElementById('#qr.successCreatingPurchase')! as HTMLDialogElement;
-
-        httpServiceSpy.postCreatePurchase.and.callFake(() =>
+        httpServiceMock.postCreatePurchase.mockReturnValue(
             throwError(() => 'Error on create purchase')
         );
 
@@ -143,10 +151,11 @@ describe('QrComponent', () => {
 
         component.onClickPurchase();
 
-        dialog.dispatchEvent(new Event('click'));
-
-        expect(httpServiceSpy.postCreatePurchase).toHaveBeenCalledOnceWith(1);
+        expect(httpServiceMock.postCreatePurchase).toHaveBeenCalledExactlyOnceWith(1);
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
+
+        expect(dialogSuccessCreatingPurchaseSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyClose).not.toHaveBeenCalled();
     });
 });

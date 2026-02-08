@@ -6,8 +6,7 @@ import de.saschaufer.tallyapp.persistence.dto.User;
 import de.saschaufer.tallyapp.services.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webflux.test.autoconfigure.WebFluxTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -18,6 +17,7 @@ import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
@@ -52,19 +52,19 @@ public abstract class SecurityConfigSetup {
     @Autowired
     private JwtEncoder jwtEncoder;
 
-    @MockBean
+    @MockitoBean
     protected UserDetailsService userDetailsService;
 
-    @MockBean
+    @MockitoBean
     protected ProductService productService;
 
-    @MockBean
+    @MockitoBean
     protected PurchaseService purchaseService;
 
-    @MockBean
+    @MockitoBean
     protected EmailService emailService;
 
-    @MockBean
+    @MockitoBean
     protected PaymentService paymentService;
 
     protected WebTestClient webClient;

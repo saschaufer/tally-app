@@ -1,30 +1,30 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {MockProvider} from "ng-mocks";
 import {of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {HttpService} from "../../../services/http.service";
 
 import {ChangeInvitationCodeComponent} from './change-invitation-code.component';
-import SpyObj = jasmine.SpyObj;
 
 describe('ChangeInvitationCodeComponent', () => {
 
     let component: ChangeInvitationCodeComponent;
     let fixture: ComponentFixture<ChangeInvitationCodeComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [ChangeInvitationCodeComponent],
-            providers: [MockProvider(HttpService)]
+            providers: [{provide: HttpService, useValue: httpServiceMock}]
         })
             .compileComponents();
 
         fixture = TestBed.createComponent(ChangeInvitationCodeComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
-
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
     });
 
     it('should create', () => {
@@ -33,7 +33,7 @@ describe('ChangeInvitationCodeComponent', () => {
 
     it('should change the invitation-code', () => {
 
-        httpServiceSpy.postChangeInvitationCode.and.callFake(() => of(undefined));
+        httpServiceMock.postChangeInvitationCode.mockReturnValue(of(undefined));
 
         component.changeInvitationCodeForm.setValue({
             invitationCode: 'test-invitation-code',
@@ -42,48 +42,48 @@ describe('ChangeInvitationCodeComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postChangeInvitationCode).toHaveBeenCalledOnceWith('test-invitation-code');
+        expect(httpServiceMock.postChangeInvitationCode).toHaveBeenCalledExactlyOnceWith('test-invitation-code');
     });
 
     it('should not change the invitation-code (invitation-code wrong)', () => {
 
-        httpServiceSpy.postChangeInvitationCode.and.callFake(() => of(undefined));
+        httpServiceMock.postChangeInvitationCode.mockReturnValue(of(undefined));
 
         component.changeInvitationCodeForm.controls.invitationCode.setErrors(['wrong']);
         component.changeInvitationCodeForm.controls.invitationCodeRepeat.patchValue('test-invitation-code');
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postChangeInvitationCode).not.toHaveBeenCalled();
+        expect(httpServiceMock.postChangeInvitationCode).not.toHaveBeenCalled();
     });
 
     it('should not change the invitation-code (invitation-code-repeat wrong)', () => {
 
-        httpServiceSpy.postChangeInvitationCode.and.callFake(() => of(undefined));
+        httpServiceMock.postChangeInvitationCode.mockReturnValue(of(undefined));
 
         component.changeInvitationCodeForm.controls.invitationCode.patchValue('test-invitation-code');
         component.changeInvitationCodeForm.controls.invitationCodeRepeat.setErrors(['wrong']);
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postChangeInvitationCode).not.toHaveBeenCalled();
+        expect(httpServiceMock.postChangeInvitationCode).not.toHaveBeenCalled();
     });
 
     it('should not change the invitation-code (invitation-code and invitation-code-repeat unequal)', () => {
 
-        httpServiceSpy.postChangeInvitationCode.and.callFake(() => of(undefined));
+        httpServiceMock.postChangeInvitationCode.mockReturnValue(of(undefined));
 
         component.changeInvitationCodeForm.controls.invitationCode.patchValue('test-invitation-code');
         component.changeInvitationCodeForm.controls.invitationCodeRepeat.patchValue('test-invitation-code-unequal');
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postChangeInvitationCode).not.toHaveBeenCalled();
+        expect(httpServiceMock.postChangeInvitationCode).not.toHaveBeenCalled();
     });
 
     it('should not change the invitation-code (change invitation-code failed)', () => {
 
-        httpServiceSpy.postChangeInvitationCode.and.callFake(() =>
+        httpServiceMock.postChangeInvitationCode.mockReturnValue(
             throwError(() => 'Error on change invitation-code')
         );
 
@@ -92,6 +92,6 @@ describe('ChangeInvitationCodeComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postChangeInvitationCode).toHaveBeenCalledOnceWith('test-invitation-code');
+        expect(httpServiceMock.postChangeInvitationCode).toHaveBeenCalledExactlyOnceWith('test-invitation-code');
     });
 });

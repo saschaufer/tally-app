@@ -1,28 +1,36 @@
-import {NgClass, NgIf} from "@angular/common";
-import {Component, inject} from '@angular/core';
-import {Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
+import {AsyncPipe, NgClass} from "@angular/common";
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
+import {NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
+import {BehaviorSubject} from "rxjs";
 import {routeName} from "./app.routes";
 import {AuthService} from "./services/auth.service";
 import {HttpLoaderService} from "./services/http-loader.service";
 
 @Component({
     selector: 'app-root',
-    standalone: true,
-    imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, NgIf],
+    imports: [RouterOutlet, RouterLink, RouterLinkActive, NgClass, AsyncPipe],
     templateUrl: './app.component.html',
-    styles: [],
+    styles: []
 })
 export class AppComponent {
 
+    @ViewChild('app.loading', {static: true}) dialog!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private router = inject(Router);
-    private authService = inject(AuthService);
-    private loaderService = inject(HttpLoaderService);
+    private readonly router = inject(Router);
+    private readonly authService = inject(AuthService);
+    private readonly loaderService = inject(HttpLoaderService);
+
+    private readonly showNavBarObserver = new BehaviorSubject<boolean>(false);
+    private readonly isAdminObserver = new BehaviorSubject<boolean>(false);
+
+    showNavBar = this.showNavBarObserver.asObservable();
+    isAdmin = this.isAdminObserver.asObservable();
 
     ngAfterViewInit() {
         this.loaderService.isLoading.subscribe((status: boolean) => {
-            const dialog = document.getElementById('#app.loading')! as HTMLDialogElement;
+            const dialog: HTMLDialogElement = this.dialog.nativeElement;
             if (status) {
                 dialog.showModal();
                 document.body.classList.add('cursor-loader');
@@ -31,16 +39,19 @@ export class AppComponent {
                 document.body.classList.remove('cursor-loader');
             }
         });
-    }
 
-    showNavBar(): boolean {
-        return this.router.url != "/" + routeName.login
-            && this.router.url != "/" + routeName.register
-            && this.router.url != "/" + routeName.reset_password
-            && !this.router.url.startsWith("/" + routeName.register_confirm);
-    }
+        this.router.events.subscribe((event) => {
 
-    isAdmin() {
-        return this.authService.isAdmin();
-    };
+            if (event instanceof NavigationEnd) {
+
+                const show = this.router.url != "/" + routeName.login
+                    && this.router.url != "/" + routeName.register
+                    && this.router.url != "/" + routeName.reset_password
+                    && !this.router.url.startsWith("/" + routeName.register_confirm);
+
+                this.showNavBarObserver.next(show);
+                this.isAdminObserver.next(this.authService.isAdmin());
+            }
+        });
+    }
 }

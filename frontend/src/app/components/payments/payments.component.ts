@@ -1,6 +1,6 @@
-import {DatePipe, NgClass, NgForOf, NgIf} from "@angular/common";
+import {DatePipe, NgClass} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject, NgZone} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {Router, RouterLink} from "@angular/router";
 import {Big} from "big.js";
 import {routeName} from "../../app.routes";
@@ -10,10 +10,7 @@ import {GetPaymentsResponse} from "../../services/models/GetPaymentsResponse";
 
 @Component({
     selector: 'app-payments',
-    standalone: true,
     imports: [
-        NgForOf,
-        NgIf,
         RouterLink,
         DatePipe,
         NgClass
@@ -23,13 +20,16 @@ import {GetPaymentsResponse} from "../../services/models/GetPaymentsResponse";
 })
 export class PaymentsComponent {
 
+    @ViewChild('payments.errorReadingPayments', {static: true}) dialogErrorReadingPayments!: ElementRef<HTMLDialogElement>;
+    @ViewChild('payments.errorReadingAccountBalance', {static: true}) dialogErrorReadingAccountBalance!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private httpService = inject(HttpService);
-    private router = inject(Router);
-    private zone = inject(NgZone);
+    private readonly httpService = inject(HttpService);
+    private readonly router = inject(Router);
+    private readonly cdr = inject(ChangeDetectorRef);
 
-    payments: GetPaymentsResponse[] | undefined;
+    payments: GetPaymentsResponse[] = [];
     accountBalance: GetAccountBalanceResponse | undefined;
     isNegative = false;
 
@@ -40,15 +40,16 @@ export class PaymentsComponent {
         this.httpService.getReadPayments()
             .subscribe({
                 next: payments => {
-                    console.info("Payments read.");
+                    console.info("Payments read: " + payments.length + " payments found.");
                     payments.sort((a, b) => new Date(a.timestamp) < new Date(b.timestamp) ? 1 : -1);
                     this.payments = payments;
+                    this.cdr.detectChanges();
                 },
                 error: (error: HttpErrorResponse) => {
                     console.error('Error reading payments.');
                     console.error(error);
                     this.error = error;
-                    this.openDialog('#payments.errorReadingPayments');
+                    this.openDialog(this.dialogErrorReadingPayments.nativeElement);
                 }
             });
 
@@ -58,26 +59,24 @@ export class PaymentsComponent {
                     console.info("Account balance read.");
                     this.accountBalance = accountBalance;
                     this.isNegative = Big(this.accountBalance.amountTotal).lt(Big('0.0'));
+                    this.cdr.detectChanges();
                 },
                 error: (error: HttpErrorResponse) => {
                     console.error('Error reading account balance.');
                     console.error(error);
                     this.error = error;
-                    this.openDialog('#payments.errorReadingAccountBalance');
+                    this.openDialog(this.dialogErrorReadingAccountBalance.nativeElement);
                 }
             });
     }
 
     onClick(i: number) {
-        let payment = this.payments![i];
+        const payment = this.payments[i];
         const urlAppend = encodeURIComponent(window.btoa(JSON.stringify(payment)));
-        this.zone.run(() =>
-            this.router.navigate(['/' + routeName.payments_delete + '/' + urlAppend]).then()
-        ).then();
+        this.router.navigate(['/' + routeName.payments_delete + '/' + urlAppend]).then();
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

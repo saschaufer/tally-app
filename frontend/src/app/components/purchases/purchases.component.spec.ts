@@ -1,32 +1,33 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {provideRouter, Router} from "@angular/router";
+import {NavigationExtras, provideRouter, Router} from "@angular/router";
 import {Big} from "big.js";
-import {MockProvider} from "ng-mocks";
 import {firstValueFrom, of} from "rxjs";
+import {beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 import {GetAccountBalanceResponse} from "../../services/models/GetAccountBalanceResponse";
 import {GetPurchasesResponse} from "../../services/models/GetPurchasesResponse";
 
 import {PurchasesComponent} from './purchases.component';
-import Spy = jasmine.Spy;
-import SpyObj = jasmine.SpyObj;
 
 describe('PurchasesComponent', () => {
 
     let component: PurchasesComponent;
     let fixture: ComponentFixture<PurchasesComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
-    let routerNavigateSpy: Spy;
+    let routerNavigateSpy: Mock<(commands: readonly any[], extras?: NavigationExtras) => Promise<boolean>>;
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [PurchasesComponent],
             providers: [
-                MockProvider(HttpService),
-                provideRouter([])
+                provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock}
             ]
         })
             .compileComponents();
@@ -34,19 +35,17 @@ describe('PurchasesComponent', () => {
         fixture = TestBed.createComponent(PurchasesComponent);
         component = fixture.componentInstance;
 
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
-
-        routerNavigateSpy = spyOn(TestBed.inject(Router), 'navigate');
+        routerNavigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate');
     });
 
     it('should create (amount total positive)', () => {
 
-        httpServiceSpy.getReadPurchases.and.callFake(() => of([
+        httpServiceMock.getReadPurchases.mockReturnValue(of([
             {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')},
             {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')}
         ] as GetPurchasesResponse[]));
 
-        httpServiceSpy.getReadAccountBalance.and.callFake(() => of({
+        httpServiceMock.getReadAccountBalance.mockReturnValue(of({
             amountPayments: Big('12.3'),
             amountPurchases: Big('45.6'),
             amountTotal: Big('78.9')
@@ -67,17 +66,17 @@ describe('PurchasesComponent', () => {
             amountTotal: Big('78.9')
         } as GetAccountBalanceResponse);
 
-        expect(component.isNegative).toBeFalse();
+        expect(component.isNegative).toBeFalsy();
     });
 
     it('should create (amount total negative)', () => {
 
-        httpServiceSpy.getReadPurchases.and.callFake(() => of([
+        httpServiceMock.getReadPurchases.mockReturnValue(of([
             {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1", productPrice: Big('123.45')},
             {purchaseId: 2, purchaseTimestamp: 456, productName: "product-2", productPrice: Big('543.21')}
         ] as GetPurchasesResponse[]));
 
-        httpServiceSpy.getReadAccountBalance.and.callFake(() => of({
+        httpServiceMock.getReadAccountBalance.mockReturnValue(of({
             amountPayments: Big('12.3'),
             amountPurchases: Big('45.6'),
             amountTotal: Big('-78.9')
@@ -98,12 +97,12 @@ describe('PurchasesComponent', () => {
             amountTotal: Big('-78.9')
         } as GetAccountBalanceResponse);
 
-        expect(component.isNegative).toBeTrue();
+        expect(component.isNegative).toBeTruthy();
     });
 
     it('should navigate to ' + routeName.purchases_delete, () => {
 
-        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
+        routerNavigateSpy.mockReturnValue(firstValueFrom(of(true)));
 
         component.purchases = [
             {purchaseId: 1, purchaseTimestamp: 123, productName: "product-1%&/+=", productPrice: Big('123.45')},
@@ -119,6 +118,6 @@ describe('PurchasesComponent', () => {
 
         component.onClick(0);
 
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases_delete + '/' + urlAppend]);
+        expect(routerNavigateSpy).toHaveBeenCalledExactlyOnceWith(['/' + routeName.purchases_delete + '/' + urlAppend]);
     });
 });

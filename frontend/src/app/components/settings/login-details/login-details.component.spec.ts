@@ -1,21 +1,20 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {Router} from "@angular/router";
-import {MockProvider} from "ng-mocks";
 import {firstValueFrom, of} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {routeName} from "../../../app.routes";
 import {AuthService, role} from "../../../services/auth.service";
 import {JwtDetails} from "../../../services/models/JwtDetails";
 
 import {LoginDetailsComponent} from './login-details.component';
-import SpyObj = jasmine.SpyObj;
 
 describe('LoginDetailsComponent', () => {
 
     let component: LoginDetailsComponent;
     let fixture: ComponentFixture<LoginDetailsComponent>;
 
-    let routerSpy: SpyObj<Router>;
-    let authServiceSpy: SpyObj<AuthService>;
+    const routerMock = vi.mockObject(Router.prototype);
+    const authServiceMock = vi.mockObject(AuthService.prototype);
 
     const jwtDetails = {
         email: "user@mail.com",
@@ -26,13 +25,16 @@ describe('LoginDetailsComponent', () => {
     } as JwtDetails;
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
+        authServiceMock.getJwtDetails.mockReturnValueOnce(jwtDetails);
+
         await TestBed.configureTestingModule({
             imports: [LoginDetailsComponent],
             providers: [
-                MockProvider(AuthService, {
-                    getJwtDetails: () => jwtDetails
-                }),
-                MockProvider(Router)
+                {provide: Router, useValue: routerMock},
+                {provide: AuthService, useValue: authServiceMock},
             ]
         })
             .compileComponents();
@@ -40,9 +42,6 @@ describe('LoginDetailsComponent', () => {
         fixture = TestBed.createComponent(LoginDetailsComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
-
-        routerSpy = spyOnAllFunctions(TestBed.inject(Router));
-        authServiceSpy = spyOnAllFunctions(TestBed.inject(AuthService));
     });
 
     it('should create', () => {
@@ -55,11 +54,11 @@ describe('LoginDetailsComponent', () => {
 
     it('should navigate to ' + routeName.login, () => {
 
-        routerSpy.navigate.and.callFake(() => firstValueFrom(of(true)));
+        routerMock.navigate.mockReturnValue(firstValueFrom(of(true)));
 
         component.onLogout();
 
-        expect(authServiceSpy.removeJwt).toHaveBeenCalledTimes(1);
-        expect(routerSpy.navigate).toHaveBeenCalledOnceWith(['/' + routeName.login]);
+        expect(authServiceMock.removeJwt).toHaveBeenCalledTimes(1);
+        expect(routerMock.navigate).toHaveBeenCalledExactlyOnceWith(['/' + routeName.login]);
     });
 });

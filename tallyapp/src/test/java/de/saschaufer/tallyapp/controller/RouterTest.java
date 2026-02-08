@@ -145,7 +145,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(stringContainsInOrder("Content type '", "' not supported. Supported: '"));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: '"));
+                });
 
         verify(userDetailsService, times(1)).findByUsername(any(String.class));
         verify(userDetailsService, times(0)).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
@@ -188,13 +190,13 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void postRegisterNewUser_negative_ResponseStatusException() {
 
-        doReturn(Mono.error(new ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "Bad"))).when(userDetailsService).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
+        doReturn(Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad"))).when(userDetailsService).createUser(any(String.class), any(String.class), ArgumentMatchers.<String>anyList());
 
         webClient.post().uri("/register")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
                 .body(Mono.just(new PostRegisterNewUserRequest("test-user@mail.com", "test-password")), PostRegisterNewUserRequest.class)
                 .exchange()
-                .expectStatus().isEqualTo(HttpStatus.I_AM_A_TEAPOT)
+                .expectStatus().isEqualTo(HttpStatus.BAD_REQUEST)
                 .expectBody(String.class).isEqualTo("Bad");
 
         verify(userDetailsService, times(1)).findByUsername(any(String.class));
@@ -268,7 +270,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(stringContainsInOrder("Content type '", "' not supported. Supported: '"));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: '"));
+                });
 
         verify(userDetailsService, times(1)).findByUsername(INVITATION);
         verify(userDetailsService, times(0)).checkRegistrationSecret(any(String.class), any(String.class));
@@ -314,13 +318,13 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void postRegisterNewUserConfirm_ResponseStatusException() {
 
-        doReturn(Mono.error(new ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "Bad"))).when(userDetailsService).checkRegistrationSecret(any(String.class), any(String.class));
+        doReturn(Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad"))).when(userDetailsService).checkRegistrationSecret(any(String.class), any(String.class));
 
         webClient.post().uri("/register/confirm")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(INVITATION, true))
                 .body(Mono.just(new PostRegisterNewUserConfirmRequest("test-user@mail.com", "registration-secret")), PostRegisterNewUserConfirmRequest.class)
                 .exchange()
-                .expectStatus().isEqualTo(HttpStatus.I_AM_A_TEAPOT)
+                .expectStatus().isEqualTo(HttpStatus.BAD_REQUEST)
                 .expectBody(String.class).isEqualTo("Bad");
 
         verify(userDetailsService, times(1)).findByUsername(INVITATION);
@@ -375,12 +379,12 @@ class RouterTest extends SecurityConfigSetup {
     @Test
     void postResetPassword_negative_ResponseStatusException() {
 
-        doReturn(Mono.error(new ResponseStatusException(HttpStatus.I_AM_A_TEAPOT, "Bad"))).when(userDetailsService).resetPassword(any(String.class));
+        doReturn(Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bad"))).when(userDetailsService).resetPassword(any(String.class));
 
         webClient.post().uri("/reset-password")
                 .body(Mono.just("test-user@mail.com"), String.class)
                 .exchange()
-                .expectStatus().isEqualTo(HttpStatus.I_AM_A_TEAPOT)
+                .expectStatus().isEqualTo(HttpStatus.BAD_REQUEST)
                 .expectBody(String.class).isEqualTo("Bad");
 
         verify(userDetailsService, times(1)).resetPassword("test-user@mail.com");
@@ -725,7 +729,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                });
 
         verify(productService, times(0)).createProduct(any(String.class), any(BigDecimal.class));
     }
@@ -830,7 +836,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                });
 
         verify(productService, times(0)).readProduct(any(Long.class));
     }
@@ -982,7 +990,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                });
 
         verify(productService, times(0)).updateProduct(any(Long.class), any(String.class));
     }
@@ -1134,7 +1144,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                });
 
         verify(productService, times(0)).updateProductPrice(any(Long.class), any(BigDecimal.class));
     }
@@ -1226,7 +1238,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                });
 
         verify(purchaseService, times(0)).createPurchase(any(Long.class), any(Long.class));
     }
@@ -1371,7 +1385,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                });
 
         verify(purchaseService, times(0)).deletePurchase(any(Long.class));
     }
@@ -1464,7 +1480,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                });
 
         verify(paymentService, times(0)).createPayment(any(Long.class), any(BigDecimal.class));
     }
@@ -1613,7 +1631,9 @@ class RouterTest extends SecurityConfigSetup {
                 .exchange()
                 .expectStatus().isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
                 .expectHeader().contentType(MediaType.TEXT_PLAIN)
-                .expectBody(String.class).value(s -> stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                .expectBody(String.class).value(s -> {
+                    assertThat(s, stringContainsInOrder("Content type '", "' not supported. Supported: "));
+                });
 
         verify(paymentService, times(0)).deletePayment(any(Long.class));
     }

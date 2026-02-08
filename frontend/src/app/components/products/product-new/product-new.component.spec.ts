@@ -1,26 +1,28 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideRouter} from "@angular/router";
 import {Big} from "big.js";
-import {MockProvider} from "ng-mocks";
 import {of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {HttpService} from "../../../services/http.service";
 
 import {ProductNewComponent} from './product-new.component';
-import SpyObj = jasmine.SpyObj;
 
 describe('ProductNewComponent', () => {
 
     let component: ProductNewComponent;
     let fixture: ComponentFixture<ProductNewComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [ProductNewComponent],
             providers: [
-                MockProvider(HttpService),
-                provideRouter([])
+                provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock}
             ]
         })
             .compileComponents();
@@ -28,8 +30,6 @@ describe('ProductNewComponent', () => {
         fixture = TestBed.createComponent(ProductNewComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
-
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
     });
 
     it('should create', () => {
@@ -38,7 +38,7 @@ describe('ProductNewComponent', () => {
 
     it('should create the product', () => {
 
-        httpServiceSpy.postCreateProduct.and.callFake(() => of(undefined));
+        httpServiceMock.postCreateProduct.mockReturnValue(of(undefined));
 
         component.newProductForm.setValue({
             name: 'new-product',
@@ -47,36 +47,36 @@ describe('ProductNewComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postCreateProduct).toHaveBeenCalledOnceWith('new-product', Big('123.45'));
+        expect(httpServiceMock.postCreateProduct).toHaveBeenCalledExactlyOnceWith('new-product', Big('123.45'));
     });
 
     it('should not create the product (name wrong)', () => {
 
-        httpServiceSpy.postCreateProduct.and.callFake(() => of(undefined));
+        httpServiceMock.postCreateProduct.mockReturnValue(of(undefined));
 
         component.newProductForm.controls.name.setErrors(['wrong']);
         component.newProductForm.controls.price.patchValue('123.45');
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postCreateProduct).not.toHaveBeenCalled();
+        expect(httpServiceMock.postCreateProduct).not.toHaveBeenCalled();
     });
 
     it('should not create the product (price wrong)', () => {
 
-        httpServiceSpy.postCreateProduct.and.callFake(() => of(undefined));
+        httpServiceMock.postCreateProduct.mockReturnValue(of(undefined));
 
         component.newProductForm.controls.name.patchValue('new-product');
         component.newProductForm.controls.price.setErrors(['wrong']);
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postCreateProduct).not.toHaveBeenCalled();
+        expect(httpServiceMock.postCreateProduct).not.toHaveBeenCalled();
     });
 
     it('should not create the product (create product failed)', () => {
 
-        httpServiceSpy.postCreateProduct.and.callFake(() =>
+        httpServiceMock.postCreateProduct.mockReturnValue(
             throwError(() => 'Error on create product')
         );
 
@@ -85,6 +85,6 @@ describe('ProductNewComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postCreateProduct).toHaveBeenCalledOnceWith('new-product', Big('123.45'));
+        expect(httpServiceMock.postCreateProduct).toHaveBeenCalledExactlyOnceWith('new-product', Big('123.45'));
     });
 });

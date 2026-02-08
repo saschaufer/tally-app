@@ -24,7 +24,7 @@ export const httpLoaderInterceptor: HttpInterceptorFn = (req: HttpRequest<unknow
                 }
             })
 
-        // teardown logic in case of cancelled requests
+        // teardown logic in case of canceled requests
         return () => {
             httpLoaderService.removeRequest(req);
             subscription.unsubscribe();

@@ -1,6 +1,6 @@
 import {DatePipe} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject, NgZone} from '@angular/core';
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {ActivatedRoute, Router, RouterLink} from "@angular/router";
 import {Big} from "big.js";
 import {routeName} from "../../../app.routes";
@@ -9,7 +9,6 @@ import {GetPurchasesResponse} from "../../../services/models/GetPurchasesRespons
 
 @Component({
     selector: 'app-purchase-delete',
-    standalone: true,
     imports: [
         RouterLink,
         DatePipe
@@ -19,12 +18,14 @@ import {GetPurchasesResponse} from "../../../services/models/GetPurchasesRespons
 })
 export class PurchaseDeleteComponent {
 
+    @ViewChild('purchases.purchaseDelete.successDeletingPurchase', {static: true}) dialogSuccess!: ElementRef<HTMLDialogElement>;
+    @ViewChild('purchases.purchaseDelete.errorDeletingPurchase', {static: true}) dialogError!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private activatedRoute = inject(ActivatedRoute);
-    private httpService = inject(HttpService);
-    private router = inject(Router);
-    private zone = inject(NgZone);
+    private readonly activatedRoute = inject(ActivatedRoute);
+    private readonly httpService = inject(HttpService);
+    private readonly router = inject(Router);
 
     purchase: GetPurchasesResponse | undefined;
 
@@ -38,7 +39,7 @@ export class PurchaseDeleteComponent {
             this.purchase = {
                 purchaseId: purchase.purchaseId,
                 productName: purchase.productName,
-                productPrice: Big(purchase.productPrice),  // JSON.parse makes a string, therefor need to be set to Big explicitly
+                productPrice: Big(purchase.productPrice),  // JSON.parse makes a string, therefore, need to be set to Big explicitly
                 purchaseTimestamp: purchase.purchaseTimestamp
             }
         });
@@ -49,26 +50,28 @@ export class PurchaseDeleteComponent {
             .subscribe({
                 next: () => {
                     console.info("Purchase delete.");
-                    const dialog = document.getElementById('#purchases.purchaseDelete.successDeletingPurchase')! as HTMLDialogElement;
-                    dialog.addEventListener('click', () => {
-                        dialog.close();
-                        this.zone.run(() =>
-                            this.router.navigate(['/' + routeName.purchases]).then()
-                        ).then();
-                    });
-                    dialog.showModal();
+                    this.openDialogSuccess();
                 },
                 error: (error: HttpErrorResponse) => {
                     console.error('Error deleting purchase.');
                     console.error(error);
                     this.error = error;
-                    this.openDialog('#purchases.purchaseDelete.errorDeletingPurchase');
+                    this.openDialogError();
                 }
             });
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialogSuccess() {
+        const dialog: HTMLDialogElement = this.dialogSuccess.nativeElement;
+        dialog.addEventListener('click', () => {
+            dialog.close();
+            this.router.navigate(['/' + routeName.purchases]).then();
+        });
+        dialog.showModal();
+    }
+
+    openDialogError() {
+        const dialog: HTMLDialogElement = this.dialogError.nativeElement;
         dialog.addEventListener('click', () => {
             dialog.close();
         });

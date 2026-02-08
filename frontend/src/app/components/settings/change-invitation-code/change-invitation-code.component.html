@@ -5,9 +5,9 @@
     <div class="mt-0_5">
         <label for="invitation-code">Invitation code</label>
 
-        <!-- @formatter:off -->
-        <label class="text-red" for="invitation-code" *ngIf="formErrors.invitationCodeMissing"> - Missing invitation code</label>
-        <!-- @formatter:on -->
+        @if (formErrors.invitationCodeMissing) {
+            <label class="text-red" for="invitation-code"> - Missing invitation code</label>
+        }
 
         <input id="invitation-code" type="password" autocomplete="" formControlName="invitationCode">
     </div>
@@ -15,10 +15,12 @@
     <div class="mt-0_5">
         <label for="invitation-code-repeat">Invitation code repeat</label>
 
-        <!-- @formatter:off -->
-        <label class="text-red" for="invitation-code-repeat" *ngIf="formErrors.invitationCodeRepeatMissing"> - Missing invitation code</label>
-        <label class="text-red" for="invitation-code-repeat" *ngIf="formErrors.invitationCodeUnequal"> - Unequal invitation code</label>
-        <!-- @formatter:on -->
+        @if (formErrors.invitationCodeRepeatMissing) {
+            <label class="text-red" for="invitation-code-repeat"> - Missing invitation code</label>
+        }
+        @if (formErrors.invitationCodeUnequal) {
+            <label class="text-red" for="invitation-code-repeat"> - Unequal invitation code</label>
+        }
 
         <input id="invitation-code-repeat" type="password" autocomplete="" formControlName="invitationCodeRepeat">
     </div>
@@ -27,11 +29,11 @@
 
 </form>
 
-<dialog id="#settings.changeInvitationCode.successChangeInvitationCode">
+<dialog #settings.changeInvitationCode.successChangeInvitationCode>
     <p class="mt-1_25 text-center text-green">Invitation code successfully changed.</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
-<dialog id="#settings.changeInvitationCode.errorChangeInvitationCode">
+<dialog #settings.changeInvitationCode.errorChangeInvitationCode>
     <p class="mt-1_25 text-center text-green">Error changing invitation code.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>

@@ -1,6 +1,5 @@
-import {NgForOf, NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject, NgZone} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {Router, RouterLink} from "@angular/router";
 import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
@@ -8,24 +7,21 @@ import {GetProductsResponse} from "../../services/models/GetProductsResponse";
 
 @Component({
     selector: 'app-products',
-    standalone: true,
-    imports: [
-        NgForOf,
-        NgIf,
-        RouterLink
-    ],
+    imports: [RouterLink],
     templateUrl: './products.component.html',
     styles: ``
 })
 export class ProductsComponent {
 
+    @ViewChild('products.errorReadingProducts', {static: true}) dialogError!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private httpService = inject(HttpService);
-    private router = inject(Router);
-    private zone = inject(NgZone);
+    private readonly httpService = inject(HttpService);
+    private readonly router = inject(Router);
+    private readonly cdr = inject(ChangeDetectorRef);
 
-    products: GetProductsResponse[] | undefined;
+    products: GetProductsResponse[] = [];
 
     error: HttpErrorResponse | undefined;
 
@@ -34,29 +30,27 @@ export class ProductsComponent {
         this.httpService.getReadProducts()
             .subscribe({
                 next: products => {
-                    console.info("Products read.");
+                    console.info("Products read: " + products.length + " products found.");
                     products.sort((a, b) => a.name.localeCompare(b.name));
                     this.products = products;
+                    this.cdr.detectChanges();
                 },
                 error: (error: HttpErrorResponse) => {
                     console.error('Error reading products.');
                     console.error(error);
                     this.error = error;
-                    this.openDialog('#products.errorReadingProducts');
+                    this.openDialog(this.dialogError.nativeElement);
                 }
             });
     }
 
     onClick(i: number) {
-        let product = this.products![i];
+        const product = this.products[i];
         const urlAppend = encodeURIComponent(window.btoa(JSON.stringify(product)));
-        this.zone.run(() =>
-            this.router.navigate(['/' + routeName.products_edit + '/' + urlAppend]).then()
-        ).then();
+        this.router.navigate(['/' + routeName.products_edit + '/' + urlAppend]).then();
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

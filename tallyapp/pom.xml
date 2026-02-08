@@ -136,6 +136,20 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Spring Boot Webflux Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Spring Boot R2DBC Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-data-r2dbc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- Hamcrest -->
         <dependency>
             <groupId>org.hamcrest</groupId>
@@ -205,6 +219,12 @@
                 <!-- https://docs.oracle.com/en/java/javase/21/docs/specs/man/javac.html -->
                 <configuration>
                     <compilerArgument>-proc:full</compilerArgument>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
@@ -247,6 +267,7 @@
                         -Xmx2048m
                         -Dfile.encoding=${project.reporting.outputEncoding}
                         ${surefire.jacoco.args}
+                        -javaagent:${settings.localRepository}/org/mockito/mockito-core/${mockito.version}/mockito-core-${mockito.version}.jar
                     </argLine>
                 </configuration>
             </plugin>

@@ -1,25 +1,27 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {provideRouter} from "@angular/router";
-import {MockProvider} from "ng-mocks";
 import {of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {HttpService} from "../../services/http.service";
 
 import {ResetPasswordComponent} from './reset-password.component';
-import SpyObj = jasmine.SpyObj;
 
 describe('ResetPasswordComponent', () => {
 
     let component: ResetPasswordComponent;
     let fixture: ComponentFixture<ResetPasswordComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [ResetPasswordComponent],
             providers: [
-                MockProvider(HttpService),
-                provideRouter([])
+                provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock}
             ]
         })
             .compileComponents();
@@ -27,8 +29,6 @@ describe('ResetPasswordComponent', () => {
         fixture = TestBed.createComponent(ResetPasswordComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
-
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
     });
 
     it('should create', () => {
@@ -37,7 +37,7 @@ describe('ResetPasswordComponent', () => {
 
     it('should switch to email sent', () => {
 
-        httpServiceSpy.postResetPassword.and.callFake(() => of(undefined));
+        httpServiceMock.postResetPassword.mockReturnValue(of(undefined));
 
         component.resetPasswordForm.setValue({
             email: 'test-username@mail.com'
@@ -48,7 +48,7 @@ describe('ResetPasswordComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postResetPassword).toHaveBeenCalledOnceWith('test-username@mail.com');
+        expect(httpServiceMock.postResetPassword).toHaveBeenCalledExactlyOnceWith('test-username@mail.com');
 
         expect(component.email).toBe('test-username@mail.com');
         expect(component.emailSent).toBe(true);
@@ -63,7 +63,7 @@ describe('ResetPasswordComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postResetPassword).not.toHaveBeenCalled();
+        expect(httpServiceMock.postResetPassword).not.toHaveBeenCalled();
 
         expect(component.email).toBe('');
         expect(component.emailSent).toBe(false);
@@ -71,7 +71,7 @@ describe('ResetPasswordComponent', () => {
 
     it('should not switch to email sent (register failed)', () => {
 
-        httpServiceSpy.postResetPassword.and.callFake(() =>
+        httpServiceMock.postResetPassword.mockReturnValue(
             throwError(() => 'Error on resetting password')
         );
 
@@ -84,7 +84,7 @@ describe('ResetPasswordComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postResetPassword).toHaveBeenCalledOnceWith('test-username@mail.com');
+        expect(httpServiceMock.postResetPassword).toHaveBeenCalledExactlyOnceWith('test-username@mail.com');
 
         expect(component.email).toBe('');
         expect(component.emailSent).toBe(false);

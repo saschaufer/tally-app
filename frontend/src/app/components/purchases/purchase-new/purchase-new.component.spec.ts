@@ -1,31 +1,41 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {provideRouter, Router} from "@angular/router";
+import {NavigationExtras, provideRouter, Router} from "@angular/router";
+import {Mock} from "@vitest/spy";
 import {Big} from "big.js";
-import {MockProvider} from "ng-mocks";
 import {firstValueFrom, of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {routeName} from "../../../app.routes";
 import {HttpService} from "../../../services/http.service";
 import {GetProductsResponse} from "../../../services/models/GetProductsResponse";
 
 import {PurchaseNewComponent} from './purchase-new.component';
-import Spy = jasmine.Spy;
-import SpyObj = jasmine.SpyObj;
 
 describe('PurchaseNewComponent', () => {
 
     let component: PurchaseNewComponent;
     let fixture: ComponentFixture<PurchaseNewComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
-    let routerNavigateSpy: Spy;
+    let routerNavigateSpy: Mock<(commands: readonly any[], extras?: NavigationExtras) => Promise<boolean>>;
+    let dialogErrorReadingProductsSpyShowModal: Mock<() => void>;
+    let dialogErrorReadingProductsSpyClose: Mock<(returnValue?: string) => void>;
+    let dialogErrorNoProductSelectedSpyShowModal: Mock<() => void>;
+    let dialogErrorNoProductSelectedSpyClose: Mock<(returnValue?: string) => void>;
+    let dialogSuccessCreatingPurchaseSpyShowModal: Mock<() => void>;
+    let dialogSuccessCreatingPurchaseSpyClose: Mock<(returnValue?: string) => void>;
+    let dialogErrorCreatingPurchaseSpyShowModal: Mock<() => void>;
+    let dialogErrorCreatingPurchaseSpyClose: Mock<(returnValue?: string) => void>;
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [PurchaseNewComponent],
             providers: [
-                MockProvider(HttpService),
-                provideRouter([])
+                provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock}
             ]
         })
             .compileComponents();
@@ -33,14 +43,20 @@ describe('PurchaseNewComponent', () => {
         fixture = TestBed.createComponent(PurchaseNewComponent);
         component = fixture.componentInstance;
 
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
-
-        routerNavigateSpy = spyOn(TestBed.inject(Router), 'navigate');
+        routerNavigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate');
+        dialogErrorReadingProductsSpyShowModal = vi.spyOn(component.dialogErrorReadingProducts.nativeElement, 'showModal');
+        dialogErrorReadingProductsSpyClose = vi.spyOn(component.dialogErrorReadingProducts.nativeElement, 'close');
+        dialogErrorNoProductSelectedSpyShowModal = vi.spyOn(component.dialogErrorNoProductSelected.nativeElement, 'showModal');
+        dialogErrorNoProductSelectedSpyClose = vi.spyOn(component.dialogErrorNoProductSelected.nativeElement, 'close');
+        dialogSuccessCreatingPurchaseSpyShowModal = vi.spyOn(component.dialogSuccessCreatingPurchase.nativeElement, 'showModal');
+        dialogSuccessCreatingPurchaseSpyClose = vi.spyOn(component.dialogSuccessCreatingPurchase.nativeElement, 'close');
+        dialogErrorCreatingPurchaseSpyShowModal = vi.spyOn(component.dialogErrorCreatingPurchase.nativeElement, 'showModal');
+        dialogErrorCreatingPurchaseSpyClose = vi.spyOn(component.dialogErrorCreatingPurchase.nativeElement, 'close');
     });
 
     it('should create', () => {
 
-        httpServiceSpy.getReadProducts.and.callFake(() => of([
+        httpServiceMock.getReadProducts.mockReturnValue(of([
             {id: 1, name: "bb-product-1", price: Big('123.45')},
             {id: 2, name: "aa-product-2", price: Big('678.90')}
         ] as GetProductsResponse[]));
@@ -53,6 +69,15 @@ describe('PurchaseNewComponent', () => {
             {id: 2, name: "aa-product-2", price: Big('678.90')},
             {id: 1, name: "bb-product-1", price: Big('123.45')}
         ] as GetProductsResponse[]);
+
+        expect(dialogErrorReadingProductsSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorReadingProductsSpyClose).not.toHaveBeenCalled();
+        expect(dialogErrorNoProductSelectedSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorNoProductSelectedSpyClose).not.toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyClose).not.toHaveBeenCalled();
+        expect(dialogErrorCreatingPurchaseSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorCreatingPurchaseSpyClose).not.toHaveBeenCalled();
     });
 
     it('should select the clicked product', () => {
@@ -73,45 +98,67 @@ describe('PurchaseNewComponent', () => {
 
     it('should create the purchase and navigate to ' + routeName.purchases, () => {
 
-        const dialog = document.getElementById('#purchases.purchaseNew.successCreatingPurchase')! as HTMLDialogElement;
+        const dialog: HTMLDialogElement = component.dialogSuccessCreatingPurchase.nativeElement;
 
-        httpServiceSpy.postCreatePurchase.and.callFake(() => of(undefined));
-        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
+        httpServiceMock.getReadProducts.mockReturnValue(of([
+            {id: 1, name: "bb-product-1", price: Big('123.45')},
+            {id: 2, name: "aa-product-2", price: Big('678.90')}
+        ] as GetProductsResponse[]));
+
+        httpServiceMock.postCreatePurchase.mockReturnValue(of(undefined));
+        routerNavigateSpy.mockReturnValue(firstValueFrom(of(true)));
 
         component.selectedProduct = {id: 1, name: "product-1", price: Big('123.45')} as GetProductsResponse;
 
+        fixture.detectChanges();
+
+        expect(dialogSuccessCreatingPurchaseSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyClose).not.toHaveBeenCalled();
+
         component.onSubmit();
 
-        expect(httpServiceSpy.postCreatePurchase).toHaveBeenCalledOnceWith(1);
+        expect(httpServiceMock.postCreatePurchase).toHaveBeenCalledExactlyOnceWith(1);
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
 
+        expect(dialogSuccessCreatingPurchaseSpyShowModal).toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyClose).not.toHaveBeenCalled();
+
         dialog.dispatchEvent(new Event('click'));
 
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases]);
+        expect(routerNavigateSpy).toHaveBeenCalledExactlyOnceWith(['/' + routeName.purchases]);
+
+        expect(dialogErrorReadingProductsSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorReadingProductsSpyClose).not.toHaveBeenCalled();
+        expect(dialogErrorNoProductSelectedSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorNoProductSelectedSpyClose).not.toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyShowModal).toHaveBeenCalled();
+        expect(dialogSuccessCreatingPurchaseSpyClose).toHaveBeenCalled();
+        expect(dialogErrorCreatingPurchaseSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorCreatingPurchaseSpyClose).not.toHaveBeenCalled();
     });
 
     it('should not create the purchase and not navigate to ' + routeName.purchases + ' (no product selected)', () => {
 
-        const dialog = document.getElementById('#purchases.purchaseNew.successCreatingPurchase')! as HTMLDialogElement;
+        const dialog: HTMLDialogElement = component.dialogSuccessCreatingPurchase.nativeElement;
 
-        httpServiceSpy.postCreatePurchase.and.callFake(() => of(undefined));
-        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
+        httpServiceMock.postCreatePurchase.mockReturnValue(of(undefined));
+        routerNavigateSpy.mockReturnValue(firstValueFrom(of(true)));
 
         component.onSubmit();
 
         dialog.dispatchEvent(new Event('click'));
 
-        expect(httpServiceSpy.postCreatePurchase).not.toHaveBeenCalled();
+        expect(httpServiceMock.postCreatePurchase).not.toHaveBeenCalled();
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
     it('should not navigate to ' + routeName.purchases + ' (create purchase failed)', () => {
 
-        const dialog = document.getElementById('#purchases.purchaseNew.successCreatingPurchase')! as HTMLDialogElement;
+        const dialog: HTMLDialogElement = component.dialogSuccessCreatingPurchase.nativeElement;
 
-        httpServiceSpy.postCreatePurchase.and.callFake(() =>
+        httpServiceMock.postCreatePurchase.mockReturnValue(
             throwError(() => 'Error on create purchase')
         );
 
@@ -121,7 +168,7 @@ describe('PurchaseNewComponent', () => {
 
         dialog.dispatchEvent(new Event('click'));
 
-        expect(httpServiceSpy.postCreatePurchase).toHaveBeenCalledOnceWith(1);
+        expect(httpServiceMock.postCreatePurchase).toHaveBeenCalledExactlyOnceWith(1);
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });

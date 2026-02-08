@@ -1,31 +1,33 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {provideRouter, Router} from "@angular/router";
+import {NavigationExtras, provideRouter, Router} from "@angular/router";
+import {Mock} from "@vitest/spy";
 import {Big} from "big.js";
-import {MockProvider} from "ng-mocks";
 import {firstValueFrom, of} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 import {GetProductsResponse} from "../../services/models/GetProductsResponse";
 
 import {ProductsComponent} from './products.component';
-import Spy = jasmine.Spy;
-import SpyObj = jasmine.SpyObj;
 
 describe('ProductsComponent', () => {
 
     let component: ProductsComponent;
     let fixture: ComponentFixture<ProductsComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
-    let routerNavigateSpy: Spy;
+    let routerNavigateSpy: Mock<(commands: readonly any[], extras?: NavigationExtras) => Promise<boolean>>;
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [ProductsComponent],
             providers: [
-                MockProvider(HttpService),
-                provideRouter([])
+                provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock}
             ]
         })
             .compileComponents();
@@ -33,14 +35,12 @@ describe('ProductsComponent', () => {
         fixture = TestBed.createComponent(ProductsComponent);
         component = fixture.componentInstance;
 
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
-
-        routerNavigateSpy = spyOn(TestBed.inject(Router), 'navigate');
+        routerNavigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate');
     });
 
     it('should create', () => {
 
-        httpServiceSpy.getReadProducts.and.callFake(() => of([
+        httpServiceMock.getReadProducts.mockReturnValue(of([
             {id: 1, name: "bb-product-1", price: Big('123.45')},
             {id: 2, name: "aa-product-2", price: Big('678.90')}
         ] as GetProductsResponse[]));
@@ -57,7 +57,7 @@ describe('ProductsComponent', () => {
 
     it('should navigate to ' + routeName.products_edit, () => {
 
-        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
+        routerNavigateSpy.mockReturnValue(firstValueFrom(of(true)));
 
         component.products = [
             {id: 1, name: "product-1%&/+=", price: Big('123.45')},
@@ -72,6 +72,6 @@ describe('ProductsComponent', () => {
 
         component.onClick(0);
 
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.products_edit + '/' + urlAppend]);
+        expect(routerNavigateSpy).toHaveBeenCalledExactlyOnceWith(['/' + routeName.products_edit + '/' + urlAppend]);
     });
 });

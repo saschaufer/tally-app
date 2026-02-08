@@ -1,6 +1,5 @@
-import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject} from '@angular/core';
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {RouterLink} from "@angular/router";
 import {Big} from "big.js";
@@ -9,20 +8,21 @@ import {HttpService} from "../../../services/http.service";
 
 @Component({
     selector: 'app-product-new',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
-        RouterLink,
-        NgIf
+        RouterLink
     ],
     templateUrl: './product-new.component.html',
     styles: ``
 })
 export class ProductNewComponent {
 
+    @ViewChild('products.productNew.successCreateProduct', {static: true}) dialogSuccessCreateProduct!: ElementRef<HTMLDialogElement>;
+    @ViewChild('products.productNew.errorCreateProduct', {static: true}) dialogErrorCreateProduct!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private httpService = inject(HttpService);
+    private readonly httpService = inject(HttpService);
 
     readonly newProductForm = new FormGroup({
         name: new FormControl('', {nonNullable: true, validators: [Validators.required]}),
@@ -55,20 +55,19 @@ export class ProductNewComponent {
                 .subscribe({
                     next: () => {
                         console.info("Product created.");
-                        this.openDialog('#products.productNew.successCreateProduct');
+                        this.openDialog(this.dialogSuccessCreateProduct.nativeElement);
                     },
                     error: (error) => {
                         console.error('Error creating product.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#products.productNew.errorCreateProduct');
+                        this.openDialog(this.dialogErrorCreateProduct.nativeElement);
                     }
                 });
         }
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

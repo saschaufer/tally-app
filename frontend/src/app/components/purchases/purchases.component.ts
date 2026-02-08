@@ -1,6 +1,6 @@
-import {DatePipe, NgClass, NgForOf, NgIf} from "@angular/common";
+import {DatePipe, NgClass} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject, NgZone} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {Router, RouterLink} from "@angular/router";
 import {Big} from "big.js";
 import {routeName} from "../../app.routes";
@@ -10,10 +10,7 @@ import {GetPurchasesResponse} from "../../services/models/GetPurchasesResponse";
 
 @Component({
     selector: 'app-purchases',
-    standalone: true,
     imports: [
-        NgForOf,
-        NgIf,
         RouterLink,
         NgClass,
         DatePipe
@@ -23,13 +20,16 @@ import {GetPurchasesResponse} from "../../services/models/GetPurchasesResponse";
 })
 export class PurchasesComponent {
 
+    @ViewChild('purchases.errorReadingPurchases', {static: true}) dialogErrorReadingPurchases!: ElementRef<HTMLDialogElement>;
+    @ViewChild('purchases.errorReadingAccountBalance', {static: true}) dialogErrorReadingAccountBalance!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private httpService = inject(HttpService);
-    private router = inject(Router);
-    private zone = inject(NgZone);
+    private readonly httpService = inject(HttpService);
+    private readonly router = inject(Router);
+    private readonly cdr = inject(ChangeDetectorRef);
 
-    purchases: GetPurchasesResponse[] | undefined;
+    purchases: GetPurchasesResponse[] = [];
     accountBalance: GetAccountBalanceResponse | undefined;
     isNegative = false;
 
@@ -40,15 +40,16 @@ export class PurchasesComponent {
         this.httpService.getReadPurchases()
             .subscribe({
                 next: purchases => {
-                    console.info("Purchases read.");
+                    console.info("Purchases read: " + purchases.length + " purchases founds.");
                     purchases.sort((a, b) => new Date(a.purchaseTimestamp) < new Date(b.purchaseTimestamp) ? 1 : -1);
                     this.purchases = purchases;
+                    this.cdr.detectChanges();
                 },
                 error: (error: HttpErrorResponse) => {
                     console.error('Error reading purchases.');
                     console.error(error);
                     this.error = error;
-                    this.openDialog('#purchases.errorReadingPurchases');
+                    this.openDialog(this.dialogErrorReadingPurchases.nativeElement);
                 }
             });
 
@@ -58,26 +59,24 @@ export class PurchasesComponent {
                     console.info("Account balance read.");
                     this.accountBalance = accountBalance;
                     this.isNegative = Big(this.accountBalance.amountTotal).lt(Big('0.0'));
+                    this.cdr.detectChanges();
                 },
                 error: (error: HttpErrorResponse) => {
                     console.error('Error reading account balance.');
                     console.error(error);
                     this.error = error;
-                    this.openDialog('#purchases.errorReadingAccountBalance');
+                    this.openDialog(this.dialogErrorReadingAccountBalance.nativeElement);
                 }
             });
     }
 
     onClick(i: number) {
-        let purchase = this.purchases![i];
+        const purchase = this.purchases[i];
         const urlAppend = encodeURIComponent(window.btoa(JSON.stringify(purchase)));
-        this.zone.run(() =>
-            this.router.navigate(['/' + routeName.purchases_delete + '/' + urlAppend]).then()
-        ).then();
+        this.router.navigate(['/' + routeName.purchases_delete + '/' + urlAppend]).then();
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

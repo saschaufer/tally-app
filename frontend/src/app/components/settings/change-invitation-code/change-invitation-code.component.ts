@@ -1,6 +1,5 @@
-import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject} from '@angular/core';
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {
     AbstractControl,
     FormControl,
@@ -14,17 +13,16 @@ import {HttpService} from "../../../services/http.service";
 
 @Component({
     selector: 'app-change-invitation-code',
-    standalone: true,
-    imports: [
-        ReactiveFormsModule,
-        NgIf
-    ],
+    imports: [ReactiveFormsModule],
     templateUrl: './change-invitation-code.component.html',
     styles: ``
 })
 export class ChangeInvitationCodeComponent {
 
-    private httpService = inject(HttpService);
+    @ViewChild('settings.changeInvitationCode.successChangeInvitationCode', {static: true}) dialogSuccessChangeInvitationCode!: ElementRef<HTMLDialogElement>;
+    @ViewChild('settings.changeInvitationCode.errorChangeInvitationCode', {static: true}) dialogErrorChangeInvitationCode!: ElementRef<HTMLDialogElement>;
+
+    private readonly httpService = inject(HttpService);
 
     readonly invitationCodesMatch: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
 
@@ -63,20 +61,19 @@ export class ChangeInvitationCodeComponent {
                 .subscribe({
                     next: () => {
                         console.info('Invitation code change successful.');
-                        this.openDialog('#settings.changeInvitationCode.successChangeInvitationCode');
+                        this.openDialog(this.dialogSuccessChangeInvitationCode.nativeElement);
                     },
                     error: (error: HttpErrorResponse) => {
                         console.error('Error changing invitation code.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#settings.changeInvitationCode.errorChangeInvitationCode');
+                        this.openDialog(this.dialogErrorChangeInvitationCode.nativeElement);
                     }
                 });
         }
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

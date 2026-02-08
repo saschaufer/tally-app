@@ -1,25 +1,28 @@
-import {provideHttpClient, withInterceptors} from "@angular/common/http";
+import {HttpRequest, provideHttpClient, withInterceptors} from "@angular/common/http";
 import {HttpTestingController, provideHttpClientTesting} from "@angular/common/http/testing";
 import {TestBed} from "@angular/core/testing";
-import {MockProvider} from "ng-mocks";
+import {afterEach, beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 import {httpLoaderInterceptor} from "./http-loader.interceptor";
 import {HttpLoaderService} from "./http-loader.service";
 import {HttpService} from "./http.service";
-import SpyObj = jasmine.SpyObj;
 
 describe('HttpLoaderInterceptor', () => {
 
     let httpService: HttpService;
     let httpTestingController: HttpTestingController;
 
-    let httpLoaderServiceSpy: SpyObj<HttpLoaderService>;
+    let httpLoaderServiceSpyAddRequest: Mock<(req: HttpRequest<any>) => void>;
+    let httpLoaderServiceSpyRemoveRequest: Mock<(req: HttpRequest<any>) => void>;
 
     beforeEach(() => {
+
+        vi.resetAllMocks();
+
         TestBed.configureTestingModule({
             imports: [],
             providers: [
                 HttpService,
-                MockProvider(HttpLoaderService),
+                HttpLoaderService,
                 provideHttpClient(withInterceptors([httpLoaderInterceptor])),
                 provideHttpClientTesting()
             ]
@@ -28,7 +31,8 @@ describe('HttpLoaderInterceptor', () => {
         httpService = TestBed.inject(HttpService);
         httpTestingController = TestBed.inject(HttpTestingController);
 
-        httpLoaderServiceSpy = spyOnAllFunctions(TestBed.inject(HttpLoaderService));
+        httpLoaderServiceSpyAddRequest = vi.spyOn(TestBed.inject(HttpLoaderService), 'addRequest');
+        httpLoaderServiceSpyRemoveRequest = vi.spyOn(TestBed.inject(HttpLoaderService), 'removeRequest');
     });
 
     afterEach(() => {
@@ -37,20 +41,20 @@ describe('HttpLoaderInterceptor', () => {
 
     it('should call the loader service', () => {
 
-        expect(httpLoaderServiceSpy.addRequest).not.toHaveBeenCalled();
-        expect(httpLoaderServiceSpy.removeRequest).not.toHaveBeenCalled();
+        expect(httpLoaderServiceSpyAddRequest).not.toHaveBeenCalled();
+        expect(httpLoaderServiceSpyRemoveRequest).not.toHaveBeenCalled();
 
         httpService.postLogin('mail', 'password').subscribe(response => {
             expect(response).toBeTruthy();
         });
 
-        expect(httpLoaderServiceSpy.addRequest).toHaveBeenCalled();
-        expect(httpLoaderServiceSpy.removeRequest).not.toHaveBeenCalled();
+        expect(httpLoaderServiceSpyAddRequest).toHaveBeenCalled();
+        expect(httpLoaderServiceSpyRemoveRequest).not.toHaveBeenCalled();
 
         const httpRequest = httpTestingController.expectOne('/login');
         httpRequest.flush({}); // Response
 
-        expect(httpLoaderServiceSpy.addRequest).toHaveBeenCalled();
-        expect(httpLoaderServiceSpy.removeRequest).toHaveBeenCalled();
+        expect(httpLoaderServiceSpyAddRequest).toHaveBeenCalled();
+        expect(httpLoaderServiceSpyRemoveRequest).toHaveBeenCalled();
     });
 });

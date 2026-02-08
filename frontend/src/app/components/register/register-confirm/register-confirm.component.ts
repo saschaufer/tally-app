@@ -1,12 +1,11 @@
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject} from '@angular/core';
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {ActivatedRoute, RouterLink} from "@angular/router";
 import {routeName} from "../../../app.routes";
 import {HttpService} from "../../../services/http.service";
 
 @Component({
     selector: 'app-register-confirm',
-    standalone: true,
     imports: [
         RouterLink
     ],
@@ -15,10 +14,12 @@ import {HttpService} from "../../../services/http.service";
 })
 export class RegisterConfirmComponent {
 
+    @ViewChild('register.registerConfirm.errorRegisterConfirm', {static: true}) dialog!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private activatedRoute = inject(ActivatedRoute);
-    private httpService = inject(HttpService);
+    private readonly activatedRoute = inject(ActivatedRoute);
+    private readonly httpService = inject(HttpService);
 
     error: HttpErrorResponse | undefined;
 
@@ -38,14 +39,13 @@ export class RegisterConfirmComponent {
                         console.error('Error register.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#register.registerConfirm.errorRegisterConfirm');
+                        this.openDialog(this.dialog.nativeElement);
                     }
                 });
         });
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

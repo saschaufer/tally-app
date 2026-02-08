@@ -55,11 +55,11 @@
                             <serverId>nexus</serverId>
                             <!-- Node & Npm compatibility: https://nodejs.org/en/download/releases/ -->
                             <!-- Download: https://nodejs.org/dist/vX.X.X/node-vX.X.X-linux-x64.tar.gz -->
-                            <nodeVersion>v20.11.1</nodeVersion>
+                            <nodeVersion>v22.12.0</nodeVersion>
                             <nodeDownloadRoot>https://nexus.server.lan/repository/raw-group/nodejs/
                             </nodeDownloadRoot>
                             <!-- Download: https://registry.npmjs.org/npm/-/npm-X.X.X.tgz -->
-                            <npmVersion>10.2.4</npmVersion>
+                            <npmVersion>10.9.0</npmVersion>
                             <npmDownloadRoot>https://nexus.server.lan/repository/raw-group/npm/</npmDownloadRoot>
                         </configuration>
                     </execution>
@@ -71,6 +71,16 @@
                         </goals>
                         <configuration>
                             <arguments>ci</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npx (install chromium)</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>npx</goal>
+                        </goals>
+                        <configuration>
+                            <arguments>playwright install chromium</arguments>
                         </configuration>
                     </execution>
                     <execution>

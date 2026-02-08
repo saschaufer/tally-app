@@ -79,7 +79,7 @@ class ProductServiceTest {
                     assertThat(error, instanceOf(ResponseStatusException.class));
 
                     final ResponseStatusException e = (ResponseStatusException) error;
-                    assertThat(e.getStatusCode(), is(HttpStatus.UNPROCESSABLE_ENTITY));
+                    assertThat(e.getStatusCode(), is(HttpStatus.UNPROCESSABLE_CONTENT));
                     assertThat(e.getReason(), containsString("Product already exists"));
                 });
 

@@ -22,25 +22,28 @@
     <hr>
 
     <ul class="list scrollable">
-        <li *ngIf="payments === undefined|| payments?.length === 0" class="list-item">
-            <p class="text-green text-center">No payments</p>
-        </li>
-        <li *ngFor="let payment of payments; let i = index" (click)="onClick(i)" (keydown)="onClick(i)"
-            class="list-item">
-            <p class="list-item-left">{{ payment.timestamp | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
-            <p class="list-item-right">{{ payment.amount }}</p>
-        </li>
+
+        @for (payment of payments; track payment; let i = $index) {
+            <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item">
+                <p class="list-item-left">{{ payment.timestamp | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+                <p class="list-item-right">{{ payment.amount }}</p>
+            </li>
+        } @empty {
+            <li class="list-item">
+                <p class="text-green text-center">No payments</p>
+            </li>
+        }
     </ul>
 
 </div>
 
-<dialog id="#payments.errorReadingPayments">
+<dialog #payments.errorReadingPayments>
     <p class="mt-1_25 text-center text-green">Error reading payments.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
-<dialog id="#payments.errorReadingAccountBalance">
+<dialog #payments.errorReadingAccountBalance>
     <p class="mt-1_25 text-center text-green">Error reading account balance.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>

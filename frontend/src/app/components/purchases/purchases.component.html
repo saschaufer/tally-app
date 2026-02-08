@@ -23,25 +23,28 @@
     <hr>
 
     <ul class="list scrollable">
-        <li *ngIf="purchases === undefined|| purchases?.length === 0" class="list-item">
-            <p class="text-green text-center">No purchases</p>
-        </li>
-        <li *ngFor="let purchase of purchases; let i = index" (click)="onClick(i)" (keydown)="onClick(i)"
-            class="list-item-two-rows">
-            <p class="list-item-two-rows-top">{{ purchase.purchaseTimestamp | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
-            <p class="list-item-two-rows-bottom-left">{{ purchase.productName }}</p>
-            <p class="list-item-two-rows-bottom-right">{{ purchase.productPrice }}</p>
-        </li>
+
+        @for (purchase of purchases; track purchase; let i = $index) {
+            <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item-two-rows">
+                <p class="list-item-two-rows-top">{{ purchase.purchaseTimestamp | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
+                <p class="list-item-two-rows-bottom-left">{{ purchase.productName }}</p>
+                <p class="list-item-two-rows-bottom-right">{{ purchase.productPrice }}</p>
+            </li>
+        } @empty {
+            <li class="list-item">
+                <p class="text-green text-center">No purchases</p>
+            </li>
+        }
     </ul>
 
 </div>
 
-<dialog id="#purchases.errorReadingPurchases">
+<dialog #purchases.errorReadingPurchases>
     <p class="mt-1_25 text-center text-green">Error reading purchase.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
 </dialog>
-<dialog id="#purchases.errorReadingAccountBalance">
+<dialog #purchases.errorReadingAccountBalance>
     <p class="mt-1_25 text-center text-green">Error reading account balance.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>

@@ -1,80 +1,79 @@
 import {TestBed} from '@angular/core/testing';
 import {ActivatedRouteSnapshot, Router, RouterStateSnapshot} from '@angular/router';
-import {MockProvider} from "ng-mocks";
 import {firstValueFrom, of} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {routeName} from "../app.routes";
 import {AuthService} from "../services/auth.service";
 import {authGuard} from "./auth.guard";
-import SpyObj = jasmine.SpyObj;
 
 describe('AuthGuard', () => {
 
-    let authServiceSpy: SpyObj<AuthService>;
-    let routerSpy: SpyObj<Router>;
+    const authServiceMock = vi.mockObject(AuthService.prototype);
+    const routerMock = vi.mockObject(Router.prototype);
 
     beforeEach(() => {
+
+        vi.resetAllMocks();
+
         TestBed.configureTestingModule({
             providers: [
-                MockProvider(AuthService),
-                MockProvider(Router)
+                {provide: AuthService, useValue: authServiceMock},
+                {provide: Router, useValue: routerMock}
             ]
         });
-
-        authServiceSpy = spyOnAllFunctions(TestBed.inject(AuthService));
-        routerSpy = spyOnAllFunctions(TestBed.inject(Router));
     });
 
     it('should navigate to ' + routeName.settings, () => {
 
-        authServiceSpy.isAuthenticated.and.returnValue(true);
-        routerSpy.navigate.and.callFake(() => firstValueFrom(of(true)));
+        authServiceMock.isAuthenticated.mockReturnValue(true);
+        routerMock.navigate.mockReturnValue(firstValueFrom(of(true)));
 
         const route = {data: {toLogin: true}} as unknown as ActivatedRouteSnapshot;
         const state = {} as RouterStateSnapshot;
         const result = TestBed.runInInjectionContext(() => authGuard(route, state));
 
-        expect(result).toBeFalsy();
+        expect(result).eq(false)
 
-        expect(routerSpy.navigate).toHaveBeenCalledOnceWith(['/' + routeName.settings]);
+        expect(routerMock.navigate).toHaveBeenCalledExactlyOnceWith(['/' + routeName.settings]);
     });
 
     it('should not navigate to ' + routeName.settings, () => {
 
-        authServiceSpy.isAuthenticated.and.returnValue(false);
+        authServiceMock.isAuthenticated.mockReturnValue(false);
 
         const route = {data: {toLogin: true}} as unknown as ActivatedRouteSnapshot;
         const state = {} as RouterStateSnapshot;
         const result = TestBed.runInInjectionContext(() => authGuard(route, state));
 
-        expect(result).toBeTruthy();
+        expect(result).eq(true);
 
-        expect(routerSpy.navigate).not.toHaveBeenCalled();
+        expect(routerMock.navigate).not.toHaveBeenCalled();
     });
 
     it('should navigate to ' + routeName.login, () => {
 
-        authServiceSpy.isAuthenticated.and.returnValue(false);
-        routerSpy.navigate.and.callFake(() => firstValueFrom(of(true)));
+        authServiceMock.isAuthenticated.mockReturnValue(false);
+        routerMock.navigate.mockReturnValue(firstValueFrom(of(true)));
 
         const route = {data: {toLogin: false}} as unknown as ActivatedRouteSnapshot;
         const state = {} as RouterStateSnapshot;
         const result = TestBed.runInInjectionContext(() => authGuard(route, state));
 
-        expect(result).toBeFalsy();
+        expect(result).eq(false);
 
-        expect(routerSpy.navigate).toHaveBeenCalledOnceWith(['/' + routeName.login]);
+        expect(routerMock.navigate).toHaveBeenCalledExactlyOnceWith(['/' + routeName.login]);
     });
 
     it('should not navigate to ' + routeName.login, () => {
 
-        authServiceSpy.isAuthenticated.and.returnValue(true);
+        authServiceMock.isAuthenticated.mockReturnValue(true);
 
         const route = {data: {toLogin: false}} as unknown as ActivatedRouteSnapshot;
         const state = {} as RouterStateSnapshot;
         const result = TestBed.runInInjectionContext(() => authGuard(route, state));
 
-        expect(result).toBeTruthy();
+        expect(result).eq(true);
 
-        expect(routerSpy.navigate).not.toHaveBeenCalled();
+        expect(routerMock.navigate).not.toHaveBeenCalled();
     });
 });

@@ -1,21 +1,22 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {ActivatedRoute, provideRouter} from "@angular/router";
 import {Big} from "big.js";
-import {MockProvider} from "ng-mocks";
 import {of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {HttpService} from "../../../services/http.service";
 
 import {ProductEditComponent} from './product-edit.component';
-import SpyObj = jasmine.SpyObj;
 
 describe('ProductEditComponent', () => {
 
     let component: ProductEditComponent;
     let fixture: ComponentFixture<ProductEditComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
 
         const urlAppend = encodeURIComponent(window.btoa(JSON.stringify({
             id: 1,
@@ -26,8 +27,8 @@ describe('ProductEditComponent', () => {
         await TestBed.configureTestingModule({
             imports: [ProductEditComponent],
             providers: [
-                MockProvider(HttpService),
                 provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock},
                 {provide: ActivatedRoute, useValue: {params: of({product: urlAppend})}}
             ]
         })
@@ -36,8 +37,6 @@ describe('ProductEditComponent', () => {
         fixture = TestBed.createComponent(ProductEditComponent);
         component = fixture.componentInstance;
         fixture.detectChanges();
-
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
     });
 
     it('should create', () => {
@@ -54,30 +53,30 @@ describe('ProductEditComponent', () => {
 
     it('should change the product name', () => {
 
-        httpServiceSpy.postUpdateProduct.and.callFake(() => of(undefined));
+        httpServiceMock.postUpdateProduct.mockReturnValue(of(undefined));
 
         component.product = {id: 1, name: "product-name", price: Big('123.45')};
         component.changeNameForm.controls.name.patchValue('new-product-name');
 
         component.onSubmitChangeName();
 
-        expect(httpServiceSpy.postUpdateProduct).toHaveBeenCalledOnceWith(1, 'new-product-name');
+        expect(httpServiceMock.postUpdateProduct).toHaveBeenCalledExactlyOnceWith(1, 'new-product-name');
     });
 
     it('should not change the product name (name wrong)', () => {
 
-        httpServiceSpy.postUpdateProduct.and.callFake(() => of(undefined));
+        httpServiceMock.postUpdateProduct.mockReturnValue(of(undefined));
 
         component.changeNameForm.controls.name.setErrors(['wrong']);
 
         component.onSubmitChangeName();
 
-        expect(httpServiceSpy.postUpdateProduct).not.toHaveBeenCalled();
+        expect(httpServiceMock.postUpdateProduct).not.toHaveBeenCalled();
     });
 
     it('should not change the product name (change name failed)', () => {
 
-        httpServiceSpy.postUpdateProduct.and.callFake(() =>
+        httpServiceMock.postUpdateProduct.mockReturnValue(
             throwError(() => 'Error on change name')
         );
 
@@ -86,35 +85,35 @@ describe('ProductEditComponent', () => {
 
         component.onSubmitChangeName();
 
-        expect(httpServiceSpy.postUpdateProduct).toHaveBeenCalledOnceWith(1, 'new-product-name');
+        expect(httpServiceMock.postUpdateProduct).toHaveBeenCalledExactlyOnceWith(1, 'new-product-name');
     });
 
     it('should change the product price', () => {
 
-        httpServiceSpy.postUpdateProductPrice.and.callFake(() => of(undefined));
+        httpServiceMock.postUpdateProductPrice.mockReturnValue(of(undefined));
 
         component.product = {id: 1, name: "product-name", price: Big('123.45')};
         component.changePriceForm.controls.price.patchValue('111');
 
         component.onSubmitChangePrice();
 
-        expect(httpServiceSpy.postUpdateProductPrice).toHaveBeenCalledOnceWith(1, Big('111'));
+        expect(httpServiceMock.postUpdateProductPrice).toHaveBeenCalledExactlyOnceWith(1, Big('111'));
     });
 
     it('should not change the product price (price wrong)', () => {
 
-        httpServiceSpy.postUpdateProductPrice.and.callFake(() => of(undefined));
+        httpServiceMock.postUpdateProductPrice.mockReturnValue(of(undefined));
 
         component.changePriceForm.controls.price.setErrors(['wrong']);
 
         component.onSubmitChangePrice();
 
-        expect(httpServiceSpy.postUpdateProductPrice).not.toHaveBeenCalled();
+        expect(httpServiceMock.postUpdateProductPrice).not.toHaveBeenCalled();
     });
 
     it('should not change the product price (change price failed)', () => {
 
-        httpServiceSpy.postUpdateProductPrice.and.callFake(() =>
+        httpServiceMock.postUpdateProductPrice.mockReturnValue(
             throwError(() => 'Error on change price')
         );
 
@@ -123,23 +122,23 @@ describe('ProductEditComponent', () => {
 
         component.onSubmitChangePrice();
 
-        expect(httpServiceSpy.postUpdateProductPrice).toHaveBeenCalledOnceWith(1, Big('111'));
+        expect(httpServiceMock.postUpdateProductPrice).toHaveBeenCalledExactlyOnceWith(1, Big('111'));
     });
 
     it('should delete the product', () => {
 
-        httpServiceSpy.postDeleteProduct.and.callFake(() => of(undefined));
+        httpServiceMock.postDeleteProduct.mockReturnValue(of(undefined));
 
         component.product = {id: 1, name: "product-name", price: Big('123.45')};
 
         component.onClickDelete();
 
-        expect(httpServiceSpy.postDeleteProduct).toHaveBeenCalledOnceWith(1);
+        expect(httpServiceMock.postDeleteProduct).toHaveBeenCalledExactlyOnceWith(1);
     });
 
     it('should not delete the product (delete product failed)', () => {
 
-        httpServiceSpy.postDeleteProduct.and.callFake(() =>
+        httpServiceMock.postDeleteProduct.mockReturnValue(
             throwError(() => 'Error on delete product')
         );
 
@@ -147,6 +146,6 @@ describe('ProductEditComponent', () => {
 
         component.onClickDelete();
 
-        expect(httpServiceSpy.postDeleteProduct).toHaveBeenCalledOnceWith(1);
+        expect(httpServiceMock.postDeleteProduct).toHaveBeenCalledExactlyOnceWith(1);
     });
 });

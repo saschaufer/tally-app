@@ -1,29 +1,28 @@
-import {DatePipe} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject, NgZone} from '@angular/core';
-import {ActivatedRoute, Router, RouterLink} from "@angular/router";
+import {ChangeDetectorRef, Component, ElementRef, inject, ViewChild} from '@angular/core';
+import {ActivatedRoute, Router} from "@angular/router";
 import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 import {GetProductsResponse} from "../../services/models/GetProductsResponse";
 
 @Component({
     selector: 'app-qr',
-    standalone: true,
-    imports: [
-        DatePipe,
-        RouterLink
-    ],
+    imports: [],
     templateUrl: './qr.component.html',
     styles: ``
 })
 export class QrComponent {
 
+    @ViewChild('qr.successCreatingPurchase', {static: true}) dialogSuccessCreatingPurchase!: ElementRef<HTMLDialogElement>;
+    @ViewChild('qr.errorReadingProduct', {static: true}) dialogErrorReadingProduct!: ElementRef<HTMLDialogElement>;
+    @ViewChild('qr.errorCreatingPurchase', {static: true}) dialogErrorCreatingPurchase!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private activatedRoute = inject(ActivatedRoute);
-    private httpService = inject(HttpService);
-    private router = inject(Router);
-    private zone = inject(NgZone);
+    private readonly activatedRoute = inject(ActivatedRoute);
+    private readonly httpService = inject(HttpService);
+    private readonly router = inject(Router);
+    private readonly cdr = inject(ChangeDetectorRef);
 
     product: GetProductsResponse | undefined;
 
@@ -44,12 +43,13 @@ export class QrComponent {
                     next: (product) => {
                         console.info("Product read.");
                         this.product = product;
+                        this.cdr.detectChanges();
                     },
                     error: (error: HttpErrorResponse) => {
                         console.error('Error reading product.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#qr.errorReadingProduct');
+                        this.openDialog(this.dialogErrorReadingProduct.nativeElement);
                     }
                 });
         }
@@ -61,20 +61,13 @@ export class QrComponent {
                 .subscribe({
                     next: () => {
                         console.info("Purchase created.");
-                        const dialog = document.getElementById('#qr.successCreatingPurchase')! as HTMLDialogElement;
-                        dialog.addEventListener('click', () => {
-                            dialog.close();
-                            this.zone.run(() =>
-                                this.router.navigate(['/' + routeName.purchases]).then()
-                            ).then();
-                        });
-                        dialog.showModal();
+                        this.openDialogSuccess(this.dialogSuccessCreatingPurchase.nativeElement);
                     },
                     error: (error) => {
                         console.error('Error creating purchase.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#qr.errorCreatingPurchase');
+                        this.openDialog(this.dialogErrorCreatingPurchase.nativeElement);
                     }
                 });
 
@@ -82,8 +75,15 @@ export class QrComponent {
         }
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialogSuccess(dialog: HTMLDialogElement) {
+        dialog.addEventListener('click', () => {
+            dialog.close();
+            this.router.navigate(['/' + routeName.purchases]).then();
+        });
+        dialog.showModal();
+    }
+
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

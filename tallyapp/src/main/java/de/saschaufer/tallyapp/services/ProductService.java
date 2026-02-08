@@ -35,7 +35,7 @@ public class ProductService {
                                                     .then(Mono.empty());
                                         }
 
-                                        return Mono.error(new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Product already exists"));
+                                        return Mono.error(new ResponseStatusException(HttpStatus.UNPROCESSABLE_CONTENT, "Product already exists"));
                                     }));
                 });
     }

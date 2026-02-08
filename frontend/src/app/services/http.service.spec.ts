@@ -1,15 +1,21 @@
+import {HttpClient} from "@angular/common/http";
 import {TestBed} from '@angular/core/testing';
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 
 import {HttpService} from './http.service';
-import {MockProvider} from "ng-mocks";
-import {HttpClient} from "@angular/common/http";
 
 describe('HttpService', () => {
+
     let service: HttpService;
 
+    const httpClientMock = vi.mockObject(HttpClient.prototype);
+
     beforeEach(() => {
+
+        vi.resetAllMocks();
+
         TestBed.configureTestingModule({
-            providers: [MockProvider(HttpClient)]
+            providers: [{provide: HttpClient, useValue: httpClientMock}]
         });
         service = TestBed.inject(HttpService);
     });

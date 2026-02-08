@@ -13,10 +13,12 @@
         <div class="mt-0_5">
             <label for="amount">Amount</label>
 
-            <!-- @formatter:off -->
-            <label class="text-red" for="amount" *ngIf="formErrors.amountMissing"> - Missing amount</label>
-            <label class="text-red" for="amount" *ngIf="formErrors.amountPatternInvalid"> - Not a valid amount</label>
-            <!-- @formatter:on -->
+            @if (formErrors.amountMissing) {
+                <label class="text-red" for="amount"> - Missing amount</label>
+            }
+            @if (formErrors.amountPatternInvalid) {
+                <label class="text-red" for="amount"> - Not a valid amount</label>
+            }
 
             <input id="amount" type="text" autocomplete="" formControlName="amount">
         </div>
@@ -27,11 +29,11 @@
 
 </div>
 
-<dialog id="#payments.paymentNew.successCreatePayment">
+<dialog #payments.paymentNew.successCreatePayment>
     <p class="mt-1_25 text-center text-green">Payment successfully created.</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
-<dialog id="#settings.changeInvitationCode.errorChangeInvitationCode">
+<dialog #payments.paymentNew.errorCreatePayment>
     <p class="mt-1_25 text-center text-green">Error creating payment.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>

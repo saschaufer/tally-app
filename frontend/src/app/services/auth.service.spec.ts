@@ -1,109 +1,49 @@
 import {TestBed} from '@angular/core/testing';
-import {MockProvider} from "ng-mocks";
-import {CookieService} from "ngx-cookie-service";
+import {beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 
 import {AuthService, role} from './auth.service';
-import SpyObj = jasmine.SpyObj;
 
 describe('AuthService', () => {
 
+    const jwtAdmin: string = 'eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0YWxseS5iYWNrZW5kIiwic3ViIjoidXNlckBtYWlsLmNvbSIsImF1ZCI6InRhbGx5LmFwcCIsImV4cCI6Mzg4MjI3NDEyMiwiaWF0IjoxNzIzNDExMjM1LCJhdXRob3JpdGllcyI6WyJ1c2VyIiwiYWRtaW4iXX0.Hel_2igtI-Em55ErNumKIzKKvHz9CjF_qyKpelgCXm8';
+    const jwtUser: string = 'eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0YWxseS5iYWNrZW5kIiwic3ViIjoidXNlckBtYWlsLmNvbSIsImF1ZCI6InRhbGx5LmFwcCIsImV4cCI6Mzg4MjI3NDEyMiwiaWF0IjoxNzIzNDExMjM1LCJhdXRob3JpdGllcyI6WyJ1c2VyIl19.b_eFKHXDmWbjbcSxyjcLhXq1fWlWbL5YxgCovC-5MzY';
+
+    const issuedAt = 1723411235000;
+    const expiresAt = 3882274122000;
+    const now = new Date().getTime();
+    const expiredLeft = new Date(0, 0, 0, 0, 0, 0, 0).setUTCMilliseconds(expiresAt - now);
+
     let authService: AuthService;
-    let cookieServiceSpy: SpyObj<CookieService>;
-    const jwt: string = 'eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0YWxseS5iYWNrZW5kIiwic3ViIjoidXNlckBtYWlsLmNvbSIsImF1ZCI6InRhbGx5LmFwcCIsImV4cCI6MTcyMzQ0NzIzNSwiaWF0IjoxNzIzNDExMjM1LCJhdXRob3JpdGllcyI6WyJ1c2VyIiwiYWRtaW4iXX0.14_pdR8v1gdJwVwdlMBuuJTVPqyGugClnmKOD75m9aE';
+    let documentSpy: Mock<(arg: string) => void>;
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            providers: [MockProvider(CookieService)],
-        });
+
+        vi.resetAllMocks();
+
+        TestBed.configureTestingModule({});
         authService = TestBed.inject(AuthService);
-        cookieServiceSpy = spyOnAllFunctions(TestBed.inject(CookieService));
+
+        documentSpy = vi.spyOn(window.document, 'cookie', 'set')
     });
 
     it('should be created', () => {
         expect(authService).toBeTruthy();
     });
 
-    it('should confirm that user is admin', () => {
+    it('should set the secure admin JWT', () => {
 
-        cookieServiceSpy.get.and.returnValue(jwt);
+        authService.setJwt(jwtAdmin, true);
 
-        expect(authService.isAdmin).toBeTruthy();
-    });
+        expect(documentSpy).toHaveBeenCalledExactlyOnceWith(`TALLY_JWT=${jwtAdmin}; SameSite=Strict; Expires=${new Date(expiresAt).toUTCString()}; Secure`);
 
-    it('should confirm the authorities in the JWT', () => {
-
-        expect(authService.hasRoles([])).toBeFalsy();
-        expect(authService.hasRoles([role.user])).toBeFalsy();
-        expect(authService.hasRoles([role.admin])).toBeFalsy();
-        expect(authService.hasRoles([role.user, role.admin])).toBeFalsy();
-
-        cookieServiceSpy.get.and.returnValue(jwt);
-
-        expect(authService.hasRoles([role.user])).toBeTruthy();
-        expect(authService.hasRoles([role.admin])).toBeTruthy();
-        expect(authService.hasRoles([role.user, role.admin])).toBeTruthy();
-    });
-
-    it('should set the not secure JWT', () => {
-
-        cookieServiceSpy.check.and.returnValue(true);
-
-        spyOn(authService, 'isAuthenticated').and.callThrough();
-
-        expect(authService.setJwt(jwt, false)).toBeTruthy();
-
-        expect(cookieServiceSpy.set).toHaveBeenCalledOnceWith('TALLY_JWT', jwt, {
-            sameSite: "Strict",
-            secure: false,
-            expires: new Date(1723447235 * 1000),
-        });
-        expect(cookieServiceSpy.check).toHaveBeenCalledOnceWith('TALLY_JWT');
-        expect(authService.isAuthenticated).toHaveBeenCalled();
-    });
-
-    it('should set the secure JWT', () => {
-
-        cookieServiceSpy.check.and.returnValue(true);
-
-        spyOn(authService, 'isAuthenticated').and.callThrough();
-
-        expect(authService.setJwt(jwt, true)).toBeTruthy();
-
-        expect(cookieServiceSpy.set).toHaveBeenCalledOnceWith('TALLY_JWT', jwt, {
-            sameSite: "Strict",
-            secure: true,
-            expires: new Date(1723447235 * 1000),
-        });
-        expect(cookieServiceSpy.check).toHaveBeenCalledOnceWith('TALLY_JWT');
-        expect(authService.isAuthenticated).toHaveBeenCalled();
-    });
-
-    it('should get the JWT', () => {
-
-        cookieServiceSpy.get.and.returnValue(jwt);
-
-        expect(authService.getJwt()).toBe(jwt);
-
-        expect(cookieServiceSpy.get).toHaveBeenCalledOnceWith('TALLY_JWT');
-    });
-
-    it('should remove the JWT', () => {
-
-        authService.removeJwt();
-
-        expect(cookieServiceSpy.delete).toHaveBeenCalledOnceWith('TALLY_JWT');
-    });
-
-    it('should get the JWT details', () => {
-
-        cookieServiceSpy.get.and.returnValue(jwt);
+        expect(authService.getJwt()).eq(jwtAdmin);
+        expect(authService.isAuthenticated()).eq(true);
+        expect(authService.isAdmin()).eq(true);
+        expect(authService.hasRoles([role.user])).eq(true);
+        expect(authService.hasRoles([role.admin])).eq(true);
+        expect(authService.hasRoles([role.user, role.admin])).eq(true);
 
         const result = authService.getJwtDetails();
-
-        const issuedAt = 1723411235000;
-        const expiresAt = 1723447235000;
-        const now = new Date().getTime();
-        const expiredLeft = new Date(0, 0, 0, 0, 0, 0, 0).setUTCMilliseconds(expiresAt - now);
 
         expect(result.email).toBe('user@mail.com');
         expect(result.issuedAt).toBe(issuedAt);
@@ -112,6 +52,32 @@ describe('AuthService', () => {
         expect(result.expiresLeft).toBeGreaterThan(expiredLeft - 1000);
         expect(result.authorities).toEqual([role.user, role.admin]);
 
-        expect(cookieServiceSpy.get).toHaveBeenCalledOnceWith('TALLY_JWT');
+        authService.removeJwt();
+        expect(authService.getJwt()).eq(undefined);
+    });
+
+    it('should set the not secure user JWT', () => {
+
+        authService.setJwt(jwtUser, false);
+
+        expect(documentSpy).toHaveBeenCalledExactlyOnceWith(`TALLY_JWT=${jwtUser}; SameSite=Strict; Expires=${new Date(expiresAt).toUTCString()}`);
+
+        expect(authService.getJwt()).eq(jwtUser);
+        expect(authService.isAuthenticated()).eq(true);
+        expect(authService.isAdmin()).eq(false);
+        expect(authService.hasRoles([role.user])).eq(true);
+        expect(authService.hasRoles([role.admin])).eq(false);
+
+        const result = authService.getJwtDetails();
+
+        expect(result.email).toBe('user@mail.com');
+        expect(result.issuedAt).toBe(issuedAt);
+        expect(result.expiresAt).toBe(expiresAt);
+        expect(result.expiresLeft).toBeLessThan(expiredLeft + 1000);
+        expect(result.expiresLeft).toBeGreaterThan(expiredLeft - 1000);
+        expect(result.authorities).toEqual([role.user]);
+
+        authService.removeJwt();
+        expect(authService.getJwt()).eq(undefined);
     });
 });

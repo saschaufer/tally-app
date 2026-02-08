@@ -1,25 +1,29 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {ActivatedRoute, provideRouter, Router} from "@angular/router";
+import {ActivatedRoute, NavigationExtras, provideRouter, Router} from "@angular/router";
 import {Big} from "big.js";
-import {MockProvider} from "ng-mocks";
 import {firstValueFrom, of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, Mock, vi} from 'vitest';
 import {routeName} from "../../../app.routes";
 import {HttpService} from "../../../services/http.service";
 
 import {PurchaseDeleteComponent} from './purchase-delete.component';
-import Spy = jasmine.Spy;
-import SpyObj = jasmine.SpyObj;
 
 describe('PurchaseDeleteComponent', () => {
 
     let component: PurchaseDeleteComponent;
     let fixture: ComponentFixture<PurchaseDeleteComponent>;
 
-    let httpServiceSpy: SpyObj<HttpService>;
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
-    let routerNavigateSpy: Spy;
+    let routerNavigateSpy: Mock<(commands: readonly any[], extras?: NavigationExtras) => Promise<boolean>>;
+    let dialogSuccessSpyShowModal: Mock<() => void>;
+    let dialogSuccessSpyClose: Mock<(returnValue?: string) => void>;
+    let dialogErrorSpyShowModal: Mock<() => void>;
+    let dialogErrorSpyClose: Mock<(returnValue?: string) => void>;
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
 
         const urlAppend = encodeURIComponent(window.btoa(JSON.stringify({
             purchaseId: 1,
@@ -31,8 +35,8 @@ describe('PurchaseDeleteComponent', () => {
         await TestBed.configureTestingModule({
             imports: [PurchaseDeleteComponent],
             providers: [
-                MockProvider(HttpService),
                 provideRouter([]),
+                {provide: HttpService, useValue: httpServiceMock},
                 {provide: ActivatedRoute, useValue: {params: of({purchase: urlAppend})}}
             ]
         })
@@ -40,11 +44,14 @@ describe('PurchaseDeleteComponent', () => {
 
         fixture = TestBed.createComponent(PurchaseDeleteComponent);
         component = fixture.componentInstance;
+
+        routerNavigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate');
+        dialogSuccessSpyShowModal = vi.spyOn(component.dialogSuccess.nativeElement, 'showModal');
+        dialogSuccessSpyClose = vi.spyOn(component.dialogSuccess.nativeElement, 'close');
+        dialogErrorSpyShowModal = vi.spyOn(component.dialogError.nativeElement, 'showModal');
+        dialogErrorSpyClose = vi.spyOn(component.dialogError.nativeElement, 'close');
+
         fixture.detectChanges();
-
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
-
-        routerNavigateSpy = spyOn(TestBed.inject(Router), 'navigate');
     });
 
     it('should create', () => {
@@ -59,35 +66,65 @@ describe('PurchaseDeleteComponent', () => {
 
     it('should delete the purchase and navigate to ' + routeName.purchases, () => {
 
-        const dialog = document.getElementById('#purchases.purchaseDelete.successDeletingPurchase')! as HTMLDialogElement;
+        const dialog: HTMLDialogElement = component.dialogSuccess.nativeElement;
 
-        httpServiceSpy.postDeletePurchase.and.callFake(() => of(undefined));
-        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
+        httpServiceMock.postDeletePurchase.mockReturnValue(of(undefined));
+        routerNavigateSpy.mockReturnValue(firstValueFrom(of(true)));
+
+        expect(dialogSuccessSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogSuccessSpyClose).not.toHaveBeenCalled();
+        expect(dialogErrorSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorSpyClose).not.toHaveBeenCalled();
 
         component.onClickDelete();
 
-        expect(httpServiceSpy.postDeletePurchase).toHaveBeenCalledOnceWith(1);
+        expect(httpServiceMock.postDeletePurchase).toHaveBeenCalledExactlyOnceWith(1);
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
 
+        expect(dialogSuccessSpyShowModal).toHaveBeenCalled();
+        expect(dialogSuccessSpyClose).not.toHaveBeenCalled();
+        expect(dialogErrorSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorSpyClose).not.toHaveBeenCalled();
+
         dialog.dispatchEvent(new Event('click'));
 
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases]);
+        expect(dialogSuccessSpyShowModal).toHaveBeenCalled();
+        expect(dialogSuccessSpyClose).toHaveBeenCalled();
+        expect(dialogErrorSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorSpyClose).not.toHaveBeenCalled();
+
+        expect(routerNavigateSpy).toHaveBeenCalledExactlyOnceWith(['/' + routeName.purchases]);
     })
 
     it('should not navigate to ' + routeName.purchases + ' (delete purchase failed)', () => {
 
-        const dialog = document.getElementById('#purchases.purchaseDelete.successDeletingPurchase')! as HTMLDialogElement;
+        const dialog: HTMLDialogElement = component.dialogError.nativeElement;
 
-        httpServiceSpy.postDeletePurchase.and.callFake(() =>
+        httpServiceMock.postDeletePurchase.mockReturnValue(
             throwError(() => 'Error on delete purchase')
         );
 
+        expect(dialogSuccessSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogSuccessSpyClose).not.toHaveBeenCalled();
+        expect(dialogErrorSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogErrorSpyClose).not.toHaveBeenCalled();
+
         component.onClickDelete();
 
-        expect(httpServiceSpy.postDeletePurchase).toHaveBeenCalledOnceWith(1);
+        expect(dialogSuccessSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogSuccessSpyClose).not.toHaveBeenCalled();
+        expect(dialogErrorSpyShowModal).toHaveBeenCalled();
+        expect(dialogErrorSpyClose).not.toHaveBeenCalled();
+
+        expect(httpServiceMock.postDeletePurchase).toHaveBeenCalledExactlyOnceWith(1);
 
         dialog.dispatchEvent(new Event('click'));
+
+        expect(dialogSuccessSpyShowModal).not.toHaveBeenCalled();
+        expect(dialogSuccessSpyClose).not.toHaveBeenCalled();
+        expect(dialogErrorSpyShowModal).toHaveBeenCalled();
+        expect(dialogErrorSpyClose).toHaveBeenCalled();
 
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     })

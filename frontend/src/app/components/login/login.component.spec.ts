@@ -1,33 +1,35 @@
 import {provideLocationMocks} from "@angular/common/testing";
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-import {provideRouter, Router} from "@angular/router";
-import {MockProvider} from "ng-mocks";
+import {NavigationExtras, provideRouter, Router} from "@angular/router";
+import {Mock} from "@vitest/spy";
 import {firstValueFrom, of, throwError} from "rxjs";
+import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {routeName} from "../../app.routes";
 import {AuthService} from "../../services/auth.service";
 import {HttpService} from "../../services/http.service";
 import {LoginResponse} from "../../services/models/LoginResponse";
 
 import {LoginComponent} from './login.component';
-import Spy = jasmine.Spy;
-import SpyObj = jasmine.SpyObj;
 
 describe('LoginComponent', () => {
 
     let component: LoginComponent;
     let fixture: ComponentFixture<LoginComponent>;
 
-    let authServiceSpy: SpyObj<AuthService>;
-    let httpServiceSpy: SpyObj<HttpService>;
+    const authServiceMock = vi.mockObject(AuthService.prototype);
+    const httpServiceMock = vi.mockObject(HttpService.prototype);
 
-    let routerNavigateSpy: Spy;
+    let routerNavigateSpy: Mock<(commands: readonly any[], extras?: NavigationExtras) => Promise<boolean>>;
 
     beforeEach(async () => {
+
+        vi.resetAllMocks();
+
         await TestBed.configureTestingModule({
             imports: [LoginComponent],
             providers: [
-                MockProvider(AuthService),
-                MockProvider(HttpService),
+                {provide: AuthService, useValue: authServiceMock},
+                {provide: HttpService, useValue: httpServiceMock},
                 provideRouter([]),
                 provideLocationMocks()
             ]
@@ -36,12 +38,10 @@ describe('LoginComponent', () => {
 
         fixture = TestBed.createComponent(LoginComponent);
         component = fixture.componentInstance;
+
+        routerNavigateSpy = vi.spyOn(TestBed.inject(Router), 'navigate');
+
         fixture.detectChanges();
-
-        authServiceSpy = spyOnAllFunctions(TestBed.inject(AuthService));
-        httpServiceSpy = spyOnAllFunctions(TestBed.inject(HttpService));
-
-        routerNavigateSpy = spyOn(TestBed.inject(Router), 'navigate');
     });
 
     it('should create', () => {
@@ -50,13 +50,13 @@ describe('LoginComponent', () => {
 
     it('should navigate to ' + routeName.purchases_new, () => {
 
-        httpServiceSpy.postLogin.and.callFake(() => of({
+        httpServiceMock.postLogin.mockReturnValue(of({
             jwt: 'my-jwt',
             secure: true
         } as LoginResponse));
 
-        authServiceSpy.setJwt.and.returnValue(true);
-        routerNavigateSpy.and.callFake(() => firstValueFrom(of(true)));
+        authServiceMock.setJwt.mockReturnValue(true);
+        routerNavigateSpy.mockReturnValue(firstValueFrom(of(true)));
 
         component.loginForm.setValue({
             email: 'test-username@mail.com',
@@ -65,9 +65,9 @@ describe('LoginComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password');
-        expect(authServiceSpy.setJwt).toHaveBeenCalledOnceWith('my-jwt', true);
-        expect(routerNavigateSpy).toHaveBeenCalledOnceWith(['/' + routeName.purchases_new]);
+        expect(httpServiceMock.postLogin).toHaveBeenCalledExactlyOnceWith('test-username@mail.com', 'test-password');
+        expect(authServiceMock.setJwt).toHaveBeenCalledExactlyOnceWith('my-jwt', true);
+        expect(routerNavigateSpy).toHaveBeenCalledExactlyOnceWith(['/' + routeName.purchases_new]);
     });
 
     it('should not navigate to ' + routeName.purchases_new + ' (email wrong)', () => {
@@ -77,8 +77,8 @@ describe('LoginComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postLogin).not.toHaveBeenCalled();
-        expect(authServiceSpy.setJwt).not.toHaveBeenCalled();
+        expect(httpServiceMock.postLogin).not.toHaveBeenCalled();
+        expect(authServiceMock.setJwt).not.toHaveBeenCalled();
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
@@ -89,14 +89,14 @@ describe('LoginComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postLogin).not.toHaveBeenCalled();
-        expect(authServiceSpy.setJwt).not.toHaveBeenCalled();
+        expect(httpServiceMock.postLogin).not.toHaveBeenCalled();
+        expect(authServiceMock.setJwt).not.toHaveBeenCalled();
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
     it('should not navigate to ' + routeName.purchases_new + ' (login failed)', () => {
 
-        httpServiceSpy.postLogin.and.callFake(() =>
+        httpServiceMock.postLogin.mockReturnValue(
             throwError(() => 'Error on login')
         );
 
@@ -107,19 +107,19 @@ describe('LoginComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password');
-        expect(authServiceSpy.setJwt).not.toHaveBeenCalled();
+        expect(httpServiceMock.postLogin).toHaveBeenCalledExactlyOnceWith('test-username@mail.com', 'test-password');
+        expect(authServiceMock.setJwt).not.toHaveBeenCalled();
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 
     it('should not navigate to ' + routeName.purchases_new + ' (Jwt not set)', () => {
 
-        httpServiceSpy.postLogin.and.callFake(() => of({
+        httpServiceMock.postLogin.mockReturnValue(of({
             jwt: 'my-jwt',
             secure: true
         } as LoginResponse));
 
-        authServiceSpy.setJwt.and.returnValue(false);
+        authServiceMock.setJwt.mockReturnValue(false);
 
         component.loginForm.setValue({
             email: 'test-username@mail.com',
@@ -128,8 +128,8 @@ describe('LoginComponent', () => {
 
         component.onSubmit();
 
-        expect(httpServiceSpy.postLogin).toHaveBeenCalledOnceWith('test-username@mail.com', 'test-password');
-        expect(authServiceSpy.setJwt).toHaveBeenCalledOnceWith('my-jwt', true);
+        expect(httpServiceMock.postLogin).toHaveBeenCalledExactlyOnceWith('test-username@mail.com', 'test-password');
+        expect(authServiceMock.setJwt).toHaveBeenCalledExactlyOnceWith('my-jwt', true);
         expect(routerNavigateSpy).not.toHaveBeenCalled();
     });
 });

@@ -9,20 +9,22 @@
 <div class="page-content">
 
     <ul class="list scrollable">
-        <li *ngIf="products === undefined|| products?.length === 0" class="list-item">
-            <p class="text-green text-center">No products</p>
-        </li>
-        <li *ngFor="let product of products; let i = index" (click)="onClick(i)" (keydown)="onClick(i)"
-            class="list-item-two-rows">
-            <p class="list-item-two-rows-top">{{ product.id }}</p>
-            <p class="list-item-two-rows-bottom-left">{{ product.name }}</p>
-            <p class="list-item-two-rows-bottom-right">{{ product.price }}</p>
-        </li>
+        @for (product of products; track product; let i = $index) {
+            <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item-two-rows">
+                <p class="list-item-two-rows-top">{{ product.id }}</p>
+                <p class="list-item-two-rows-bottom-left">{{ product.name }}</p>
+                <p class="list-item-two-rows-bottom-right">{{ product.price }}</p>
+            </li>
+        } @empty {
+            <li class="list-item">
+                <p class="text-green text-center">No products</p>
+            </li>
+        }
     </ul>
 
 </div>
 
-<dialog id="#products.errorReadingProducts">
+<dialog #products.errorReadingProducts>
     <p class="mt-1_25 text-center text-green">Error reading products.</p>
     <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
     <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>

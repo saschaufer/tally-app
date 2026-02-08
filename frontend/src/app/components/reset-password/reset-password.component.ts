@@ -1,6 +1,5 @@
-import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject} from '@angular/core';
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {RouterLink} from "@angular/router";
 import {routeName} from "../../app.routes";
@@ -8,9 +7,7 @@ import {HttpService} from "../../services/http.service";
 
 @Component({
     selector: 'app-reset-password',
-    standalone: true,
     imports: [
-        NgIf,
         ReactiveFormsModule,
         RouterLink
     ],
@@ -19,9 +16,11 @@ import {HttpService} from "../../services/http.service";
 })
 export class ResetPasswordComponent {
 
+    @ViewChild('reset_password.errorResetPassword', {static: true}) dialog!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private httpService = inject(HttpService);
+    private readonly httpService = inject(HttpService);
 
     readonly resetPasswordForm = new FormGroup({
         email: new FormControl('', {
@@ -61,14 +60,13 @@ export class ResetPasswordComponent {
                         console.error('Error on resetting password.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#reset-password.errorResetPassword');
+                        this.openDialog(this.dialog.nativeElement);
                     }
                 });
         }
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

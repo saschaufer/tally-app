@@ -1,6 +1,5 @@
-import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject} from '@angular/core';
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {
     AbstractControl,
     FormControl,
@@ -14,17 +13,16 @@ import {HttpService} from "../../../services/http.service";
 
 @Component({
     selector: 'app-change-user-details',
-    standalone: true,
-    imports: [
-        ReactiveFormsModule,
-        NgIf
-    ],
+    imports: [ReactiveFormsModule],
     templateUrl: './change-user-details.component.html',
     styles: ``
 })
 export class ChangeUserDetailsComponent {
 
-    private httpService = inject(HttpService);
+    @ViewChild('settings.changeUserDetails.successChangePassword', {static: true}) dialogSuccessChangePassword!: ElementRef<HTMLDialogElement>;
+    @ViewChild('settings.changeUserDetails.errorChangePassword', {static: true}) dialogErrorChangePassword!: ElementRef<HTMLDialogElement>;
+
+    private readonly httpService = inject(HttpService);
 
     readonly passwordsMatch: ValidatorFn = (control: AbstractControl): ValidationErrors | null => {
 
@@ -63,20 +61,19 @@ export class ChangeUserDetailsComponent {
                 .subscribe({
                     next: () => {
                         console.info('Password change successful.');
-                        this.openDialog('#settings.changeUserDetails.successChangePassword');
+                        this.openDialog(this.dialogSuccessChangePassword.nativeElement);
                     },
                     error: (error: HttpErrorResponse) => {
                         console.error('Error changing password.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#settings.changeUserDetails.errorChangePassword');
+                        this.openDialog(this.dialogErrorChangePassword.nativeElement);
                     }
                 });
         }
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

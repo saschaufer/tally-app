@@ -1,18 +1,13 @@
-import {DatePipe, NgClass, NgForOf, NgIf} from "@angular/common";
+import {DatePipe, NgClass} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject} from '@angular/core';
-import {RouterLink} from "@angular/router";
+import {ChangeDetectorRef, Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {Big} from "big.js";
 import {HttpService} from "../../services/http.service";
 import {GetUsersResponse} from "../../services/models/GetUsersResponse";
 
 @Component({
     selector: 'app-users',
-    standalone: true,
     imports: [
-        NgForOf,
-        NgIf,
-        RouterLink,
         DatePipe,
         NgClass
     ],
@@ -21,9 +16,12 @@ import {GetUsersResponse} from "../../services/models/GetUsersResponse";
 })
 export class UsersComponent {
 
-    private httpService = inject(HttpService);
+    @ViewChild('users.errorReadingUsers', {static: true}) dialog!: ElementRef<HTMLDialogElement>;
 
-    users: GetUsersResponse[] | undefined;
+    private readonly httpService = inject(HttpService);
+    private readonly cdr = inject(ChangeDetectorRef);
+
+    users: GetUsersResponse[] = [];
 
     error: HttpErrorResponse | undefined;
 
@@ -32,15 +30,16 @@ export class UsersComponent {
         this.httpService.getReadUsers()
             .subscribe({
                 next: users => {
-                    console.info("Users read.");
+                    console.info("Users read: " + users.length + " users found.");
                     users.sort((a, b) => a.email.localeCompare(b.email));
                     this.users = users;
+                    this.cdr.detectChanges();
                 },
                 error: (error: HttpErrorResponse) => {
                     console.error('Error reading users.');
                     console.error(error);
                     this.error = error;
-                    this.openDialog('#users.errorReadingUsers');
+                    this.openDialog(this.dialog.nativeElement);
                 }
             });
     }
@@ -49,8 +48,7 @@ export class UsersComponent {
         return Big(amount).lt(Big('0.0'));
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

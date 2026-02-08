@@ -1,6 +1,5 @@
-import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject} from '@angular/core';
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {ActivatedRoute, RouterLink} from "@angular/router";
 import {Big} from "big.js";
@@ -10,21 +9,26 @@ import {GetProductsResponse} from "../../../services/models/GetProductsResponse"
 
 @Component({
     selector: 'app-product-edit',
-    standalone: true,
     imports: [
         RouterLink,
-        ReactiveFormsModule,
-        NgIf
+        ReactiveFormsModule
     ],
     templateUrl: './product-edit.component.html',
     styles: ``
 })
 export class ProductEditComponent {
 
+    @ViewChild('products.productEdit.successChangeName', {static: true}) dialogSuccessChangeName!: ElementRef<HTMLDialogElement>;
+    @ViewChild('products.productEdit.errorChangeName', {static: true}) dialogErrorChangeName!: ElementRef<HTMLDialogElement>;
+    @ViewChild('products.productEdit.successChangePrice', {static: true}) dialogSuccessChangePrice!: ElementRef<HTMLDialogElement>;
+    @ViewChild('products.productEdit.errorChangePrice', {static: true}) dialogErrorChangePrice!: ElementRef<HTMLDialogElement>;
+    @ViewChild('products.productEdit.successDelete', {static: true}) dialogSuccessDelete!: ElementRef<HTMLDialogElement>;
+    @ViewChild('products.productEdit.errorDelete', {static: true}) dialogErrorDelete!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private httpService = inject(HttpService);
-    private activatedRoute = inject(ActivatedRoute);
+    private readonly httpService = inject(HttpService);
+    private readonly activatedRoute = inject(ActivatedRoute);
 
     product: GetProductsResponse | undefined;
 
@@ -58,7 +62,7 @@ export class ProductEditComponent {
             this.product = {
                 id: product.id,
                 name: product.name,
-                price: Big(product.price) // JSON.parse makes a string, therefor need to be set to Big explicitly
+                price: Big(product.price) // JSON.parse makes a string, therefore, need to be set to Big explicitly
             };
             this.changeNameForm.controls.name.patchValue(this.product.name);
             this.changePriceForm.controls.price.patchValue(this.product.price.toString());
@@ -79,13 +83,13 @@ export class ProductEditComponent {
                 .subscribe({
                     next: () => {
                         console.info("Product name changed.");
-                        this.openDialog('#products.productEdit.successChangeName');
+                        this.openDialog(this.dialogSuccessChangeName.nativeElement);
                     },
                     error: (error) => {
                         console.error('Error changing product name.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#products.productEdit.errorChangeName');
+                        this.openDialog(this.dialogErrorChangeName.nativeElement);
                     }
                 });
         }
@@ -105,13 +109,13 @@ export class ProductEditComponent {
                 .subscribe({
                     next: () => {
                         console.info("Product price changed.");
-                        this.openDialog('#products.productEdit.successChangePrice');
+                        this.openDialog(this.dialogSuccessChangePrice.nativeElement);
                     },
                     error: (error) => {
                         console.error('Error changing product price.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#products.productEdit.errorChangePrice');
+                        this.openDialog(this.dialogErrorChangePrice.nativeElement);
                     }
                 });
         }
@@ -122,19 +126,18 @@ export class ProductEditComponent {
             .subscribe({
                 next: () => {
                     console.info("Product deleted.");
-                    this.openDialog('#products.productEdit.successDelete');
+                    this.openDialog(this.dialogSuccessDelete.nativeElement);
                 },
                 error: (error) => {
                     console.error('Error deleting product.');
                     console.error(error);
                     this.error = error;
-                    this.openDialog('#products.productEdit.errorDelete');
+                    this.openDialog(this.dialogErrorDelete.nativeElement);
                 }
             });
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

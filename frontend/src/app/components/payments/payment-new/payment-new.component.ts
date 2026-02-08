@@ -1,6 +1,5 @@
-import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject} from '@angular/core';
+import {Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {RouterLink} from "@angular/router";
 import {Big} from "big.js";
@@ -9,20 +8,18 @@ import {HttpService} from "../../../services/http.service";
 
 @Component({
     selector: 'app-payment-new',
-    standalone: true,
-    imports: [
-        ReactiveFormsModule,
-        RouterLink,
-        NgIf
-    ],
+    imports: [ReactiveFormsModule, RouterLink],
     templateUrl: './payment-new.component.html',
     styles: ``
 })
 export class PaymentNewComponent {
 
+    @ViewChild('payments.paymentNew.successCreatePayment', {static: true}) dialogSuccess!: ElementRef<HTMLDialogElement>;
+    @ViewChild('payments.paymentNew.errorCreatePayment', {static: true}) dialogError!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private httpService = inject(HttpService);
+    private readonly httpService = inject(HttpService);
 
     readonly newPaymentForm = new FormGroup({
         amount: new FormControl('', {
@@ -52,20 +49,19 @@ export class PaymentNewComponent {
                 .subscribe({
                     next: () => {
                         console.info('Payment created.');
-                        this.openDialog('#payments.paymentNew.successCreatePayment');
+                        this.openDialog(this.dialogSuccess.nativeElement);
                     },
                     error: (error) => {
                         console.error('Error creating payment.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#settings.changeInvitationCode.errorChangeInvitationCode');
+                        this.openDialog(this.dialogError.nativeElement);
                     }
                 });
         }
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });

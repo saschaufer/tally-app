@@ -1,5 +1,4 @@
-import {inject, Injectable} from '@angular/core';
-import {CookieService} from "ngx-cookie-service";
+import {Injectable} from '@angular/core';
 import {Jwt} from "./models/Jwt";
 import {JwtDetails} from "./models/JwtDetails";
 
@@ -13,12 +12,10 @@ export enum role {
 })
 export class AuthService {
 
-    private cookieService = inject(CookieService);
-
     private readonly cookieName: string = 'TALLY_JWT';
 
     isAuthenticated() {
-        return this.cookieService.check(this.cookieName);
+        return this.getJwt() !== undefined;
     }
 
     isAdmin() {
@@ -45,33 +42,33 @@ export class AuthService {
     }
 
     setJwt(jwt: string, secure: boolean) {
-
         const decodedJwt = this.decodeJwt(jwt);
-
-        console.debug('Set Cookie for JWT.');
-
-        this.cookieService.set(this.cookieName, jwt, {
-            sameSite: "Strict",
-            secure: secure,
-            expires: new Date(decodedJwt.exp * 1000),
-        });
-
-        console.debug('Cookie for JWT set.', new Map().set('check', this.getJwt()));
-
+        document.cookie = `${this.cookieName}=${jwt}; SameSite=Strict; Expires=${new Date(decodedJwt.exp * 1000).toUTCString()}` + (secure ? '; Secure' : '');
         return this.isAuthenticated();
     }
 
     getJwt() {
-        return this.cookieService.get(this.cookieName);
+        return document.cookie
+            .split(';')
+            .map(cookie => cookie.trim())
+            .filter(cookie => cookie.startsWith(this.cookieName + '='))
+            .map(cookie => cookie.substring(this.cookieName.length + 1))
+            .pop();
     }
 
     removeJwt() {
-        this.cookieService.delete(this.cookieName);
+        const date = new Date();
+        // Set expire in -1 days
+        date.setTime(date.getTime() + (-1 * 24 * 60 * 60 * 1000));
+        document.cookie = this.cookieName + "=; expires=" + date.toUTCString() + "; path=/";
     }
 
     public getJwtDetails(): JwtDetails {
 
-        const jwt = this.cookieService.get(this.cookieName);
+        const jwt = this.getJwt();
+        if (!jwt) {
+            throw new Error('JWT not found.');
+        }
         const decodedJwt = this.decodeJwt(jwt);
 
         const expire = new Date(decodedJwt.exp * 1000);

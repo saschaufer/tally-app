@@ -1,6 +1,5 @@
-import {NgIf} from "@angular/common";
 import {HttpErrorResponse} from "@angular/common/http";
-import {Component, inject} from '@angular/core';
+import {ChangeDetectorRef, Component, ElementRef, inject, ViewChild} from '@angular/core';
 import {
     AbstractControl,
     FormControl,
@@ -16,20 +15,21 @@ import {HttpService} from "../../services/http.service";
 
 @Component({
     selector: 'app-register',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
-        RouterLink,
-        NgIf
+        RouterLink
     ],
     templateUrl: './register.component.html',
     styles: ``
 })
 export class RegisterComponent {
 
+    @ViewChild('register.errorRegister', {static: true}) dialog!: ElementRef<HTMLDialogElement>;
+
     protected readonly routeName = routeName;
 
-    private httpService = inject(HttpService);
+    private readonly httpService = inject(HttpService);
+    private readonly cdr = inject(ChangeDetectorRef);
 
     email = '';
     emailSent = false;
@@ -83,19 +83,19 @@ export class RegisterComponent {
                         console.info('Register successful.');
                         this.email = email;
                         this.emailSent = true;
+                        this.cdr.detectChanges();
                     },
                     error: (error: HttpErrorResponse) => {
                         console.error('Error register.');
                         console.error(error);
                         this.error = error;
-                        this.openDialog('#register.errorRegister');
+                        this.openDialog(this.dialog.nativeElement);
                     }
                 });
         }
     }
 
-    openDialog(id: string) {
-        const dialog = document.getElementById(id)! as HTMLDialogElement;
+    openDialog(dialog: HTMLDialogElement) {
         dialog.addEventListener('click', () => {
             dialog.close();
         });
