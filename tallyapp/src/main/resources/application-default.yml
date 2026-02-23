@@ -6,9 +6,19 @@ server.port: 8000
 # Logging
 # ==================================================================
 
-logging.level:
-  root: warn
-  de.saschaufer: info
+logging:
+  # Format log messages as oneliner
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID}){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m %clr(%mdc){faint} %n%wEx"
+  # Format log messages as JSON
+  #structured:
+  #  format.console: logstash
+  #  json.add.app:
+  #    name: ${project.groupId}:${project.artifactId}
+  #    version: ${project.version}
+  level:
+    root: warn
+    de.saschaufer: info
 
 # Admin
 # ==================================================================
