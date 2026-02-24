@@ -12,7 +12,7 @@
         @for (product of products; track product; let i = $index) {
             <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item-two-rows">
                 <p class="list-item-two-rows-top">{{ product.id }}</p>
-                <p class="list-item-two-rows-bottom-left">{{ product.name }}</p>
+                <p class="list-item-two-rows-bottom-left" translate=no>{{ product.name }}</p>
                 <p class="list-item-two-rows-bottom-right">{{ product.price }}</p>
             </li>
         } @empty {
@@ -26,7 +26,7 @@
 
 <dialog #products.errorReadingProducts>
     <p class="mt-1_25 text-center text-green">Error reading products.</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.error }}</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>

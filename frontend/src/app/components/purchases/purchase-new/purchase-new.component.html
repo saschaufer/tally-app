@@ -13,7 +13,7 @@
         @for (product of products; track product; let i = $index) {
             <!-- @formatter:off -->
             <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item">
-                <p class="list-item-left" [class.list-item-selected-text]="product.id == selectedProduct?.id">{{ product.name }}</p>
+                <p class="list-item-left" [class.list-item-selected-text]="product.id == selectedProduct?.id" translate=no>{{ product.name }}</p>
                 <p class="list-item-right" [class.list-item-selected-text]="product.id == selectedProduct?.id">{{ product.price }}</p>
             </li>
             <!-- @formatter:on -->
@@ -30,8 +30,8 @@
 
 <dialog #purchases.purchaseNew.errorReadingProducts>
     <p class="mt-1_25 text-center text-green">Error reading products.</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.error }}</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
 
@@ -46,7 +46,7 @@
 </dialog>
 <dialog #purchases.purchaseNew.errorCreatingPurchase>
     <p class="mt-1_25 text-center text-green">Error creating purchase.</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.error }}</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>

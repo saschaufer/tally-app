@@ -27,7 +27,7 @@
         @for (purchase of purchases; track purchase; let i = $index) {
             <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item-two-rows">
                 <p class="list-item-two-rows-top">{{ purchase.purchaseTimestamp | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
-                <p class="list-item-two-rows-bottom-left">{{ purchase.productName }}</p>
+                <p class="list-item-two-rows-bottom-left" translate=no>{{ purchase.productName }}</p>
                 <p class="list-item-two-rows-bottom-right">{{ purchase.productPrice }}</p>
             </li>
         } @empty {
@@ -41,11 +41,11 @@
 
 <dialog #purchases.errorReadingPurchases>
     <p class="mt-1_25 text-center text-green">Error reading purchase.</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.error }}</p>
 </dialog>
 <dialog #purchases.errorReadingAccountBalance>
     <p class="mt-1_25 text-center text-green">Error reading account balance.</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.error }}</p>
 </dialog>

@@ -7,7 +7,7 @@
     <table aria-hidden="true">
         <tr>
             <td class="table-row-left">Product:</td>
-            <td class="table-row-right">{{ product?.name }}</td>
+            <td class="table-row-right" translate=no>{{ product?.name }}</td>
         </tr>
         <tr>
             <td class="table-row-left">Price:</td>
@@ -22,8 +22,8 @@
 
 <dialog #qr.errorReadingProduct>
     <p class="mt-1_25 text-center text-green">Error reading product.</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.error }}</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
 
@@ -33,7 +33,7 @@
 </dialog>
 <dialog #qr.errorCreatingPurchase>
     <p class="mt-1_25 text-center text-green">Error creating purchase.</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.message }}</p>
-    <p class="mt-1_25 text-center text-green">{{ error?.error }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.message }}</p>
+    <p class="mt-1_25 text-center text-green" translate=no>{{ error?.error }}</p>
     <p class="mt-1_25 text-center text-green">(click anywhere to close)</p>
 </dialog>
