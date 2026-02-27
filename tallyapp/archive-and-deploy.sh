@@ -22,6 +22,7 @@ mkdir -p "target/$dir"
 # Copy everything for the archive
 cp target/tallyapp*.jar "target/$dir/tallyapp.jar"
 cp "target/archive-pack/application-default.yml" "target/$dir/application.yml"
+cp "../target/sbom/sbom.json" "target/$dir/sbom.json"
 
 # Make archive
 echo "---"

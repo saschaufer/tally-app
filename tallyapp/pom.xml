@@ -276,6 +276,29 @@
                 </executions>
             </plugin>
 
+            <!-- Generate SBOM -->
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <version>${cyclonedx-maven-plugin.version}</version>
+                <configuration>
+                    <schemaVersion>1.6</schemaVersion>
+                    <outputFormat>json</outputFormat>
+                    <outputDirectory>${project.build.directory}/sbom</outputDirectory>
+                    <outputName>sbom</outputName>
+                    <projectType>application</projectType>
+                    <skipNotDeployed>false</skipNotDeployed>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>makeBom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Create and deploy archive -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

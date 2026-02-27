@@ -76,6 +76,13 @@ pipeline {
                        -Dmaven.install.skip=true
                     '''
                     sh '''
+                       bash sbom-merge.sh \
+                       -n "tallyapp" \
+                       -g "de.saschaufer" \
+                       -v $RELEASE_VERSION \
+                       -s "./tallyapp/target/sbom/sbom.json ./frontend/target/sbom/sbom.json"
+                    '''
+                    sh '''
                        mvn -B exec:exec@archive-and-deploy \
                        -Darchive.version=$RELEASE_VERSION \
                        -Darchive.repository=$NEXUS_RAW_APPS_SNAPSHOTS
@@ -103,7 +110,14 @@ pipeline {
                        -Dmaven.install.skip=true
                     '''
                     sh '''
-                        mvn -B ci-friendly-flatten:scmTag -Drevision=$RELEASE_VERSION -Dtag=$RELEASE_VERSION
+                       bash sbom-merge.sh \
+                       -n "tallyapp" \
+                       -g "de.saschaufer" \
+                       -v $RELEASE_VERSION \
+                       -s "./tallyapp/target/sbom/sbom.json ./frontend/target/sbom/sbom.json"
+                    '''
+                    sh '''
+                       mvn -B ci-friendly-flatten:scmTag -Drevision=$RELEASE_VERSION -Dtag=$RELEASE_VERSION
                     '''
                     sh '''
                        mvn -B exec:exec@archive-and-deploy \

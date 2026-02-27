@@ -7,7 +7,8 @@
     "source-map": "rm -R target/classes/static/ || true && ng build --configuration production --aot --source-map && node_modules/.bin/source-map-explorer target/classes/static/browser/**/main*.js{,.map} --no-border-checks",
     "build": "ng build --configuration development",
     "build-release": "ng build --configuration production --aot",
-    "test": "ng test --no-watch"
+    "test": "ng test --no-watch",
+    "generate-sbom": "NODE_NO_WARNINGS=1 node/npx @cyclonedx/cyclonedx-npm --output-reproducible --validate  --omit dev --output-file target/sbom/sbom.json --spec-version 1.6 package.json"
   },
   "prettier": {
     "printWidth": 100,
@@ -40,6 +41,7 @@
     "@angular/build": "^21.1.4",
     "@angular/cli": "^21.1.4",
     "@angular/compiler-cli": "^21.1.5",
+    "@cyclonedx/cyclonedx-npm": "^4.1.2",
     "@types/big.js": "^6.2.2",
     "@vitest/browser-playwright": "^4.0.18",
     "@vitest/coverage-istanbul": "^4.0.18",
