@@ -8,29 +8,15 @@ pipeline {
     }
 
     options {
-        skipDefaultCheckout(true)
         timeout(time: 30, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '5'))
     }
 
-    stages{
+    parameters {
+        booleanParam(name: 'RELEASE', defaultValue: false, description: 'Build a release')
+    }
 
-        stage('Checkout SCM') {
-            steps {
-                checkout scm
-                script {
-                    env.GIT_BRANCH = sh (
-                      script: "git branch --show-current",
-                      returnStdout: true
-                    ).trim()
-                    env.GIT_COMMIT_MESSAGE = sh (
-                      script: "git show -s --format=%s",
-                      returnStdout: true
-                    ).trim()
-                }
-                echo "Checked out branch: \"${env.GIT_BRANCH}\" on commit message \"${env.GIT_COMMIT_MESSAGE}\""
-            }
-        }
+    stages{
 
         stage('Test') {
             steps {
@@ -43,6 +29,11 @@ pipeline {
         }
 
         stage ('Dependency-Check') {
+            when {
+                allOf {
+                    expression { currentBuild.currentResult == 'SUCCESS' }
+                }
+            }
             steps {
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                     sh 'mvn -B dependency-check:aggregate'
@@ -51,6 +42,11 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
+            when {
+                allOf {
+                    expression { currentBuild.currentResult == 'SUCCESS' }
+                }
+            }
             steps {
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                     sh 'mvn -B sonar:sonar'
@@ -62,13 +58,16 @@ pipeline {
             when {
                 allOf {
                     expression { currentBuild.currentResult == 'SUCCESS' }
-                    expression { env.GIT_BRANCH ==~ '^develop(-\\d+\\.\\d+\\.\\d+)?$' }
+                    expression { env.GIT_BRANCH ==~ '^main(-\\d+\\.\\d+\\.\\d+)?$' }
+                    expression { params.RELEASE == false }
                 }
             }
             steps {
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                     script {
-                        env.RELEASE_VERSION = readReleaseVersion() + '-' + env.BUILD_NUMBER
+                        env.ARTIFACT_ID = readArtifactId('.ci-friendly-pom.xml').replace('-', '')
+                        env.GROUP_ID = readGroupId('.ci-friendly-pom.xml')
+                        env.RELEASE_VERSION = readReleaseVersion('.ci-friendly-pom.xml') + '-' + env.BUILD_NUMBER
                     }
                     sh '''
                        mvn -B deploy \
@@ -77,8 +76,8 @@ pipeline {
                     '''
                     sh '''
                        bash sbom-merge.sh \
-                       -n "tallyapp" \
-                       -g "de.saschaufer" \
+                       -n $ARTIFACT_ID \
+                       -g $GROUP_ID \
                        -v $RELEASE_VERSION \
                        -s "./tallyapp/target/sbom/sbom.json ./frontend/target/sbom/sbom.json"
                     '''
@@ -96,12 +95,15 @@ pipeline {
                 allOf {
                     expression { currentBuild.currentResult == 'SUCCESS' }
                     expression { env.GIT_BRANCH ==~ '^main(-\\d+\\.\\d+\\.\\d+)?$' }
+                    expression { params.RELEASE == true }
                 }
             }
             steps {
                 catchError(buildResult: 'FAILURE', stageResult: 'FAILURE') {
                     script {
-                        env.RELEASE_VERSION = readReleaseVersion()
+                        env.ARTIFACT_ID = readArtifactId('.ci-friendly-pom.xml').replace('-', '')
+                        env.GROUP_ID = readGroupId('.ci-friendly-pom.xml')
+                        env.RELEASE_VERSION = readReleaseVersion('.ci-friendly-pom.xml')
                     }
                     sh '''
                        mvn -B clean deploy \
@@ -111,8 +113,8 @@ pipeline {
                     '''
                     sh '''
                        bash sbom-merge.sh \
-                       -n "tallyapp" \
-                       -g "de.saschaufer" \
+                       -n $ARTIFACT_ID \
+                       -g $GROUP_ID \
                        -v $RELEASE_VERSION \
                        -s "./tallyapp/target/sbom/sbom.json ./frontend/target/sbom/sbom.json"
                     '''
@@ -128,16 +130,4 @@ pipeline {
             }
         }
     }
-}
-
-String readReleaseVersion() {
-
-    def matcher = readFile('.ci-friendly-pom.xml') =~ '<version>(.+?)</version>'
-    version = matcher ? matcher[0][1] : null
-
-    if (version == null || version.trim().isEmpty()) {
-        throw new Exception("Couldn't read version from POM.")
-    }
-
-    return version.trim().replace('-SNAPSHOT', '')
 }
