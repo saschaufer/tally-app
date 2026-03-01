@@ -203,7 +203,7 @@ public class UserDetailsService implements ReactiveUserDetailsService, ReactiveU
 
         final String jwt = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
 
-        return new PostLoginResponse(jwt, jwtProperties.secure());
+        return new PostLoginResponse(jwt, jwtProperties.secure(), null);
     }
 
     public Mono<User> createUser(final String email, final String password, final List<String> roles) {

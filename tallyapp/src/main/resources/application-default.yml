@@ -28,6 +28,12 @@ admin.emails:
 # - "admin1@mail.com"
 # - "admin2@mail.com"
 
+# Currency
+# ==================================================================
+
+# Currency used in the UI
+currency.symbol: €
+
 # Database
 # ==================================================================
 

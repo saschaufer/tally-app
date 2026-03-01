@@ -469,6 +469,7 @@ class UserDetailsServiceTest {
 
         assertThat(response.jwt(), is("ecoded-jwt"));
         assertThat(response.secure(), is(jwtProperties.secure()));
+        assertThat(response.properties(), nullValue());
 
         final JwtEncoderParameters parameters = captor.getValue();
         assertThat(parameters.getJwsHeader().getAlgorithm().getName(), is(JwsAlgorithms.HS256));
@@ -502,6 +503,7 @@ class UserDetailsServiceTest {
 
         assertThat(response.jwt(), is("ecoded-jwt"));
         assertThat(response.secure(), is(jwtProperties.secure()));
+        assertThat(response.properties(), nullValue());
 
         final JwtEncoderParameters parameters = captor.getValue();
         assertThat(parameters.getJwsHeader().getAlgorithm().getName(), is(JwsAlgorithms.HS256));

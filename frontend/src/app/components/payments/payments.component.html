@@ -14,9 +14,11 @@
         <div class="bar-element text-green">Total</div>
     </div>
     <div class="bar">
-        <div class="bar-element text-green">{{ accountBalance?.amountPayments }}</div>
-        <div class="bar-element text-green">{{ accountBalance?.amountPurchases }}</div>
-        <div class="bar-element text-green" [ngClass]="{'text-red': isNegative}">{{ accountBalance?.amountTotal }}</div>
+        <div class="bar-element text-green">{{ accountBalance?.amountPayments }} {{ currency }}</div>
+        <div class="bar-element text-green">{{ accountBalance?.amountPurchases }} {{ currency }}</div>
+        <div class="bar-element text-green"
+             [ngClass]="{'text-red': isNegative}">{{ accountBalance?.amountTotal }} {{ currency }}
+        </div>
     </div>
 
     <hr>
@@ -26,7 +28,7 @@
         @for (payment of payments; track payment; let i = $index) {
             <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item">
                 <p class="list-item-left">{{ payment.timestamp | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
-                <p class="list-item-right">{{ payment.amount }}</p>
+                <p class="list-item-right">{{ payment.amount }} {{ currency }}</p>
             </li>
         } @empty {
             <li class="list-item">

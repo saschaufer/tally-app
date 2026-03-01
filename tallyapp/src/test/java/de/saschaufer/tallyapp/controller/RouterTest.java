@@ -29,18 +29,20 @@ class RouterTest extends SecurityConfigSetup {
     void postLogin_positive() {
 
         doReturn(getUserByUsername(USER)).when(userDetailsService).checkRegistered(any(User.class));
-        doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
+        doReturn(new PostLoginResponse("jwt", true, null)).when(userDetailsService).createJwtToken(any(User.class));
+        doReturn(new PostLoginResponse("jwt", true, new PostLoginResponse.Properties("€"))).when(frontendPropertiesService).addFrontendProperties(any(PostLoginResponse.class));
 
         webClient.post().uri("/login")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(PostLoginResponse.class).isEqualTo(new PostLoginResponse("jwt", true));
+                .expectBody(PostLoginResponse.class).isEqualTo(new PostLoginResponse("jwt", true, new PostLoginResponse.Properties("€")));
 
         verify(userDetailsService, times(1)).findByUsername(USER);
         verify(userDetailsService, times(1)).checkRegistered(any(User.class));
         verify(userDetailsService, times(1)).createJwtToken(any(User.class));
+        verify(frontendPropertiesService, times(1)).addFrontendProperties(any(PostLoginResponse.class));
 
         final ArgumentCaptor<User> argumentCaptor1 = ArgumentCaptor.forClass(User.class);
         verify(userDetailsService).checkRegistered(argumentCaptor1.capture());
@@ -61,6 +63,13 @@ class RouterTest extends SecurityConfigSetup {
         assertThat(user2.getUsername(), is(USER));
         assertThat(user2.getPassword(), notNullValue());
         assertThat(user2.getRoles(), is(USER));
+
+        final ArgumentCaptor<PostLoginResponse> argumentCaptor3 = ArgumentCaptor.forClass(PostLoginResponse.class);
+        verify(frontendPropertiesService).addFrontendProperties(argumentCaptor3.capture());
+
+        final PostLoginResponse postLoginResponse = argumentCaptor3.getValue();
+
+        assertThat(postLoginResponse, is(new PostLoginResponse("jwt", true, null)));
     }
 
     @Test
@@ -74,7 +83,6 @@ class RouterTest extends SecurityConfigSetup {
 
         doReturn(user).when(userDetailsService).findByUsername(any(String.class));
         doCallRealMethod().when(userDetailsService).checkRegistered(any(User.class));
-        doReturn(new PostLoginResponse("jwt", true)).when(userDetailsService).createJwtToken(any(User.class));
 
         webClient.post().uri("/login")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
@@ -86,6 +94,7 @@ class RouterTest extends SecurityConfigSetup {
         verify(userDetailsService, times(1)).findByUsername(USER);
         verify(userDetailsService, times(1)).checkRegistered(any(User.class));
         verify(userDetailsService, times(0)).createJwtToken(any(User.class));
+        verify(frontendPropertiesService, times(0)).addFrontendProperties(any(PostLoginResponse.class));
     }
 
     @Test

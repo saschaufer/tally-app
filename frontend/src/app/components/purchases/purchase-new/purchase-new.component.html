@@ -14,7 +14,7 @@
             <!-- @formatter:off -->
             <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item">
                 <p class="list-item-left" [class.list-item-selected-text]="product.id == selectedProduct?.id" translate=no>{{ product.name }}</p>
-                <p class="list-item-right" [class.list-item-selected-text]="product.id == selectedProduct?.id">{{ product.price }}</p>
+                <p class="list-item-right" [class.list-item-selected-text]="product.id == selectedProduct?.id">{{ product.price }} {{ currency }}</p>
             </li>
             <!-- @formatter:on -->
         } @empty {

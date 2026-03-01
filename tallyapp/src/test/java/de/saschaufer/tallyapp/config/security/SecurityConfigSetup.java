@@ -56,6 +56,9 @@ public abstract class SecurityConfigSetup {
     protected UserDetailsService userDetailsService;
 
     @MockitoBean
+    protected FrontendPropertiesService frontendPropertiesService;
+
+    @MockitoBean
     protected ProductService productService;
 
     @MockitoBean

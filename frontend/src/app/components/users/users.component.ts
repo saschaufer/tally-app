@@ -4,6 +4,7 @@ import {ChangeDetectorRef, Component, ElementRef, inject, ViewChild} from '@angu
 import {Big} from "big.js";
 import {HttpService} from "../../services/http.service";
 import {GetUsersResponse} from "../../services/models/GetUsersResponse";
+import {PropertiesService} from "../../services/properties.service";
 
 @Component({
     selector: 'app-users',
@@ -20,8 +21,10 @@ export class UsersComponent {
 
     private readonly httpService = inject(HttpService);
     private readonly cdr = inject(ChangeDetectorRef);
+    private readonly propertiesService = inject(PropertiesService);
 
     users: GetUsersResponse[] = [];
+    currency = this.propertiesService.getProperties().currency;
 
     error: HttpErrorResponse | undefined;
 

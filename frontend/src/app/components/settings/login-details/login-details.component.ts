@@ -4,6 +4,7 @@ import {Router} from "@angular/router";
 import {interval, Subscription} from "rxjs";
 import {routeName} from "../../../app.routes";
 import {AuthService} from "../../../services/auth.service";
+import {PropertiesService} from "../../../services/properties.service";
 
 @Component({
     selector: 'app-login-details',
@@ -16,12 +17,14 @@ import {AuthService} from "../../../services/auth.service";
 export class LoginDetailsComponent {
 
     private readonly authService = inject(AuthService);
+    private readonly propertiesService = inject(PropertiesService);
     private readonly router = inject(Router);
     private readonly cdr = inject(ChangeDetectorRef);
 
     private time!: Subscription;
 
     jwtDetails = this.authService.getJwtDetails();
+    properties = this.propertiesService.getProperties();
 
     ngOnInit() {
         this.time = interval(1000).subscribe(() => {

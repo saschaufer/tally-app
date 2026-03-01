@@ -13,7 +13,7 @@
             <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item-two-rows">
                 <p class="list-item-two-rows-top">{{ product.id }}</p>
                 <p class="list-item-two-rows-bottom-left" translate=no>{{ product.name }}</p>
-                <p class="list-item-two-rows-bottom-right">{{ product.price }}</p>
+                <p class="list-item-two-rows-bottom-right">{{ product.price }} {{ currency }}</p>
             </li>
         } @empty {
             <li class="list-item">

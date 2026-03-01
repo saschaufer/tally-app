@@ -7,6 +7,7 @@ import {routeName} from "../../app.routes";
 import {HttpService} from "../../services/http.service";
 import {GetAccountBalanceResponse} from "../../services/models/GetAccountBalanceResponse";
 import {GetPaymentsResponse} from "../../services/models/GetPaymentsResponse";
+import {PropertiesService} from "../../services/properties.service";
 
 @Component({
     selector: 'app-payments',
@@ -28,10 +29,12 @@ export class PaymentsComponent {
     private readonly httpService = inject(HttpService);
     private readonly router = inject(Router);
     private readonly cdr = inject(ChangeDetectorRef);
+    private readonly propertiesService = inject(PropertiesService);
 
     payments: GetPaymentsResponse[] = [];
     accountBalance: GetAccountBalanceResponse | undefined;
     isNegative = false;
+    currency = this.propertiesService.getProperties().currency;
 
     error: HttpErrorResponse | undefined;
 

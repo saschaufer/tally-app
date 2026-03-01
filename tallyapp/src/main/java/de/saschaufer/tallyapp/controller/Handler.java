@@ -34,6 +34,7 @@ import static org.springframework.web.reactive.function.server.ServerResponse.st
 public class Handler {
 
     private final UserDetailsService userDetailsService;
+    private final FrontendPropertiesService frontendPropertiesService;
     private final ProductService productService;
     private final PurchaseService purchaseService;
     private final EmailService emailService;
@@ -51,6 +52,7 @@ public class Handler {
                 .flatMap(userDetailsService::checkRegistered)
                 .doOnNext(u -> log.atInfo().setMessage("User '{}' logged in.").addArgument(u.getEmail()).log())
                 .map(userDetailsService::createJwtToken)
+                .map(frontendPropertiesService::addFrontendProperties)
 
                 // Build response
                 .flatMap(res -> ok().contentType(MediaType.APPLICATION_JSON).bodyValue(res))

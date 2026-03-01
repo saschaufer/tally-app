@@ -10,7 +10,7 @@
         @for (user of users; track user) {
             <li class="list-item-two-rows">
                 <p class="list-item-two-rows-top-left" translate=no>{{ user.email }}</p>
-                <p class="list-item-two-rows-top-right" [ngClass]="isNegative(user.accountBalance) ? 'text-red' : 'text-green'">{{ user.accountBalance }}</p>
+                <p class="list-item-two-rows-top-right" [ngClass]="isNegative(user.accountBalance) ? 'text-red' : 'text-green'">{{ user.accountBalance }} {{ currency }}</p>
                 <p class="list-item-two-rows-bottom-left text-vsm" translate=no>{{ user.roles.join(", ") }}</p>
                 <p class="list-item-two-rows-bottom-right text-vsm">({{ user.registrationComplete ? "v" : "x" }}) {{ user.registrationOn | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
             </li>

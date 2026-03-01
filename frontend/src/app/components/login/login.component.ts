@@ -5,6 +5,7 @@ import {Router, RouterLink} from "@angular/router";
 import {routeName} from "../../app.routes";
 import {AuthService} from "../../services/auth.service";
 import {HttpService} from "../../services/http.service";
+import {PropertiesService} from "../../services/properties.service";
 
 
 @Component({
@@ -21,6 +22,7 @@ export class LoginComponent {
     protected readonly routeName = routeName;
 
     private readonly authService = inject(AuthService);
+    private readonly propertiesService = inject(PropertiesService);
     private readonly httpService = inject(HttpService);
     private readonly router = inject(Router);
 
@@ -56,10 +58,12 @@ export class LoginComponent {
                     next: (loginResponse) => {
                         if (this.authService.setJwt(loginResponse.jwt, loginResponse.secure)) {
                             console.info("Login successful.");
+                            this.propertiesService.setProperties(loginResponse.properties);
                             this.router.navigate(['/' + routeName.purchases_new]).then();
                         } else {
                             console.error("Cookie not set. Probably because it needs to be sent over a secure HTTPS connection.");
                             this.openDialog(this.dialogErrorCookie.nativeElement);
+                            this.propertiesService.clear();
                         }
                     },
                     error: (error) => {
@@ -67,6 +71,7 @@ export class LoginComponent {
                         console.error(error);
                         this.error = error;
                         this.openDialog(this.dialogError.nativeElement);
+                        this.propertiesService.clear();
                     }
                 });
         }

@@ -6,6 +6,7 @@ import {Big} from "big.js";
 import {routeName} from "../../../app.routes";
 import {HttpService} from "../../../services/http.service";
 import {GetPurchasesResponse} from "../../../services/models/GetPurchasesResponse";
+import {PropertiesService} from "../../../services/properties.service";
 
 @Component({
     selector: 'app-purchase-delete',
@@ -26,8 +27,10 @@ export class PurchaseDeleteComponent {
     private readonly activatedRoute = inject(ActivatedRoute);
     private readonly httpService = inject(HttpService);
     private readonly router = inject(Router);
+    private readonly propertiesService = inject(PropertiesService);
 
     purchase: GetPurchasesResponse | undefined;
+    currency = this.propertiesService.getProperties().currency;
 
     error: HttpErrorResponse | undefined;
 

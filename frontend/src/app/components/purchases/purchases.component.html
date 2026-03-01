@@ -14,9 +14,10 @@
         <div class="bar-element text-green">Total</div>
     </div>
     <div class="bar">
-        <div class="bar-element text-green">{{ accountBalance?.amountPayments }}</div>
-        <div class="bar-element text-green">{{ accountBalance?.amountPurchases }}</div>
-        <div class="bar-element" [ngClass]="isNegative ? 'text-red' : 'text-green'">{{ accountBalance?.amountTotal }}
+        <div class="bar-element text-green">{{ accountBalance?.amountPayments }} {{ currency }}</div>
+        <div class="bar-element text-green">{{ accountBalance?.amountPurchases }} {{ currency }}</div>
+        <div class="bar-element"
+             [ngClass]="isNegative ? 'text-red' : 'text-green'">{{ accountBalance?.amountTotal }} {{ currency }}
         </div>
     </div>
 
@@ -28,7 +29,7 @@
             <li (click)="onClick(i)" (keydown)="onClick(i)" class="list-item-two-rows">
                 <p class="list-item-two-rows-top">{{ purchase.purchaseTimestamp | date: 'yyyy-MM-dd HH:mm:ss' }}</p>
                 <p class="list-item-two-rows-bottom-left" translate=no>{{ purchase.productName }}</p>
-                <p class="list-item-two-rows-bottom-right">{{ purchase.productPrice }}</p>
+                <p class="list-item-two-rows-bottom-right">{{ purchase.productPrice }} {{ currency }}</p>
             </li>
         } @empty {
             <li class="list-item">

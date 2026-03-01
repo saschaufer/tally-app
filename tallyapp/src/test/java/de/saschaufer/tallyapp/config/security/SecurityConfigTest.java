@@ -81,13 +81,13 @@ class SecurityConfigTest extends SecurityConfigSetup {
     @Test
     void postLogin_positive_Password() {
 
-        doReturn(ok().bodyValue(new PostLoginResponse("jwt", true))).when(handler).postLogin(any(ServerRequest.class));
+        doReturn(ok().bodyValue(new PostLoginResponse("jwt", true, new PostLoginResponse.Properties("€")))).when(handler).postLogin(any(ServerRequest.class));
 
         webClient.post().uri("/login")
                 .header(HttpHeaders.AUTHORIZATION, "Basic " + credentials(USER, true))
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(PostLoginResponse.class).isEqualTo(new PostLoginResponse("jwt", true));
+                .expectBody(PostLoginResponse.class).isEqualTo(new PostLoginResponse("jwt", true, new PostLoginResponse.Properties("€")));
 
         verify(handler, times(1)).postLogin(any(ServerRequest.class));
     }
@@ -119,13 +119,13 @@ class SecurityConfigTest extends SecurityConfigSetup {
     @Test
     void postLogin_positive_Jwt() {
 
-        doReturn(ok().bodyValue(new PostLoginResponse("jwt", true))).when(handler).postLogin(any(ServerRequest.class));
+        doReturn(ok().bodyValue(new PostLoginResponse("jwt", true, new PostLoginResponse.Properties("€")))).when(handler).postLogin(any(ServerRequest.class));
 
         webClient.post().uri("/login")
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + testJwt(USER, Instant.now()))
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(PostLoginResponse.class).isEqualTo(new PostLoginResponse("jwt", true));
+                .expectBody(PostLoginResponse.class).isEqualTo(new PostLoginResponse("jwt", true, new PostLoginResponse.Properties("€")));
 
         verify(handler, times(1)).postLogin(any(ServerRequest.class));
     }

@@ -21,7 +21,10 @@
         <td class="table-row-left">Logout in:</td>
         <td class="table-row-right">{{ jwtDetails.expiresLeft | date: 'HH:mm:ss' }}</td>
     </tr>
-
+    <tr>
+        <td class="table-row-left">Currency:</td>
+        <td class="table-row-right" translate=no>{{ properties.currency }}</td>
+    </tr>
 </table>
 
 <button (click)="onLogout()" class="mt-1_25">Logout</button>
