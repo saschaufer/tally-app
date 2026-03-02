@@ -4,7 +4,7 @@ pipeline {
 
     tools {
         maven 'maven'
-        jdk 'temurin-21-jdk-amd64'
+        jdk 'temurin-25-jdk-amd64'
     }
 
     options {

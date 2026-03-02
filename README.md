@@ -1,5 +1,5 @@
 [![Maven](https://img.shields.io/static/v1?label=Maven&message=4.0.0&color=blue)](https://maven.apache.org/)
-[![Java](https://img.shields.io/static/v1?label=Java&message=21&color=red)](https://adoptium.net/de/temurin/releases/?os=linux&arch=any&package=jdk)
+[![Java](https://img.shields.io/static/v1?label=Java&message=25&color=red)](https://adoptium.net/de/temurin/releases/?os=linux&arch=any&package=jdk)
 [![TypeScript](https://img.shields.io/static/v1?label=TypeScript&message=5.9.3&color=blue)](https://www.typescriptlang.org/)
 [![Angular](https://img.shields.io/static/v1?label=Angular&message=21&color=purple)](https://angular.dev/)
 [![SpringBoot](https://img.shields.io/static/v1?label=SpringBoot&message=4.0.3&color=green)](https://spring.io/projects/spring-boot)
@@ -19,11 +19,11 @@ machine.
 
 ## Supported Java Versions
 
-To run Tally App Java 21 is required.
+To run Tally App Java 25 is required.
 
 ```bash
 apt update
-apt install temurin-21-jre
+apt install temurin-25-jre
 ```
 
 ## Database Requirements
@@ -74,7 +74,7 @@ Documentation=https://github.com/saschaufer/tally-app
 [Service]
 WorkingDirectory=/opt/tallyapp
 
-ExecStart=/usr/lib/jvm/temurin-21-jre-amd64/bin/java \
+ExecStart=/usr/lib/jvm/temurin-25-jre-amd64/bin/java \
           -jar \
           tallyapp.jar \
           --spring.config.additional-location=file:application.yml
